@@ -11,7 +11,7 @@ import type {
   AuthTokenResponse, 
   PasswordResetRequest,
   PasswordResetConfirmation 
-} from '../types/shared';
+} from '@colorgarb/shared';
 
 interface AuthServiceConfig {
   baseURL: string;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AuthUser, Organization } from '../types/shared';
+import type { Organization, AuthTokenResponse } from '@colorgarb/shared';
 import authService from '../services/authService';
 
 /**
@@ -9,7 +9,7 @@ import authService from '../services/authService';
  */
 interface AppState {
   /** Currently authenticated user */
-  user: AuthUser | null;
+  user: AuthTokenResponse['user'] | null;
   /** Current organization context */
   organization: Organization | null;
   /** Authentication token */
@@ -33,7 +33,7 @@ interface AppState {
   
   // General Actions
   /** Set the current user */
-  setUser: (user: AuthUser | null) => void;
+  setUser: (user: AuthTokenResponse['user'] | null) => void;
   /** Set the current organization */
   setOrganization: (organization: Organization | null) => void;
   /** Set loading state */

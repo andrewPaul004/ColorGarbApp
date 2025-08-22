@@ -1,0 +1,254 @@
+# Azure DevOps CI/CD Pipeline for ColorGarb Application
+# Builds and tests both frontend (React/TypeScript) and backend (.NET Core)
+# Deploys to Azure App Services
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - apps/*
+      - packages/*
+      - azure-pipelines.yml
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - apps/*
+      - packages/*
+
+variables:
+  buildConfiguration: 'Release'
+  dotNetFramework: 'net9.0'
+  dotNetVersion: '9.0.x'
+  nodeVersion: '18.x'
+
+stages:
+  # Build and Test Stage
+  - stage: BuildAndTest
+    displayName: 'Build and Test'
+    jobs:
+      # Frontend Build and Test Job
+      - job: Frontend
+        displayName: 'Build and Test Frontend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        
+        steps:
+          - task: NodeTool@0
+            displayName: 'Use Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+          
+          - script: |
+              cd apps/web
+              npm ci
+            displayName: 'Install Frontend Dependencies'
+          
+          - script: |
+              cd apps/web
+              npm run lint
+            displayName: 'Run Frontend Linting'
+            continueOnError: false
+          
+          - script: |
+              cd apps/web
+              npm run test -- --coverage --watchAll=false
+            displayName: 'Run Frontend Tests'
+            continueOnError: false
+          
+          - script: |
+              cd apps/web
+              npm run build
+            displayName: 'Build Frontend'
+          
+          - task: PublishTestResults@2
+            displayName: 'Publish Frontend Test Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'apps/web/coverage/junit.xml'
+              testRunTitle: 'Frontend Tests'
+          
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Frontend Code Coverage'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'apps/web/coverage/cobertura-coverage.xml'
+              reportDirectory: 'apps/web/coverage/lcov-report'
+          
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Frontend Build Artifacts'
+            inputs:
+              pathToPublish: 'apps/web/dist'
+              artifactName: 'frontend-build'
+              publishLocation: 'Container'
+
+      # Backend Build and Test Job
+      - job: Backend
+        displayName: 'Build and Test Backend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core SDK $(dotNetVersion)'
+            inputs:
+              packageType: 'sdk'
+              version: '$(dotNetVersion)'
+          
+          - script: |
+              cd apps/api
+              dotnet restore
+            displayName: 'Restore Backend Dependencies'
+          
+          - script: |
+              cd apps/api
+              dotnet build --configuration $(buildConfiguration) --no-restore
+            displayName: 'Build Backend'
+          
+          - script: |
+              cd apps/api
+              dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
+            displayName: 'Run Backend Tests'
+            condition: succeededOrFailed()
+          
+          - task: PublishTestResults@2
+            displayName: 'Publish Backend Test Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              testRunTitle: 'Backend Tests'
+          
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Backend Code Coverage'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+          
+          - script: |
+              cd apps/api
+              dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/backend
+            displayName: 'Publish Backend'
+          
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Backend Build Artifacts'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)/backend'
+              artifactName: 'backend-build'
+              publishLocation: 'Container'
+
+  # Deploy to Development Stage
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: DeployFrontendDev
+        displayName: 'Deploy Frontend to Development'
+        environment: 'colorgarb-dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'Download Frontend Artifacts'
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'frontend-build'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+                
+                - task: AzureStaticWebApp@0
+                  displayName: 'Deploy Frontend to Azure Static Web App'
+                  inputs:
+                    app_location: '$(System.ArtifactsDirectory)/frontend-build'
+                    azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_DEV)'
+      
+      - deployment: DeployBackendDev
+        displayName: 'Deploy Backend to Development'
+        environment: 'colorgarb-dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'Download Backend Artifacts'
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'backend-build'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+                
+                - task: AzureRmWebAppDeployment@4
+                  displayName: 'Deploy Backend to Azure App Service'
+                  inputs:
+                    connectionType: 'AzureRM'
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+                    appType: 'webApp'
+                    webAppName: '$(AZURE_APP_SERVICE_NAME_DEV)'
+                    package: '$(System.ArtifactsDirectory)/backend-build'
+
+  # Deploy to Production Stage
+  - stage: DeployProd
+    displayName: 'Deploy to Production'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployFrontendProd
+        displayName: 'Deploy Frontend to Production'
+        environment: 'colorgarb-prod'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'Download Frontend Artifacts'
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'frontend-build'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+                
+                - task: AzureStaticWebApp@0
+                  displayName: 'Deploy Frontend to Azure Static Web App'
+                  inputs:
+                    app_location: '$(System.ArtifactsDirectory)/frontend-build'
+                    azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_PROD)'
+      
+      - deployment: DeployBackendProd
+        displayName: 'Deploy Backend to Production'
+        environment: 'colorgarb-prod'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadBuildArtifacts@0
+                  displayName: 'Download Backend Artifacts'
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'backend-build'
+                    downloadPath: '$(System.ArtifactsDirectory)'
+                
+                - task: AzureRmWebAppDeployment@4
+                  displayName: 'Deploy Backend to Azure App Service'
+                  inputs:
+                    connectionType: 'AzureRM'
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+                    appType: 'webApp'
+                    webAppName: '$(AZURE_APP_SERVICE_NAME_PROD)'
+                    package: '$(System.ArtifactsDirectory)/backend-build'

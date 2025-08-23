@@ -57,3 +57,19 @@ export interface PasswordResetConfirmation {
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  description: string;
+  currentStage: string;
+  originalShipDate: Date;
+  currentShipDate: Date;
+  totalAmount: number;
+  paymentStatus: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  organizationName: string;
+}

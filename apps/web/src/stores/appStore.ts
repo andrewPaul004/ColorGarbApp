@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Organization, AuthTokenResponse } from '@colorgarb/shared';
+import type { Organization, AuthTokenResponse, Order } from '../types/shared';
 import authService from '../services/authService';
+import orderService from '../services/orderService';
 
 /**
  * Global application state interface
@@ -20,6 +21,14 @@ interface AppState {
   isLoading: boolean;
   /** Global error message */
   error: string | null;
+  
+  // Orders State
+  /** Current orders for the user's organization */
+  orders: Order[];
+  /** Loading state for orders */
+  ordersLoading: boolean;
+  /** Error message for orders operations */
+  ordersError: string | null;
   
   // Authentication Actions
   /** Login action */
@@ -44,6 +53,18 @@ interface AppState {
   clearError: () => void;
   /** Clear all state */
   clearState: () => void;
+  
+  // Orders Actions
+  /** Fetch orders for the user's organization */
+  fetchOrders: (status?: string, stage?: string) => Promise<void>;
+  /** Fetch a specific order by ID */
+  fetchOrder: (id: string) => Promise<Order>;
+  /** Set orders loading state */
+  setOrdersLoading: (loading: boolean) => void;
+  /** Set orders error message */
+  setOrdersError: (error: string | null) => void;
+  /** Clear orders error */
+  clearOrdersError: () => void;
 }
 
 /**
@@ -79,6 +100,11 @@ export const useAppStore = create<AppState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      
+      // Orders State
+      orders: [],
+      ordersLoading: false,
+      ordersError: null,
 
       // Authentication Actions
       login: async (email: string, password: string) => {
@@ -173,7 +199,48 @@ export const useAppStore = create<AppState>()(
         isAuthenticated: false,
         isLoading: false,
         error: null,
+        orders: [],
+        ordersLoading: false,
+        ordersError: null,
       }),
+
+      // Orders Actions
+      fetchOrders: async (status?: string, stage?: string) => {
+        set({ ordersLoading: true, ordersError: null });
+        
+        try {
+          const orders = await orderService.getOrders(status, stage);
+          set({
+            orders,
+            ordersLoading: false,
+            ordersError: null,
+          });
+        } catch (error) {
+          set({
+            orders: [],
+            ordersLoading: false,
+            ordersError: error instanceof Error ? error.message : 'Failed to fetch orders',
+          });
+          throw error;
+        }
+      },
+
+      fetchOrder: async (id: string): Promise<Order> => {
+        set({ ordersError: null });
+        
+        try {
+          const order = await orderService.getOrder(id);
+          return order;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to fetch order';
+          set({ ordersError: errorMessage });
+          throw error;
+        }
+      },
+
+      setOrdersLoading: (ordersLoading: boolean) => set({ ordersLoading }),
+      setOrdersError: (ordersError: string | null) => set({ ordersError }),
+      clearOrdersError: () => set({ ordersError: null }),
     }),
     {
       name: 'colorgarb-app-store',

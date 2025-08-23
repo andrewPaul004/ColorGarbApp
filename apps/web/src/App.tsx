@@ -1,117 +1,29 @@
 import React from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Container, Typography, Box } from '@mui/material';
+import { Box } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { UserRole } from '@colorgarb/shared';
 import { useAppStore } from './stores/appStore';
+import colorGarbTheme from './theme/colorGarbTheme';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import RoleBasedNavigation from './components/common/RoleBasedNavigation';
+import Navigation from './components/layout/Navigation';
 import LoginPage from './pages/Auth/LoginPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage';
+import Dashboard from './pages/Dashboard/Dashboard';
+import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
 
 /**
- * Material-UI theme configuration
- * Follows ColorGarb branding guidelines
+ * Layout component that provides consistent navigation and structure
+ * @param children React children to render within the layout
+ * @returns {JSX.Element} Layout with navigation
  */
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2', // Blue primary color
-    },
-    secondary: {
-      main: '#dc004e', // Accent color
-    },
-  },
-  typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-});
-
-/**
- * Dashboard component for Director and Finance users
- * @component
- * @returns {JSX.Element} Dashboard layout
- */
-function Dashboard() {
-  const { user } = useAppStore();
-
+function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <Box className="min-h-screen bg-gray-50">
-      <RoleBasedNavigation />
-      
-      <Container maxWidth="lg" className="py-8">
-        <Box className="text-center">
-          <Typography variant="h4" component="h1" gutterBottom>
-            Welcome to ColorGarb
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            Your costume manufacturing portal is ready.
-          </Typography>
-          {user && (
-            <Typography variant="h6" color="primary" className="mt-4">
-              Hello, {user.name} ({user.role})
-            </Typography>
-          )}
-        </Box>
-      </Container>
-    </Box>
-  );
-}
-
-/**
- * Admin Dashboard component for ColorGarb staff
- * @component
- * @returns {JSX.Element} Admin dashboard layout
- */
-function AdminDashboard() {
-  const { user } = useAppStore();
-
-  return (
-    <Box className="min-h-screen bg-gray-50">
-      <RoleBasedNavigation />
-      
-      <Container maxWidth="lg" className="py-8">
-        <Box className="text-center">
-          <Typography variant="h4" component="h1" gutterBottom>
-            ColorGarb Administration
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            Manage orders, organizations, and users across the platform.
-          </Typography>
-          {user && (
-            <Typography variant="h6" color="primary" className="mt-4">
-              Hello, {user.name} ({user.role})
-            </Typography>
-          )}
-        </Box>
-      </Container>
-    </Box>
-  );
-}
-
-/**
- * Unauthorized access page
- * @component
- * @returns {JSX.Element} Unauthorized page
- */
-function UnauthorizedPage() {
-  return (
-    <Box className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <Container maxWidth="sm" className="text-center">
-        <Typography variant="h4" component="h1" gutterBottom color="error">
-          Access Denied
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          You don't have permission to access this resource.
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Please contact your administrator if you believe this is an error.
-        </Typography>
-      </Container>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+      <Navigation />
+      {children}
     </Box>
   );
 }
@@ -132,11 +44,11 @@ function App() {
   }, [initializeAuth]);
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={colorGarbTheme}>
       <CssBaseline />
       <Router>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes - no navigation */}
           <Route 
             path="/auth/login" 
             element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
@@ -150,38 +62,42 @@ function App() {
             element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/dashboard" replace />} 
           />
           
-          {/* Protected routes for organization users (Director/Finance) */}
+          {/* Protected routes with layout */}
           <Route 
             path="/dashboard" 
             element={
-              <ProtectedRoute requiredRole={UserRole.Director}>
-                <Dashboard />
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
               </ProtectedRoute>
             } 
           />
           
-          {/* Protected routes for ColorGarb staff */}
           <Route 
-            path="/admin/dashboard" 
+            path="/profile" 
             element={
-              <ProtectedRoute requiredRole={UserRole.ColorGarbStaff}>
-                <AdminDashboard />
+              <ProtectedRoute>
+                <Layout>
+                  <UserProfile />
+                </Layout>
               </ProtectedRoute>
             } 
           />
+          
+          {/* Admin routes */}
           <Route 
             path="/admin/users" 
             element={
-              <ProtectedRoute requiredRole={UserRole.ColorGarbStaff}>
-                <UserManagement />
+              <ProtectedRoute>
+                <Layout>
+                  <UserManagement />
+                </Layout>
               </ProtectedRoute>
             } 
           />
           
-          {/* Unauthorized access page */}
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          
-          {/* Default redirect based on user role */}
+          {/* Default redirect based on authentication */}
           <Route 
             path="/" 
             element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth/login"} replace />} 

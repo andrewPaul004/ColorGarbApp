@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ColorGarbApi.Models.Entities;
 
 namespace ColorGarbApi.Models;
 
@@ -35,8 +36,7 @@ public class User
     /// User's role in the system
     /// </summary>
     [Required]
-    [MaxLength(50)]
-    public string Role { get; set; } = string.Empty; // client, colorgarb_staff
+    public UserRole Role { get; set; } = UserRole.Director;
 
     /// <summary>
     /// Hashed password for authentication

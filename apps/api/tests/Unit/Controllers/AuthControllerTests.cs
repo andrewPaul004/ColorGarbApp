@@ -8,6 +8,7 @@ using Xunit;
 using ColorGarbApi.Controllers;
 using ColorGarbApi.Data;
 using ColorGarbApi.Models;
+using ColorGarbApi.Models.Entities;
 using ColorGarbApi.Services;
 
 namespace ColorGarbApi.Tests.Unit.Controllers;
@@ -81,7 +82,7 @@ public class AuthControllerTests : IDisposable
             Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Email = "test@testschool.edu",
             Name = "Test User",
-            Role = "client",
+            Role = UserRole.Director,
             OrganizationId = organization.Id,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
             IsActive = true,

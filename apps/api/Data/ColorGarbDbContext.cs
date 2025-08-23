@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ColorGarbApi.Models;
+using ColorGarbApi.Models.Entities;
 
 namespace ColorGarbApi.Data;
 
@@ -41,6 +42,11 @@ public class ColorGarbDbContext : DbContext
     /// Password reset tokens dataset - tracks secure password reset tokens
     /// </summary>
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
+    /// <summary>
+    /// Role access audits dataset - tracks role-based access attempts for security
+    /// </summary>
+    public DbSet<RoleAccessAudit> RoleAccessAudits => Set<RoleAccessAudit>();
 
     /// <summary>
     /// Configures entity relationships and constraints
@@ -111,6 +117,29 @@ public class ColorGarbDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configure RoleAccessAudit entity
+        modelBuilder.Entity<RoleAccessAudit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrganizationId);
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => new { e.UserId, e.Timestamp });
+            entity.Property(e => e.UserRole).HasConversion<string>();
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Organization
+            entity.HasOne(e => e.Organization)
+                  .WithMany()
+                  .HasForeignKey(e => e.OrganizationId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
         // Seed initial data for development
         SeedInitialData(modelBuilder);
     }
@@ -147,7 +176,7 @@ public class ColorGarbDbContext : DbContext
             Id = sampleUserId,
             Email = "director@lincolnhigh.edu",
             Name = "Jane Smith",
-            Role = "client",
+            Role = UserRole.Director,
             Phone = "(555) 123-4567",
             OrganizationId = sampleOrgId,
             PasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewKXhK9Pq3qKwP0O", // BCrypt hash of "password123"

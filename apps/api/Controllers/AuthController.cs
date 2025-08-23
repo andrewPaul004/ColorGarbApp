@@ -10,6 +10,7 @@ using System.Text;
 using BCrypt.Net;
 using ColorGarbApi.Data;
 using ColorGarbApi.Models;
+using ColorGarbApi.Models.Entities;
 using ColorGarbApi.Services;
 
 namespace ColorGarbApi.Controllers;
@@ -149,7 +150,7 @@ public class AuthController : ControllerBase
                     Id = user.Id.ToString(),
                     Email = user.Email,
                     Name = user.Name,
-                    Role = user.Role,
+                    Role = user.Role.GetRoleString(),
                     OrganizationId = user.OrganizationId?.ToString()
                 }
             });
@@ -226,6 +227,102 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Registers a new user with automatic role assignment based on organization type.
+    /// Creates user account with appropriate default role and organization association.
+    /// </summary>
+    /// <param name="request">Registration details including user and organization information</param>
+    /// <returns>Authentication token and user information for newly created user</returns>
+    /// <response code="201">User registered successfully</response>
+    /// <response code="400">Invalid request format or validation errors</response>
+    /// <response code="409">Email already exists</response>
+    /// <response code="500">Server error during registration</response>
+    [HttpPost("register")]
+    [EnableRateLimiting("AuthLimiter")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        try
+        {
+            if (request == null)
+            {
+                return BadRequest(new { message = "Registration data is required" });
+            }
+
+            // Validate required fields
+            var validationErrors = ValidateRegistrationRequest(request);
+            if (validationErrors.Any())
+            {
+                return BadRequest(new { message = "Validation failed", errors = validationErrors });
+            }
+
+            // Normalize email
+            var normalizedEmail = request.Email.Trim();
+
+            // Check if user already exists
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail.ToLower());
+
+            if (existingUser != null)
+            {
+                _logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
+                return Conflict(new { message = "Email address is already registered" });
+            }
+
+            // Find or create organization
+            var organization = await FindOrCreateOrganization(request);
+
+            // Determine default role based on organization type
+            var defaultRole = DetermineDefaultRole(organization.Type, request.RequestedRole);
+
+            // Create new user with default role
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Name = request.Name.Trim(),
+                Email = normalizedEmail,
+                PasswordHash = HashPassword(request.Password),
+                Role = defaultRole,
+                OrganizationId = organization.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("New user registered: {UserId} with role {Role} for organization {OrganizationId}",
+                user.Id, user.Role, organization.Id);
+
+            // Generate JWT token for immediate login
+            var token = GenerateJwtToken(user);
+
+            return StatusCode(201, new AuthTokenResponse
+            {
+                AccessToken = token,
+                TokenType = "Bearer",
+                ExpiresIn = 3600,
+                User = new UserInfo
+                {
+                    Id = user.Id.ToString(),
+                    Email = user.Email,
+                    Name = user.Name,
+                    Role = user.Role.GetRoleString(),
+                    OrganizationId = user.OrganizationId?.ToString()
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during user registration for email: {Email}", request?.Email);
+            return StatusCode(500, new { message = "An error occurred during registration" });
+        }
+    }
+
+    /// <summary>
     /// Refreshes an existing JWT token.
     /// Validates current token and issues a new one with extended expiry.
     /// </summary>
@@ -271,7 +368,7 @@ public class AuthController : ControllerBase
                     Id = user.Id.ToString(),
                     Email = user.Email,
                     Name = user.Name,
-                    Role = user.Role,
+                    Role = user.Role.GetRoleString(),
                     OrganizationId = user.OrganizationId?.ToString()
                 }
             });
@@ -302,7 +399,7 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.Role, user.Role),
+            new Claim(ClaimTypes.Role, user.Role.GetRoleString()),
             new Claim("organizationId", user.OrganizationId?.ToString() ?? "")
         };
 
@@ -438,6 +535,140 @@ public class AuthController : ControllerBase
         rng.GetBytes(randomBytes);
         return Convert.ToBase64String(randomBytes);
     }
+
+    /// <summary>
+    /// Validates registration request data
+    /// </summary>
+    /// <param name="request">Registration request to validate</param>
+    /// <returns>List of validation errors</returns>
+    private List<string> ValidateRegistrationRequest(RegisterRequest request)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            errors.Add("Name is required");
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+            errors.Add("Email is required");
+        else if (!IsValidEmail(request.Email))
+            errors.Add("Email format is invalid");
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+            errors.Add("Password is required");
+        else if (request.Password.Length < 8)
+            errors.Add("Password must be at least 8 characters long");
+
+        if (string.IsNullOrWhiteSpace(request.OrganizationName))
+            errors.Add("Organization name is required");
+
+        if (string.IsNullOrWhiteSpace(request.OrganizationType))
+            errors.Add("Organization type is required");
+        else if (!IsValidOrganizationType(request.OrganizationType))
+            errors.Add("Invalid organization type. Allowed values: school, theater, dance_company, other");
+
+        return errors;
+    }
+
+    /// <summary>
+    /// Validates email format
+    /// </summary>
+    /// <param name="email">Email to validate</param>
+    /// <returns>True if email format is valid</returns>
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Validates organization type
+    /// </summary>
+    /// <param name="type">Organization type to validate</param>
+    /// <returns>True if organization type is valid</returns>
+    private bool IsValidOrganizationType(string type)
+    {
+        var validTypes = new[] { "school", "theater", "dance_company", "other" };
+        return validTypes.Contains(type.ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Finds existing organization or creates a new one
+    /// </summary>
+    /// <param name="request">Registration request containing organization details</param>
+    /// <returns>Organization entity</returns>
+    private async Task<Organization> FindOrCreateOrganization(RegisterRequest request)
+    {
+        // First, try to find existing organization by name and type
+        var existingOrg = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Name.ToLower() == request.OrganizationName.Trim().ToLower()
+                                   && o.Type.ToLower() == request.OrganizationType.ToLowerInvariant());
+
+        if (existingOrg != null)
+        {
+            return existingOrg;
+        }
+
+        // Create new organization
+        var newOrganization = new Organization
+        {
+            Id = Guid.NewGuid(),
+            Name = request.OrganizationName.Trim(),
+            Type = request.OrganizationType.ToLowerInvariant(),
+            ContactEmail = request.Email.Trim(),
+            ContactPhone = request.OrganizationPhone?.Trim(),
+            Address = request.OrganizationAddress?.Trim() ?? "Address not provided",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Organizations.Add(newOrganization);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("New organization created: {OrganizationId} - {OrganizationName}",
+            newOrganization.Id, newOrganization.Name);
+
+        return newOrganization;
+    }
+
+    /// <summary>
+    /// Determines default role based on organization type and requested role
+    /// </summary>
+    /// <param name="organizationType">Type of organization</param>
+    /// <param name="requestedRole">Role requested by user (optional)</param>
+    /// <returns>Appropriate default role</returns>
+    private UserRole DetermineDefaultRole(string organizationType, string? requestedRole)
+    {
+        // Default role assignment logic based on organization type
+        var defaultRole = organizationType.ToLowerInvariant() switch
+        {
+            "school" => UserRole.Director,     // Schools typically need director-level access for drama departments
+            "theater" => UserRole.Director,    // Theater companies need full order management
+            "dance_company" => UserRole.Director, // Dance companies need full order management
+            "other" => UserRole.Finance,       // Default to more restricted role for unknown organization types
+            _ => UserRole.Finance
+        };
+
+        // If a specific role was requested, validate it against business rules
+        if (!string.IsNullOrWhiteSpace(requestedRole) && Enum.TryParse<UserRole>(requestedRole, true, out var parsedRole))
+        {
+            // Only allow Director or Finance roles for organization users
+            // ColorGarb staff roles can only be assigned by existing ColorGarb staff
+            if (parsedRole == UserRole.Director || parsedRole == UserRole.Finance)
+            {
+                return parsedRole;
+            }
+        }
+
+        return defaultRole;
+    }
 }
 
 /// <summary>
@@ -465,6 +696,52 @@ public class PasswordResetRequest
     /// Email address for password reset
     /// </summary>
     public string Email { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// User registration request model
+/// </summary>
+public class RegisterRequest
+{
+    /// <summary>
+    /// User's full name
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's email address
+    /// </summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// User's password
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Organization name
+    /// </summary>
+    public string OrganizationName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Organization type (school, theater, dance_company, other)
+    /// </summary>
+    public string OrganizationType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Organization phone number (optional)
+    /// </summary>
+    public string? OrganizationPhone { get; set; }
+
+    /// <summary>
+    /// Organization address (optional)
+    /// </summary>
+    public string? OrganizationAddress { get; set; }
+
+    /// <summary>
+    /// Requested user role (optional, defaults based on organization type)
+    /// </summary>
+    public string? RequestedRole { get; set; }
 }
 
 /// <summary>

@@ -2,11 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using StackExchange.Redis;
 using System.Text;
 using System.Threading.RateLimiting;
 using ColorGarbApi.Data;
 using ColorGarbApi.Services;
+using ColorGarbApi.Common.Authorization;
+using ColorGarbApi.Models.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,9 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 // Register email service
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Register audit service
+builder.Services.AddScoped<IAuditService, AuditService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ColorGarbApi";
@@ -54,7 +60,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// Configure role-based authorization
+builder.Services.AddScoped<IAuthorizationHandler, RoleAuthorizationHandler>();
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+builder.Services.AddAuthorization(options =>
+{
+    // Register role-based policies
+    foreach (UserRole role in Enum.GetValues<UserRole>())
+    {
+        options.AddPolicy($"RequireRole_{role}", policy =>
+            policy.Requirements.Add(new RoleRequirement(new[] { role })));
+    }
+
+    // Register combined role policies
+    options.AddPolicy("RequireRoles_Director_Finance", policy =>
+        policy.Requirements.Add(new RoleRequirement(new[] { UserRole.Director, UserRole.Finance })));
+
+    options.AddPolicy("RequireOrganizationAccess", policy =>
+        policy.Requirements.Add(new RoleRequirement(new[] { UserRole.Director, UserRole.Finance })));
+
+    options.AddPolicy("RequireColorGarbStaff", policy =>
+        policy.Requirements.Add(new RoleRequirement(new[] { UserRole.ColorGarbStaff }, false, true)));
+});
 
 // Configure Rate Limiting
 builder.Services.AddRateLimiter(options =>

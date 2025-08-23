@@ -1,0 +1,312 @@
+import React from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
+  Box,
+  Chip
+} from '@mui/material';
+import {
+  AccountCircle,
+  Dashboard,
+  People,
+  Settings,
+  ExitToApp,
+  Business,
+  Receipt,
+  AdminPanelSettings
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+} from '@mui/icons-material';
+import { UserRole, type NavigationItem, RoleUtils } from '@colorgarb/shared';
+import { useAppStore } from '../../stores/appStore';
+import { useNavigate } from 'react-router-dom';
+
+/**
+ * Navigation configuration based on user roles
+ */
+const getNavigationItems = (userRole: UserRole): NavigationItem[] => {
+  const baseItems: NavigationItem[] = [
+    {
+      label: 'Dashboard',
+      path: '/dashboard',
+      icon: 'Dashboard',
+      requiredRole: UserRole.Director,
+      requiresOrganization: true
+    }
+  ];
+
+  switch (userRole) {
+    case UserRole.Director:
+      return [
+        ...baseItems,
+        {
+          label: 'Orders',
+          path: '/orders',
+          icon: 'Receipt',
+          requiredRole: UserRole.Director,
+          requiresOrganization: true
+        },
+        {
+          label: 'Organization',
+          path: '/organization',
+          icon: 'Business',
+          requiredRole: UserRole.Director,
+          requiresOrganization: true
+        },
+        {
+          label: 'Users',
+          path: '/users',
+          icon: 'People',
+          requiredRole: UserRole.Director,
+          requiresOrganization: true
+        },
+        {
+          label: 'Settings',
+          path: '/settings',
+          icon: 'Settings',
+          requiredRole: UserRole.Director,
+          requiresOrganization: true
+        }
+      ];
+
+    case UserRole.Finance:
+      return [
+        ...baseItems,
+        {
+          label: 'Orders',
+          path: '/orders',
+          icon: 'Receipt',
+          requiredRole: UserRole.Finance,
+          requiresOrganization: true
+        },
+        {
+          label: 'Billing',
+          path: '/billing',
+          icon: 'Receipt',
+          requiredRole: UserRole.Finance,
+          requiresOrganization: true
+        }
+      ];
+
+    case UserRole.ColorGarbStaff:
+      return [
+        {
+          label: 'Admin Dashboard',
+          path: '/admin/dashboard',
+          icon: 'AdminPanelSettings',
+          requiredRole: UserRole.ColorGarbStaff,
+          requiresOrganization: false
+        },
+        {
+          label: 'All Orders',
+          path: '/admin/orders',
+          icon: 'Receipt',
+          requiredRole: UserRole.ColorGarbStaff,
+          requiresOrganization: false
+        },
+        {
+          label: 'Organizations',
+          path: '/admin/organizations',
+          icon: 'Business',
+          requiredRole: UserRole.ColorGarbStaff,
+          requiresOrganization: false
+        },
+        {
+          label: 'User Management',
+          path: '/admin/users',
+          icon: 'People',
+          requiredRole: UserRole.ColorGarbStaff,
+          requiresOrganization: false
+        },
+        {
+          label: 'System Settings',
+          path: '/admin/settings',
+          icon: 'Settings',
+          requiredRole: UserRole.ColorGarbStaff,
+          requiresOrganization: false
+        }
+      ];
+
+    default:
+      return baseItems;
+  }
+};
+
+/**
+ * Icon mapping for navigation items
+ */
+const iconMap: Record<string, React.ReactElement> = {
+  Dashboard: <Dashboard />,
+  Receipt: <Receipt />,
+  Business: <Business />,
+  People: <People />,
+  Settings: <Settings />,
+  AdminPanelSettings: <AdminPanelSettings />
+};
+
+/**
+ * RoleBasedNavigation component that provides role-specific navigation menus.
+ * Displays different navigation options based on the user's role and permissions.
+ * 
+ * @component
+ * @returns {JSX.Element} Role-based navigation bar
+ * 
+ * @example
+ * ```tsx
+ * <RoleBasedNavigation />
+ * ```
+ * 
+ * @since 1.0.0
+ */
+export const RoleBasedNavigation: React.FC = () => {
+  const { user, logout } = useAppStore();
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  if (!user) {
+    return null;
+  }
+
+  const userRole = user.role as UserRole;
+  const roleInfo = RoleUtils.getRoleInfo(userRole);
+  const navigationItems = getNavigationItems(userRole);
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleClose();
+    navigate('/auth/login');
+  };
+
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          ColorGarb
+        </Typography>
+
+        {/* Navigation Items */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2 }}>
+          {navigationItems.map((item) => (
+            <Button
+              key={item.path}
+              color="inherit"
+              startIcon={iconMap[item.icon]}
+              onClick={() => handleNavigation(item.path)}
+              sx={{ mx: 1 }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </Box>
+
+        {/* User Role Indicator */}
+        <Chip
+          label={roleInfo.name}
+          size="small"
+          variant="outlined"
+          sx={{ 
+            color: 'white', 
+            borderColor: 'white',
+            mr: 2
+          }}
+        />
+
+        {/* User Menu */}
+        <Box>
+          <IconButton
+            size="large"
+            aria-label="account of current user"
+            aria-controls="user-menu"
+            aria-haspopup="true"
+            onClick={handleMenu}
+            color="inherit"
+          >
+            <AccountCircle />
+          </IconButton>
+          <Menu
+            id="user-menu"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+          >
+            <MenuItem disabled>
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  {user.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user.email}
+                </Typography>
+                <Typography variant="caption" display="block" color="text.secondary">
+                  {roleInfo.description}
+                </Typography>
+              </Box>
+            </MenuItem>
+            <Divider />
+            
+            {/* Mobile Navigation Items */}
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+              {navigationItems.map((item) => (
+                <MenuItem 
+                  key={item.path}
+                  onClick={() => {
+                    handleNavigation(item.path);
+                    handleClose();
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {iconMap[item.icon]}
+                    {item.label}
+                  </Box>
+                </MenuItem>
+              ))}
+              <Divider />
+            </Box>
+
+            <MenuItem onClick={() => { handleNavigation('/profile'); handleClose(); }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Settings />
+                Profile Settings
+              </Box>
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ExitToApp />
+                Logout
+              </Box>
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+export default RoleBasedNavigation;

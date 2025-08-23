@@ -3,6 +3,8 @@
  * @fileoverview Contains interfaces and types for login, tokens, and auth state
  */
 
+import { User, UserRole } from './user';
+
 /**
  * Login request payload interface
  * @interface LoginRequest
@@ -12,6 +14,23 @@ export interface LoginRequest {
   email: string;
   /** User's password */
   password: string;
+}
+
+/**
+ * User information from authentication response
+ * @interface UserInfo
+ */
+export interface UserInfo {
+  /** User ID */
+  id: string;
+  /** User email */
+  email: string;
+  /** User name */
+  name: string;
+  /** User role (as string from backend) */
+  role: string;
+  /** Organization ID */
+  organizationId?: string;
 }
 
 /**
@@ -26,13 +45,7 @@ export interface AuthTokenResponse {
   /** Token expiration time in seconds */
   expiresIn: number;
   /** Authenticated user information */
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    organizationId?: string;
-  };
+  user: UserInfo;
 }
 
 /**
@@ -63,7 +76,7 @@ export interface PasswordResetConfirmation {
  */
 export interface AuthState {
   /** Current authenticated user */
-  user: AuthTokenResponse['user'] | null;
+  user: UserInfo | null;
   /** Authentication token */
   token: string | null;
   /** Whether user is currently authenticated */
@@ -109,7 +122,7 @@ export interface JwtPayload {
   /** User name */
   name: string;
   /** User role */
-  role: string;
+  role: UserRole;
   /** Organization ID */
   organizationId?: string;
   /** Token issued at time */

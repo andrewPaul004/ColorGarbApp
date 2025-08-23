@@ -6,32 +6,9 @@
 // Export authentication types
 export * from './auth';
 
-/**
- * User interface for authentication and authorization
- * @interface User
- */
-export interface User {
-  /** Unique identifier for the user */
-  id: string;
-  /** User's email address */
-  email: string;
-  /** User's full name */
-  name: string;
-  /** User's role in the system */
-  role: 'client' | 'colorgarb_staff';
-  /** Phone number (optional) */
-  phone?: string;
-  /** Organization ID (null for ColorGarb staff) */
-  organizationId?: string;
-  /** Account active status */
-  isActive: boolean;
-  /** Last login timestamp */
-  lastLoginAt?: Date;
-  /** Account creation timestamp */
-  createdAt: Date;
-  /** Last update timestamp */
-  updatedAt: Date;
-}
+// Export user and role types
+export * from './user';
+export type { UserInfo } from './auth';
 
 /**
  * Organization interface for client entities
@@ -53,9 +30,9 @@ export interface Organization {
   /** Account active status */
   isActive: boolean;
   /** Organization creation timestamp */
-  createdAt: Date;
+  createdAt: string;
   /** Last update timestamp */
-  updatedAt: Date;
+  updatedAt: string;
 }
 
 /**
@@ -97,9 +74,9 @@ export interface Order {
   /** Current manufacturing stage */
   currentStage: OrderStage;
   /** Original promised ship date */
-  originalShipDate: Date;
+  originalShipDate: string;
   /** Current ship date (may be revised) */
-  currentShipDate: Date;
+  currentShipDate: string;
   /** Total order value in USD */
   totalAmount: number;
   /** Payment status */
@@ -109,9 +86,9 @@ export interface Order {
   /** Order active status */
   isActive: boolean;
   /** Order creation timestamp */
-  createdAt: Date;
+  createdAt: string;
   /** Last update timestamp */
-  updatedAt: Date;
+  updatedAt: string;
 }
 
 /**
@@ -128,7 +105,7 @@ export interface ApiResponse<T = any> {
   /** Detailed error information */
   errors?: string[];
   /** Response timestamp */
-  timestamp: Date;
+  timestamp: string;
 }
 
 /**
@@ -159,31 +136,6 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   pagination: PaginationMeta;
 }
 
-/**
- * Authentication token response
- * @interface AuthTokenResponse
- */
-export interface AuthTokenResponse {
-  /** JWT access token */
-  accessToken: string;
-  /** Token type (typically "Bearer") */
-  tokenType: string;
-  /** Token expiration in seconds */
-  expiresIn: number;
-  /** User information */
-  user: User;
-}
-
-/**
- * Login request payload
- * @interface LoginRequest
- */
-export interface LoginRequest {
-  /** User email */
-  email: string;
-  /** User password */
-  password: string;
-}
 
 /**
  * Health check response
@@ -193,7 +145,7 @@ export interface HealthCheckResponse {
   /** Overall health status */
   status: 'healthy' | 'unhealthy';
   /** Check timestamp */
-  timestamp: Date;
+  timestamp: string;
   /** Application version */
   version: string;
   /** Environment name */

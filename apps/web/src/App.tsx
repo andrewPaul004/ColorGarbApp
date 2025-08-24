@@ -11,6 +11,7 @@ import LoginPage from './pages/Auth/LoginPage';
 import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage';
 import Dashboard from './pages/Dashboard/Dashboard';
+import OrderDetail from './pages/OrderDetail/OrderDetail';
 import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
 
@@ -70,6 +71,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/orders/:orderId" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OrderDetail />
                 </Layout>
               </ProtectedRoute>
             } 

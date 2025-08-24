@@ -73,34 +73,3 @@ export interface Order {
   updatedAt: Date;
   organizationName: string;
 }
-
-/**
- * Extended order interface for detailed order view
- * Includes complete organization information and stage-specific actions
- * 
- * @interface OrderDetail
- * @since 2.1.0
- */
-export interface OrderDetail extends Order {
-  /** Complete organization information */
-  organization: {
-    id: string;
-    name: string;
-    type: string;
-    contactEmail: string;
-    contactPhone?: string;
-    address: {
-      street1: string;
-      street2?: string;
-      city: string;
-      state: string;
-      zipCode: string;
-      country: string;
-    };
-    paymentTerms: string;
-  };
-  /** Current order status */
-  status: string;
-  /** Available quick actions for current stage */
-  nextActions: string[];
-}

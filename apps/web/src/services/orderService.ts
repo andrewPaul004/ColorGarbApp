@@ -1,4 +1,4 @@
-import type { Order, OrderDetail } from '../types/shared';
+import type { Order } from '../types/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
@@ -141,74 +141,6 @@ class OrderService {
       };
     } catch (error) {
       console.error('Error fetching order:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Retrieves detailed information for a specific order including organization data.
-   * Provides complete order context for the order detail workspace view.
-   * 
-   * @param id Unique identifier of the order to retrieve detailed information for
-   * @returns Promise<OrderDetail> Complete order details with organization information
-   * 
-   * @throws {Error} When API request fails or user is not authenticated
-   * @throws {AuthorizationError} When user lacks permission to access the order
-   * @throws {NotFoundError} When order is not found or not accessible
-   * 
-   * @example
-   * ```typescript
-   * const orderService = new OrderService();
-   * 
-   * try {
-   *   const orderDetail = await orderService.getOrderDetail('12345-67890');
-   *   console.log('Order details:', orderDetail);
-   *   console.log('Organization:', orderDetail.organization.name);
-   *   console.log('Available actions:', orderDetail.nextActions);
-   * } catch (error) {
-   *   if (error.message.includes('not found')) {
-   *     console.error('Order not found or access denied');
-   *   }
-   * }
-   * ```
-   * 
-   * @since 2.1.0
-   */
-  async getOrderDetail(id: string): Promise<OrderDetail> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getAuthToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication required. Please log in again.');
-        }
-        if (response.status === 403) {
-          throw new Error('Access denied. You do not have permission to view this order.');
-        }
-        if (response.status === 404) {
-          throw new Error('Order not found or access denied.');
-        }
-        throw new Error(`Failed to fetch order detail: ${response.statusText}`);
-      }
-
-      const orderDetail = await response.json();
-      
-      // Convert date strings to Date objects
-      return {
-        ...orderDetail,
-        originalShipDate: new Date(orderDetail.originalShipDate),
-        currentShipDate: new Date(orderDetail.currentShipDate),
-        createdAt: new Date(orderDetail.createdAt),
-        updatedAt: new Date(orderDetail.updatedAt),
-      };
-    } catch (error) {
-      console.error('Error fetching order detail:', error);
       throw error;
     }
   }

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -37,7 +36,6 @@ import type { Order } from '../../types/shared';
  * @since 1.0.0
  */
 export const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -91,11 +89,12 @@ export const Dashboard: React.FC = () => {
   };
 
   /**
-   * Handles order card click - navigates to order detail page
+   * Handles order card click - placeholder for future navigation
    * @param order Selected order
    */
   const handleOrderClick = (order: Order) => {
-    navigate(`/orders/${order.id}`);
+    // TODO: Navigate to order detail page when implemented
+    console.log('Order selected:', order.id);
   };
 
   /**

@@ -1,118 +1,140 @@
-import React, { useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
-import { Box, Container, Alert, CircularProgress } from '@mui/material';
+import React from 'react';
+import { Box, Typography, Paper, Container } from '@mui/material';
+import { useParams } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
-import OrderHeader from './components/OrderHeader';
-import OrderSummary from './components/OrderSummary';
-import ContactInfo from './components/ContactInfo';
-import QuickActions from './components/QuickActions';
-import Breadcrumbs from './components/Breadcrumbs';
+import { OrderTimeline } from '../../components/timeline/OrderTimeline';
+import type { OrderStage, StageHistory, Order } from '@colorgarb/shared/types/order';
 
 /**
- * Order Detail Workspace page component.
- * Displays comprehensive order information including header, summary, contact info, and quick actions.
- * Supports mobile-responsive design with breadcrumb navigation.
+ * Order detail workspace page that displays comprehensive order information
+ * including the 13-stage progress timeline.
  * 
  * @component
- * @returns {JSX.Element} Order detail workspace with complete order information
+ * @returns {JSX.Element} Order detail workspace with timeline
  * 
  * @example
  * ```tsx
- * // Route: /orders/:orderId
  * <OrderDetail />
  * ```
  * 
- * @since 2.1.0
+ * @since 1.0.0
  */
-const OrderDetail: React.FC = () => {
+export const OrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
-  const {
-    selectedOrder,
-    selectedOrderLoading,
-    ordersError,
-    selectOrder,
-    clearSelectedOrder,
-    clearOrdersError
-  } = useAppStore();
+  const { selectedOrder } = useAppStore(state => state.orders);
 
-  // Load order detail when component mounts or orderId changes
-  useEffect(() => {
-    if (orderId) {
-      selectOrder(orderId);
+  // Mock data for demonstration - in real implementation, this would come from the store
+  const mockOrder: Order = {
+    id: orderId || 'mock-order-id',
+    orderNumber: 'CG-2023-001',
+    organizationId: 'org-123',
+    description: 'Marching Band Uniforms - Fall 2023',
+    currentStage: 'Measurements',
+    originalShipDate: new Date('2023-09-15'),
+    currentShipDate: new Date('2023-09-20'),
+    createdAt: new Date('2023-01-01'),
+    updatedAt: new Date('2023-01-15')
+  };
+
+  const mockStageHistory: StageHistory[] = [
+    {
+      id: '1',
+      stage: 'DesignProposal',
+      enteredAt: new Date('2023-01-01'),
+      updatedBy: 'ColorGarb Design Team',
+      notes: 'Initial design concepts created based on school colors and requirements'
+    },
+    {
+      id: '2',
+      stage: 'ProofApproval',
+      enteredAt: new Date('2023-01-05'),
+      updatedBy: 'Band Director Johnson',
+      notes: 'Design approved with minor color adjustments requested'
     }
-    
-    // Cleanup on unmount
-    return () => {
-      clearSelectedOrder();
-      clearOrdersError();
-    };
-  }, [orderId, selectOrder, clearSelectedOrder, clearOrdersError]);
+  ];
 
-  // Redirect if no orderId provided
+  /**
+   * Handles click events on timeline stages.
+   * 
+   * @param {OrderStage} stage - The clicked stage
+   */
+  const handleStageClick = (stage: OrderStage) => {
+    console.log(`Stage clicked: ${stage}`);
+    // Future implementation: Show stage-specific details modal or sidebar
+  };
+
+  // Use selected order from store if available, otherwise use mock data
+  const order = selectedOrder || mockOrder;
+
   if (!orderId) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Loading state
-  if (selectedOrderLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress size={60} />
-        </Box>
-      </Container>
-    );
-  }
-
-  // Error state
-  if (ordersError) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {ordersError}
-        </Alert>
-      </Container>
-    );
-  }
-
-  // No order found
-  if (!selectedOrder) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="warning">
-          Order not found or you don't have permission to view it.
-        </Alert>
+        <Typography variant="h4" color="error">
+          Order ID is required
+        </Typography>
       </Container>
     );
   }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 3 }}>
-        <Breadcrumbs orderId={selectedOrder.id} orderNumber={selectedOrder.orderNumber} />
-      </Box>
-
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {/* Order Header */}
-        <OrderHeader order={selectedOrder} />
-
-        {/* Main Content Grid */}
-        <Box sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-          gap: 3
-        }}>
-          {/* Left Column */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <OrderSummary order={selectedOrder} />
-            <QuickActions order={selectedOrder} />
+        {/* Order Header Section */}
+        <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'flex-start', mb: 2 }}>
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+                Order {order.orderNumber}
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                {order.description}
+              </Typography>
+            </Box>
           </Box>
-
-          {/* Right Column */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <ContactInfo order={selectedOrder} />
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Current Stage
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                {order.currentStage.replace(/([A-Z])/g, ' $1').trim()}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Original Ship Date
+              </Typography>
+              <Typography variant="body1">
+                {order.originalShipDate.toLocaleDateString()}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Current Ship Date
+              </Typography>
+              <Typography variant="body1">
+                {order.currentShipDate.toLocaleDateString()}
+              </Typography>
+            </Box>
           </Box>
-        </Box>
+        </Paper>
+
+        {/* Order Timeline Section */}
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h5" component="h2" sx={{ mb: 3 }}>
+            Manufacturing Progress
+          </Typography>
+          <OrderTimeline
+            orderId={order.id}
+            currentStage={order.currentStage}
+            stageHistory={mockStageHistory}
+            onStageClick={handleStageClick}
+          />
+        </Paper>
+
+        {/* Additional sections would go here in future stories */}
+        {/* Order Summary, Contact Info, Quick Actions, etc. */}
       </Box>
     </Container>
   );

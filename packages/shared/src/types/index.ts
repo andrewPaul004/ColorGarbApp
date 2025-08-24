@@ -10,6 +10,9 @@ export * from './auth';
 export * from './user';
 export type { UserInfo } from './auth';
 
+// Export order types
+export * from './order';
+
 /**
  * Organization interface for client entities
  * @interface Organization
@@ -37,21 +40,23 @@ export interface Organization {
 
 /**
  * Order stages in the 13-step manufacturing process
+ * NOTE: OrderStage definition moved to ./order.ts to resolve conflicts
+ * @deprecated Use OrderStage from './order' instead
  */
-export type OrderStage = 
-  | 'Initial Consultation'
-  | 'Measurements'
-  | 'Design Approval'
-  | 'Pattern Creation'
-  | 'Fabric Selection'
-  | 'Cutting'
-  | 'Initial Construction'
-  | 'First Fitting'
-  | 'Adjustments'
-  | 'Final Construction'
-  | 'Final Fitting'
-  | 'Quality Control'
-  | 'Shipping';
+// export type OrderStage = 
+//   | 'Initial Consultation'
+//   | 'Measurements'
+//   | 'Design Approval'
+//   | 'Pattern Creation'
+//   | 'Fabric Selection'
+//   | 'Cutting'
+//   | 'Initial Construction'
+//   | 'First Fitting'
+//   | 'Adjustments'
+//   | 'Final Construction'
+//   | 'Final Fitting'
+//   | 'Quality Control'
+//   | 'Shipping';
 
 /**
  * Payment status options
@@ -60,36 +65,38 @@ export type PaymentStatus = 'Pending' | 'Partial' | 'Paid' | 'Refunded';
 
 /**
  * Order interface for costume manufacturing orders
+ * NOTE: Order interface moved to ./order.ts for consistency
+ * @deprecated Use Order from './order' instead
  * @interface Order
  */
-export interface Order {
-  /** Unique identifier for the order */
-  id: string;
-  /** Human-readable order number */
-  orderNumber: string;
-  /** Organization that owns this order */
-  organizationId: string;
-  /** Order description */
-  description: string;
-  /** Current manufacturing stage */
-  currentStage: OrderStage;
-  /** Original promised ship date */
-  originalShipDate: string;
-  /** Current ship date (may be revised) */
-  currentShipDate: string;
-  /** Total order value in USD */
-  totalAmount: number;
-  /** Payment status */
-  paymentStatus: PaymentStatus;
-  /** Additional notes */
-  notes?: string;
-  /** Order active status */
-  isActive: boolean;
-  /** Order creation timestamp */
-  createdAt: string;
-  /** Last update timestamp */
-  updatedAt: string;
-}
+// export interface Order {
+//   /** Unique identifier for the order */
+//   id: string;
+//   /** Human-readable order number */
+//   orderNumber: string;
+//   /** Organization that owns this order */
+//   organizationId: string;
+//   /** Order description */
+//   description: string;
+//   /** Current manufacturing stage */
+//   currentStage: OrderStage;
+//   /** Original promised ship date */
+//   originalShipDate: string;
+//   /** Current ship date (may be revised) */
+//   currentShipDate: string;
+//   /** Total order value in USD */
+//   totalAmount: number;
+//   /** Payment status */
+//   paymentStatus: PaymentStatus;
+//   /** Additional notes */
+//   notes?: string;
+//   /** Order active status */
+//   isActive: boolean;
+//   /** Order creation timestamp */
+//   createdAt: string;
+//   /** Last update timestamp */
+//   updatedAt: string;
+// }
 
 /**
  * API response wrapper for consistent error handling

@@ -3,7 +3,8 @@ import { Box, Typography, Paper, Container } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { OrderTimeline } from '../../components/timeline/OrderTimeline';
-import type { OrderStage, StageHistory, Order } from '@colorgarb/shared/types/order';
+import { ShipDateDisplay, type ShipDateChangeHistory } from '../../components/timeline/ShipDateDisplay';
+import type { OrderStage, StageHistory, Order } from '@colorgarb/shared';
 
 /**
  * Order detail workspace page that displays comprehensive order information
@@ -50,6 +51,20 @@ export const OrderDetail: React.FC = () => {
       enteredAt: new Date('2023-01-05'),
       updatedBy: 'Band Director Johnson',
       notes: 'Design approved with minor color adjustments requested'
+    }
+  ];
+
+  // Mock ship date change history for demonstration
+  const mockShipDateHistory: ShipDateChangeHistory[] = [
+    {
+      id: 'ship-1',
+      stage: 'ProductionPlanning',
+      enteredAt: new Date('2023-01-10'),
+      updatedBy: 'Production Manager Smith',
+      notes: 'Initial ship date revision due to material procurement delays',
+      previousShipDate: new Date('2023-09-15'),
+      newShipDate: new Date('2023-09-20'),
+      changeReason: 'material-delay'
     }
   ];
 
@@ -119,6 +134,15 @@ export const OrderDetail: React.FC = () => {
             </Box>
           </Box>
         </Paper>
+
+        {/* Ship Date Information Section */}
+        <ShipDateDisplay
+          orderId={order.id}
+          originalShipDate={order.originalShipDate}
+          currentShipDate={order.currentShipDate}
+          changeHistory={mockShipDateHistory}
+          onHistoryExpand={() => console.log('Ship date history expanded')}
+        />
 
         {/* Order Timeline Section */}
         <Paper sx={{ p: 3 }}>

@@ -171,7 +171,7 @@ public class OrdersController : ControllerBase
                 return NotFound(new { message = "Order not found or access denied" });
             }
 
-            var orderDetailDto = new OrderDetailDto
+            var orderDto = new OrderDto
             {
                 Id = order.Id,
                 OrderNumber = order.OrderNumber,
@@ -182,35 +182,15 @@ public class OrdersController : ControllerBase
                 TotalAmount = order.TotalAmount,
                 PaymentStatus = order.PaymentStatus,
                 Notes = order.Notes,
-                Status = order.IsActive ? "Active" : "Completed",
                 IsActive = order.IsActive,
                 CreatedAt = order.CreatedAt,
                 UpdatedAt = order.UpdatedAt,
-                OrganizationName = order.Organization?.Name ?? "Unknown Organization",
-                Organization = order.Organization != null ? new OrganizationDetailDto
-                {
-                    Id = order.Organization.Id,
-                    Name = order.Organization.Name,
-                    Type = order.Organization.Type,
-                    ContactEmail = order.Organization.ContactEmail,
-                    ContactPhone = order.Organization.ContactPhone,
-                    Address = new AddressDto
-                    {
-                        Street1 = ExtractAddressLine(order.Organization.Address, 1),
-                        Street2 = ExtractAddressLine(order.Organization.Address, 2),
-                        City = ExtractAddressCity(order.Organization.Address),
-                        State = ExtractAddressState(order.Organization.Address),
-                        ZipCode = ExtractAddressZipCode(order.Organization.Address),
-                        Country = "US"
-                    },
-                    PaymentTerms = order.Organization.PaymentTerms ?? "Net 30"
-                } : null,
-                NextActions = GetNextActionsForStage(order.CurrentStage)
+                OrganizationName = order.Organization?.Name ?? "Unknown Organization"
             };
 
             _logger.LogInformation("Retrieved order {OrderId} for user {UserId}", id, GetUserId());
 
-            return Ok(orderDetailDto);
+            return Ok(orderDto);
         }
         catch (Exception ex)
         {
@@ -249,77 +229,6 @@ public class OrdersController : ControllerBase
     private string GetUserId()
     {
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-    }
-
-    /// <summary>
-    /// Gets stage-specific next actions for order management
-    /// </summary>
-    /// <param name="currentStage">Current manufacturing stage</param>
-    /// <returns>List of recommended next actions</returns>
-    private List<string> GetNextActionsForStage(string currentStage)
-    {
-        return currentStage switch
-        {
-            "Measurements" => new List<string> { "Submit performer measurements", "Review sizing requirements" },
-            "DesignProposal" => new List<string> { "Review design proposal", "Provide feedback or approval" },
-            "ProofApproval" => new List<string> { "Approve final design proof", "Request design modifications" },
-            "ProductionPlanning" => new List<string> { "Await production start notification" },
-            "Cutting" or "Sewing" or "QualityControl" or "Finishing" or "FinalInspection" => 
-                new List<string> { "Track production progress", "Prepare for delivery" },
-            "Packaging" or "ShippingPreparation" => new List<string> { "Confirm shipping address", "Track shipment" },
-            "ShipOrder" => new List<string> { "Track delivery status", "Prepare for receipt" },
-            "Delivery" => new List<string> { "Confirm delivery received", "Provide feedback" },
-            _ => new List<string> { "Contact support for assistance" }
-        };
-    }
-
-    /// <summary>
-    /// Extracts street address line from concatenated address string
-    /// </summary>
-    /// <param name="address">Full address string</param>
-    /// <param name="lineNumber">Line number to extract (1 or 2)</param>
-    /// <returns>Street address line or empty string</returns>
-    private string ExtractAddressLine(string? address, int lineNumber)
-    {
-        if (string.IsNullOrEmpty(address)) return string.Empty;
-        
-        // Simple parsing - in production, use proper address parsing service
-        var lines = address.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        return lineNumber == 1 && lines.Length > 0 ? lines[0].Trim() :
-               lineNumber == 2 && lines.Length > 1 ? lines[1].Trim() : string.Empty;
-    }
-
-    /// <summary>
-    /// Extracts city from address string (basic implementation)
-    /// </summary>
-    /// <param name="address">Full address string</param>
-    /// <returns>City name or "Unknown"</returns>
-    private string ExtractAddressCity(string? address)
-    {
-        // TODO: Implement proper address parsing service
-        return "Unknown";
-    }
-
-    /// <summary>
-    /// Extracts state from address string (basic implementation)
-    /// </summary>
-    /// <param name="address">Full address string</param>
-    /// <returns>State abbreviation or "Unknown"</returns>
-    private string ExtractAddressState(string? address)
-    {
-        // TODO: Implement proper address parsing service
-        return "Unknown";
-    }
-
-    /// <summary>
-    /// Extracts zip code from address string (basic implementation)
-    /// </summary>
-    /// <param name="address">Full address string</param>
-    /// <returns>Zip code or "00000"</returns>
-    private string ExtractAddressZipCode(string? address)
-    {
-        // TODO: Implement proper address parsing service
-        return "00000";
     }
 }
 
@@ -393,103 +302,4 @@ public class OrderDto
     /// Name of the organization that owns this order
     /// </summary>
     public string OrganizationName { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Extended data transfer object for detailed order information including organization details.
-/// Contains complete order context for order detail workspace view.
-/// </summary>
-public class OrderDetailDto : OrderDto
-{
-    /// <summary>
-    /// Current order status (Active, Completed, Cancelled)
-    /// </summary>
-    public string Status { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Complete organization information including contact and address details
-    /// </summary>
-    public OrganizationDetailDto? Organization { get; set; }
-
-    /// <summary>
-    /// Available quick actions based on current order stage
-    /// </summary>
-    public List<string> NextActions { get; set; } = new List<string>();
-}
-
-/// <summary>
-/// Organization details for order detail view
-/// </summary>
-public class OrganizationDetailDto
-{
-    /// <summary>
-    /// Unique identifier for the organization
-    /// </summary>
-    public Guid Id { get; set; }
-
-    /// <summary>
-    /// Organization name
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Organization type (School, BoosterClub, Theater, etc.)
-    /// </summary>
-    public string Type { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Primary contact email address
-    /// </summary>
-    public string ContactEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Optional contact phone number
-    /// </summary>
-    public string? ContactPhone { get; set; }
-
-    /// <summary>
-    /// Complete mailing/shipping address
-    /// </summary>
-    public AddressDto Address { get; set; } = new AddressDto();
-
-    /// <summary>
-    /// Payment terms and conditions
-    /// </summary>
-    public string PaymentTerms { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Address information for organization contact details
-/// </summary>
-public class AddressDto
-{
-    /// <summary>
-    /// Primary street address line
-    /// </summary>
-    public string Street1 { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Secondary street address line (optional)
-    /// </summary>
-    public string Street2 { get; set; } = string.Empty;
-
-    /// <summary>
-    /// City name
-    /// </summary>
-    public string City { get; set; } = string.Empty;
-
-    /// <summary>
-    /// State or province abbreviation
-    /// </summary>
-    public string State { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ZIP or postal code
-    /// </summary>
-    public string ZipCode { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Country code (defaults to US)
-    /// </summary>
-    public string Country { get; set; } = "US";
 }

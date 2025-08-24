@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Organization, AuthTokenResponse, Order, OrderDetail } from '../types/shared';
+import type { Organization, AuthTokenResponse, Order } from '../types/shared';
 import authService from '../services/authService';
 import orderService from '../services/orderService';
 
@@ -25,12 +25,8 @@ interface AppState {
   // Orders State
   /** Current orders for the user's organization */
   orders: Order[];
-  /** Currently selected order with detailed information */
-  selectedOrder: OrderDetail | null;
   /** Loading state for orders */
   ordersLoading: boolean;
-  /** Loading state for selected order */
-  selectedOrderLoading: boolean;
   /** Error message for orders operations */
   ordersError: string | null;
   
@@ -65,14 +61,8 @@ interface AppState {
   fetchOrders: (status?: string, stage?: string) => Promise<void>;
   /** Fetch a specific order by ID */
   fetchOrder: (id: string) => Promise<Order>;
-  /** Select and load detailed information for a specific order */
-  selectOrder: (orderId: string) => Promise<void>;
-  /** Clear selected order */
-  clearSelectedOrder: () => void;
   /** Set orders loading state */
   setOrdersLoading: (loading: boolean) => void;
-  /** Set selected order loading state */
-  setSelectedOrderLoading: (loading: boolean) => void;
   /** Set orders error message */
   setOrdersError: (error: string | null) => void;
   /** Clear orders error */
@@ -115,9 +105,7 @@ export const useAppStore = create<AppState>()(
       
       // Orders State
       orders: [],
-      selectedOrder: null,
       ordersLoading: false,
-      selectedOrderLoading: false,
       ordersError: null,
 
       // Authentication Actions
@@ -237,9 +225,7 @@ export const useAppStore = create<AppState>()(
         isLoading: false,
         error: null,
         orders: [],
-        selectedOrder: null,
         ordersLoading: false,
-        selectedOrderLoading: false,
         ordersError: null,
       }),
 
@@ -277,30 +263,7 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      selectOrder: async (orderId: string) => {
-        set({ selectedOrderLoading: true, ordersError: null });
-        
-        try {
-          const orderDetail = await orderService.getOrderDetail(orderId);
-          set({
-            selectedOrder: orderDetail,
-            selectedOrderLoading: false,
-            ordersError: null,
-          });
-        } catch (error) {
-          set({
-            selectedOrder: null,
-            selectedOrderLoading: false,
-            ordersError: error instanceof Error ? error.message : 'Failed to fetch order detail',
-          });
-          throw error;
-        }
-      },
-
-      clearSelectedOrder: () => set({ selectedOrder: null }),
-
       setOrdersLoading: (ordersLoading: boolean) => set({ ordersLoading }),
-      setSelectedOrderLoading: (selectedOrderLoading: boolean) => set({ selectedOrderLoading }),
       setOrdersError: (ordersError: string | null) => set({ ordersError }),
       clearOrdersError: () => set({ ordersError: null }),
     }),

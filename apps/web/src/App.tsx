@@ -77,22 +77,23 @@ function App() {
           />
           
           <Route 
-            path="/orders/:orderId" 
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <OrderDetail />
-                </Layout>
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
             path="/profile" 
             element={
               <ProtectedRoute>
                 <Layout>
                   <UserProfile />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Order routes */}
+          <Route 
+            path="/orders/:orderId" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OrderDetail />
                 </Layout>
               </ProtectedRoute>
             } 

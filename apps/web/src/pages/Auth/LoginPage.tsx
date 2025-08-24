@@ -58,12 +58,15 @@ export const LoginPage: React.FC = () => {
       ...prev,
       [name]: value
     }));
-    // Clear errors when user starts typing
-    if (error) {
-      setError(null);
-    }
-    if (authError) {
-      clearError();
+    // Only clear validation errors when user corrects the specific field
+    // Don't clear server authentication errors automatically
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      handleSubmit(event as any);
     }
   };
 
@@ -93,6 +96,7 @@ export const LoginPage: React.FC = () => {
    */
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     
     const validationError = validateForm(formData);
     if (validationError) {
@@ -100,6 +104,7 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    // Clear any previous errors before new login attempt
     setError(null);
     clearError();
 
@@ -148,8 +153,7 @@ export const LoginPage: React.FC = () => {
         {/* Login Form */}
         <Card className="shadow-lg">
           <CardContent className="p-8">
-            <form onSubmit={handleSubmit} noValidate>
-              <Box className="space-y-6">
+            <Box className="space-y-6">
                 {/* Error Alert */}
                 {displayError && (
                   <Alert 
@@ -176,6 +180,7 @@ export const LoginPage: React.FC = () => {
                   autoFocus
                   value={formData.email}
                   onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
                   disabled={isLoading}
                   error={!!displayError && displayError.toLowerCase().includes('email')}
                   InputProps={{
@@ -196,6 +201,7 @@ export const LoginPage: React.FC = () => {
                   autoComplete="current-password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
                   disabled={isLoading}
                   error={!!displayError && displayError.toLowerCase().includes('password')}
                   InputProps={{
@@ -207,10 +213,11 @@ export const LoginPage: React.FC = () => {
 
                 {/* Submit Button */}
                 <Button
-                  type="submit"
+                  type="button"
                   fullWidth
                   variant="contained"
                   disabled={isLoading}
+                  onClick={handleSubmit}
                   className="relative mt-6 w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   {isLoading ? (
@@ -240,7 +247,6 @@ export const LoginPage: React.FC = () => {
                   </Link>
                 </Box>
               </Box>
-            </form>
           </CardContent>
         </Card>
 

@@ -87,7 +87,7 @@ public class OrdersController : ControllerBase
             // Apply optional stage filter
             if (!string.IsNullOrWhiteSpace(stage))
             {
-                query = query.Where(o => o.CurrentStage.Equals(stage, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(o => EF.Functions.Like(o.CurrentStage.ToLower(), stage.ToLower()));
             }
 
             // Order by creation date (newest first)

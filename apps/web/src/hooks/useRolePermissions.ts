@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { UserRole, RoleUtils } from '@colorgarb/shared';
+import { UserRole, RoleUtils } from '../../../../packages/shared/src/types/user';
 import { useAppStore } from '../stores/appStore';
 
 /**

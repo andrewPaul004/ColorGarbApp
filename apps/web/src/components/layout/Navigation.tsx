@@ -19,6 +19,11 @@ import {
   MenuItem,
   Divider,
   ListItemButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -69,6 +74,7 @@ export const Navigation: React.FC = () => {
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   /**
    * Gets navigation items based on user role
@@ -142,12 +148,27 @@ export const Navigation: React.FC = () => {
   };
 
   /**
-   * Handles user logout
+   * Handles logout button click
    */
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true);
+    handleProfileMenuClose();
+  };
+
+  /**
+   * Handles logout dialog cancel
+   */
+  const handleLogoutCancel = () => {
+    setLogoutDialogOpen(false);
+  };
+
+  /**
+   * Handles logout confirmation
+   */
+  const handleLogoutConfirm = () => {
+    setLogoutDialogOpen(false);
     logout();
     navigate('/auth/login');
-    handleProfileMenuClose();
   };
 
   /**
@@ -386,7 +407,7 @@ export const Navigation: React.FC = () => {
                 </ListItemIcon>
                 Profile Settings
               </MenuItem>
-              <MenuItem onClick={handleLogout}>
+              <MenuItem onClick={handleLogoutClick}>
                 <ListItemIcon>
                   <LogoutIcon fontSize="small" />
                 </ListItemIcon>
@@ -399,6 +420,31 @@ export const Navigation: React.FC = () => {
 
       {/* Mobile drawer */}
       <MobileDrawer />
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={handleLogoutCancel}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+      >
+        <DialogTitle id="logout-dialog-title">
+          Confirm Logout
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="logout-dialog-description">
+            Are you sure you want to log out? You will need to enter your credentials again to access your account.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleLogoutCancel} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleLogoutConfirm} color="error" variant="contained">
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

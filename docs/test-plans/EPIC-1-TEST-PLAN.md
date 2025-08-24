@@ -47,8 +47,8 @@ cd apps/api
 dotnet ef database update
 
 # Verify database connection (optional)
-dotnet run --urls="http://localhost:5000"
-# Visit http://localhost:5000/api/health/detailed
+dotnet run --urls="http://localhost:5132"
+# Visit http://localhost5132/api/health/detailed
 ```
 
 #### 3. Start Development Servers
@@ -70,8 +70,8 @@ npm run dev:api
 
 **Access Points:**
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:5000
-- **API Documentation**: http://localhost:5000/openapi
+- **Backend API**: http://localhost:5132
+- **API Documentation**: http://localhost:5132/openapi
 
 ---
 
@@ -84,15 +84,15 @@ npm run dev:api
 
 1. **Confirm servers are running:**
    - Open http://localhost:5173 - Should show React app
-   - Open http://localhost:5000/api/health - Should return {"status": "Healthy"}
-   - Open http://localhost:5000/openapi - Should show Swagger UI
+   - Open http://localhost:5132/api/health - Should return {"status": "Healthy"}
+   - Open http://localhost:5132/openapi - Should show Swagger UI
 
 2. **Verify hot reloading:**
    - **Frontend**: Make a small change to any React component, save - should auto-refresh
    - **Backend**: Make a small change to any controller, save - should auto-recompile
 
 3. **Test database connectivity:**
-   - Visit http://localhost:5000/api/health/detailed
+   - Visit http://localhost:5132/api/health/detailed
    - Verify "Database" status shows "Healthy"
    - Verify "Redis" status (may show "Unhealthy" if not installed - this is OK for testing)
 
@@ -296,7 +296,7 @@ npm run dev:api
 
 3. **Test API endpoint security:**
    - Open browser DevTools → Network tab
-   - Try accessing http://localhost:5000/api/orders without token
+   - Try accessing http://localhost:5132/api/orders without token
    - **Expected**: 401 Unauthorized response
 
 ### Error Handling Verification

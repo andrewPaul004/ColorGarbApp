@@ -6,6 +6,10 @@ using ColorGarbApi.Models;
 using ColorGarbApi.Models.Entities;
 using ColorGarbApi.Common.Authorization;
 using ColorGarbApi.Services;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 
 namespace ColorGarbApi.Controllers;
 
@@ -22,15 +26,18 @@ public class UsersController : ControllerBase
     private readonly ColorGarbDbContext _context;
     private readonly ILogger<UsersController> _logger;
     private readonly IAuditService _auditService;
+    private readonly IConfiguration _configuration;
 
     public UsersController(
         ColorGarbDbContext context,
         ILogger<UsersController> logger,
-        IAuditService auditService)
+        IAuditService auditService,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
         _auditService = auditService;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -319,6 +326,147 @@ public class UsersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving users" });
         }
     }
+
+    /// <summary>
+    /// Updates the current user's profile information.
+    /// Users can update their own name and email address.
+    /// </summary>
+    /// <param name="request">Profile update request containing new information</param>
+    /// <returns>Updated user information with new JWT token</returns>
+    /// <response code="200">Profile updated successfully</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="404">User not found</response>
+    [HttpPut("profile")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        try
+        {
+            if (request == null)
+            {
+                return BadRequest(new { message = "Profile data is required" });
+            }
+
+            // Get current user ID from JWT claims
+            var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserIdString) || !Guid.TryParse(currentUserIdString, out var currentUserId))
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            // Find user
+            var user = await _context.Users
+                .Include(u => u.Organization)
+                .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            // Update profile fields
+            if (!string.IsNullOrWhiteSpace(request.Name))
+            {
+                user.Name = request.Name.Trim();
+            }
+
+            // Note: Email updates might require verification in a real system
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                // Check if email is already taken by another user
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == request.Email && u.Id != currentUserId);
+                
+                if (existingUser != null)
+                {
+                    return BadRequest(new { message = "Email address is already in use" });
+                }
+
+                user.Email = request.Email.Trim().ToLowerInvariant();
+            }
+
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} updated their profile", currentUserId);
+
+            // Return updated user data with a new JWT token containing updated information
+            var authResponse = new ColorGarbApi.Controllers.AuthTokenResponse
+            {
+                AccessToken = GenerateJwtToken(user), // You'll need to implement this or inject a service
+                User = new ColorGarbApi.Controllers.UserInfo
+                {
+                    Id = user.Id.ToString(),
+                    Name = user.Name,
+                    Email = user.Email,
+                    Role = user.Role.GetRoleString(),
+                    OrganizationId = user.OrganizationId?.ToString()
+                }
+            };
+
+            return Ok(authResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating profile for user");
+            return StatusCode(500, new { message = "An error occurred while updating profile" });
+        }
+    }
+
+    /// <summary>
+    /// Generates a JWT token for the authenticated user
+    /// </summary>
+    /// <param name="user">User to generate token for</param>
+    /// <returns>JWT token string</returns>
+    private string GenerateJwtToken(User user)
+    {
+        var key = _configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";
+        var issuer = _configuration["Jwt:Issuer"] ?? "ColorGarbApi";
+        var audience = _configuration["Jwt:Audience"] ?? "ColorGarbClient";
+
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.Role, user.Role.GetRoleString()),
+            new Claim("organizationId", user.OrganizationId?.ToString() ?? "")
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
+
+/// <summary>
+/// Request model for updating user profile
+/// </summary>
+public class UpdateProfileRequest
+{
+    /// <summary>
+    /// Updated name for the user
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Updated email address for the user
+    /// </summary>
+    public string? Email { get; set; }
 }
 
 /// <summary>

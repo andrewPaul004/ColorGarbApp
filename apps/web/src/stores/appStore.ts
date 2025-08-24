@@ -39,6 +39,8 @@ interface AppState {
   initializeAuth: () => void;
   /** Refresh authentication token */
   refreshToken: () => Promise<void>;
+  /** Update user profile */
+  updateProfile: (profileData: { name?: string; email?: string }) => Promise<void>;
   
   // General Actions
   /** Set the current user */
@@ -121,12 +123,13 @@ export const useAppStore = create<AppState>()(
             error: null
           });
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Login failed';
           set({
             user: null,
             token: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Login failed'
+            error: errorMessage
           });
           throw error;
         }
@@ -153,12 +156,13 @@ export const useAppStore = create<AppState>()(
             isAuthenticated: true 
           });
         } else {
-          // Clear any invalid stored state
-          set({
+          // Clear any invalid stored state but preserve error messages
+          set((state) => ({
+            ...state,
             user: null,
             token: null,
             isAuthenticated: false
-          });
+          }));
         }
       },
 
@@ -181,6 +185,27 @@ export const useAppStore = create<AppState>()(
             isAuthenticated: false,
             isLoading: false,
             error: error instanceof Error ? error.message : 'Token refresh failed'
+          });
+          throw error;
+        }
+      },
+
+      updateProfile: async (profileData: { name?: string; email?: string }) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const authResponse = await authService.updateProfile(profileData);
+          
+          set({
+            user: authResponse.user,
+            token: authResponse.accessToken,
+            isLoading: false,
+            error: null
+          });
+        } catch (error) {
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Profile update failed'
           });
           throw error;
         }

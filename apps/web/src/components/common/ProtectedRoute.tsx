@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { UserRole, RoleUtils } from '@colorgarb/shared';
+import { UserRole, RoleUtils } from '../../../../../packages/shared/src/types/user';
 import { useAppStore } from '../../stores/appStore';
 
 /**

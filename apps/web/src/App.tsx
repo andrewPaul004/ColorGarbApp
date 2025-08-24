@@ -38,10 +38,11 @@ function Layout({ children }: { children: React.ReactNode }) {
 function App() {
   const { isAuthenticated, initializeAuth } = useAppStore();
   
+  
   // Initialize authentication state on app start
   React.useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+  }, []); // Empty dependency array - only run once on mount
 
   return (
     <ThemeProvider theme={colorGarbTheme}>

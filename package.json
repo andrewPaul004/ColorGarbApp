@@ -11,6 +11,7 @@
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "dotnet run --project apps/api",
+    "dev:api-watch": "dotnet watch --project apps/api",
     "build": "npm run build --workspaces",
     "build:web": "npm run build --workspace=apps/web",
     "build:api": "dotnet build apps/api",

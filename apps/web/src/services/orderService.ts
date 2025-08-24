@@ -1,6 +1,6 @@
 import type { Order } from '../types/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
 /**
  * Service for managing costume order operations.
@@ -43,7 +43,7 @@ class OrderService {
       if (stage) params.append('stage', stage);
 
       const queryString = params.toString();
-      const url = `${API_BASE_URL}/orders${queryString ? `?${queryString}` : ''}`;
+      const url = `${API_BASE_URL}/api/orders${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -108,7 +108,7 @@ class OrderService {
    */
   async getOrder(id: string): Promise<Order> {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ class OrderService {
    * @private
    */
   private getAuthToken(): string {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('colorgarb_auth_token');
     if (!token) {
       throw new Error('No authentication token found. Please log in.');
     }

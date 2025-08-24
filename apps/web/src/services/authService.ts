@@ -11,7 +11,7 @@ import type {
   AuthTokenResponse, 
   PasswordResetRequest,
   PasswordResetConfirmation 
-} from '@colorgarb/shared';
+} from '../types/shared';
 
 interface AuthServiceConfig {
   baseURL: string;
@@ -63,8 +63,8 @@ export class AuthService {
       (error: AxiosError) => {
         if (error.response?.status === 401) {
           this.clearStoredToken();
-          // Redirect to login page
-          if (typeof window !== 'undefined') {
+          // Only redirect to login page if we're not already on login/auth pages
+          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
             window.location.href = '/auth/login';
           }
         }
@@ -284,6 +284,39 @@ export class AuthService {
   private clearStoredToken(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(this.tokenStorageKey);
+    }
+  }
+
+  /**
+   * Updates user profile information
+   * @param {object} profileData - Profile update data
+   * @returns {Promise<AuthTokenResponse>} Updated user data
+   * 
+   * @throws {Error} When profile update fails
+   * 
+   * @example
+   * ```typescript
+   * try {
+   *   const updatedUser = await authService.updateProfile({ name: 'New Name' });
+   *   console.log('Profile updated:', updatedUser.user.name);
+   * } catch (error) {
+   *   console.error('Profile update failed:', error.message);
+   * }
+   * ```
+   */
+  async updateProfile(profileData: { name?: string; email?: string }): Promise<AuthTokenResponse> {
+    try {
+      const response = await this.apiClient.put<AuthTokenResponse>('/api/users/profile', profileData);
+      
+      // Store updated token if returned
+      if (response.data.accessToken) {
+        this.storeToken(response.data.accessToken);
+      }
+      
+      return response.data;
+    } catch (error) {
+      this.handleAuthError(error as AxiosError);
+      throw error;
     }
   }
 

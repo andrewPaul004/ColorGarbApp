@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserRole } from '@colorgarb/shared';
+import { UserRole } from '../../../../../packages/shared/src/types/user';
 import ProtectedRoute from './ProtectedRoute';
 
 /**

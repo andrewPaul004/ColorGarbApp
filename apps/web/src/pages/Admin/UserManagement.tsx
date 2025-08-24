@@ -36,7 +36,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 } from '@mui/icons-material';
-import { UserRole, type User, RoleUtils } from '@colorgarb/shared';
+import { UserRole, type User, RoleUtils } from '../../../../../packages/shared/src/types/user';
 import RoleBasedNavigation from '../../components/common/RoleBasedNavigation';
 import useRolePermissions from '../../hooks/useRolePermissions';
 

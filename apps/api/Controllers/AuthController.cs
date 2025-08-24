@@ -158,7 +158,7 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during login attempt for email: {Email}", request.Email);
-            return StatusCode(500, new { message = "An error occurred during login" });
+            return StatusCode(500, new { message = $"An error occurred during login: {ex.Message}" });
         }
     }
 

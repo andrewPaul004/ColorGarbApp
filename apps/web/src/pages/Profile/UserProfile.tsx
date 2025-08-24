@@ -47,7 +47,7 @@ import { useNavigate } from 'react-router-dom';
  * @since 1.0.0
  */
 export const UserProfile: React.FC = () => {
-  const { user, logout, organization } = useAppStore();
+  const { user, logout, organization, updateProfile, isLoading, error } = useAppStore();
   const navigate = useNavigate();
 
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -154,14 +154,19 @@ export const UserProfile: React.FC = () => {
   };
 
   /**
-   * Handles form submission (placeholder for future implementation)
+   * Handles form submission for profile updates
    * @param event Form submit event
    */
-  const handleFormSubmit = (event: React.FormEvent) => {
+  const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: Implement profile update API call
-    console.log('Profile update:', formData);
-    setEditMode(false);
+    
+    try {
+      await updateProfile(formData);
+      setEditMode(false);
+    } catch (error) {
+      // Error is handled by the store and will be displayed
+      console.error('Profile update failed:', error);
+    }
   };
 
   if (!user) {
@@ -238,6 +243,11 @@ export const UserProfile: React.FC = () => {
 
               {editMode ? (
                 <Box component="form" onSubmit={handleFormSubmit} sx={{ mt: 3 }}>
+                  {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {error}
+                    </Alert>
+                  )}
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -265,10 +275,15 @@ export const UserProfile: React.FC = () => {
                     </Grid>
                   </Grid>
                   <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-                    <Button type="submit" variant="contained" color="primary">
-                      Save Changes
+                    <Button 
+                      type="submit" 
+                      variant="contained" 
+                      color="primary"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    <Button onClick={handleEditToggle} variant="outlined">
+                    <Button onClick={handleEditToggle} variant="outlined" disabled={isLoading}>
                       Cancel
                     </Button>
                   </Box>

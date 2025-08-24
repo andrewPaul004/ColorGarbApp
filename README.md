@@ -85,8 +85,8 @@ cd apps/api
 dotnet ef database update
 
 # Verify database connection
-dotnet run --urls="http://localhost:5000"
-# Visit http://localhost:5000/api/health/detailed
+dotnet run --urls="http://localhost:5132"
+# Visit http://localhost:5132/api/health/detailed
 ```
 
 #### 3. Redis Setup (Optional for Development)
@@ -129,8 +129,8 @@ npm run dev:api
 
 **Access Points:**
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
-- API Documentation: http://localhost:5000/openapi
+- Backend API: http://localhost:5132
+- API Documentation: http://localhost:5132/openapi
 
 ## 🧪 Testing
 
@@ -276,7 +276,7 @@ dotnet publish        # Create production build
 
 ```bash
 # Development
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5132/api
 
 # Production
 VITE_API_BASE_URL=https://your-api-domain.azurewebsites.net/api
@@ -342,7 +342,7 @@ dotnet run --environment Development
 - [Architecture Documentation](docs/architecture/)
 - [PRD and Requirements](docs/prd/)
 - [Frontend Specifications](docs/front-end-spec/)
-- [API Documentation](http://localhost:5000/openapi) (when running locally)
+- [API Documentation](http://localhost5132/openapi) (when running locally)
 - [Azure DevOps Project](https://dev.azure.com/your-org/colorgarb)
 
 ## 🤝 Contributing

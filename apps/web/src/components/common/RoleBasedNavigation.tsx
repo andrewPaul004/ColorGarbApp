@@ -23,7 +23,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 } from '@mui/icons-material';
-import { UserRole, type NavigationItem, RoleUtils } from '../../../../packages/shared/src/types/user';
+import { UserRole, type NavigationItem, RoleUtils } from '../../../../../packages/shared/src/types/user';
 import { useAppStore } from '../../stores/appStore';
 import { useNavigate } from 'react-router-dom';
 

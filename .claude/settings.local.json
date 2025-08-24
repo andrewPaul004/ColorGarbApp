@@ -25,7 +25,11 @@
       "Bash(dotnet format:*)",
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
-      "Bash(if not exist \"docs\\qa\\gates\" mkdir \"docs\\qa\\gates\")"
+      "Bash(if not exist \"docs\\qa\\gates\" mkdir \"docs\\qa\\gates\")",
+      "Bash(dotnet run:*)",
+      "Bash(taskkill:*)",
+      "Read(/c:\\Users\\apaul\\Downloads/**)",
+      "Read(/c:\\Users\\apaul\\Downloads/**)"
     ],
     "deny": [],
     "ask": []

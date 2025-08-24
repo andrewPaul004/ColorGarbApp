@@ -102,7 +102,7 @@ namespace ColorGarbApi.Migrations
                 keyColumn: "Id",
                 keyValue: new Guid("22222222-2222-2222-2222-222222222222"),
                 column: "Role",
-                value: "client");
+                value: "Director");
         }
     }
 }

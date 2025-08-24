@@ -49,7 +49,7 @@ export const Dashboard: React.FC = () => {
   } = useAppStore();
 
   const [statusFilter, setStatusFilter] = useState<string>('Active');
-  const [stageFilter, setStageFilter] = useState<string>('');
+  const [stageFilter, setStageFilter] = useState<string>('All');
 
   /**
    * Loads orders on component mount and when filters change
@@ -220,10 +220,45 @@ export const Dashboard: React.FC = () => {
                 value={stageFilter}
                 label="Stage Filter"
                 onChange={handleStageChange}
+                sx={{
+                  '& .MuiSelect-select': {
+                    paddingLeft: '14px',
+                    paddingRight: '32px !important',
+                  }
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxWidth: 'none',
+                      minWidth: '300px',
+                    },
+                  },
+                }}
               >
-                <MenuItem value="">All Stages</MenuItem>
+                <MenuItem 
+                  value="All"
+                  sx={{ 
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    minHeight: '48px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  All Stages
+                </MenuItem>
                 {getAvailableStages().map((stage) => (
-                  <MenuItem key={stage} value={stage}>
+                  <MenuItem 
+                    key={stage} 
+                    value={stage}
+                    sx={{ 
+                      whiteSpace: 'normal',
+                      wordWrap: 'break-word',
+                      minHeight: '48px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
                     {stage}
                   </MenuItem>
                 ))}

@@ -29,7 +29,8 @@
       "Bash(dotnet run:*)",
       "Bash(taskkill:*)",
       "Read(/c:\\Users\\apaul\\Downloads/**)",
-      "Read(/c:\\Users\\apaul\\Downloads/**)"
+      "Read(/c:\\Users\\apaul\\Downloads/**)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []

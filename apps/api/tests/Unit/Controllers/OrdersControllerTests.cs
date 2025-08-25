@@ -7,6 +7,8 @@ using Xunit;
 using ColorGarbApi.Controllers;
 using ColorGarbApi.Data;
 using ColorGarbApi.Models;
+using ColorGarbApi.Services;
+using Moq;
 
 namespace ColorGarbApi.Tests.Unit.Controllers;
 
@@ -19,6 +21,9 @@ public class OrdersControllerTests : IDisposable
     private readonly ColorGarbDbContext _context;
     private readonly OrdersController _controller;
     private readonly ILogger<OrdersController> _logger;
+    private readonly Mock<IAuditService> _mockAuditService;
+    private readonly Mock<IProductionTrackingService> _mockProductionTrackingService;
+    private readonly Mock<IEmailService> _mockEmailService;
 
     public OrdersControllerTests()
     {
@@ -29,7 +34,29 @@ public class OrdersControllerTests : IDisposable
 
         _context = new ColorGarbDbContext(options);
         _logger = new LoggerFactory().CreateLogger<OrdersController>();
-        _controller = new OrdersController(_context, _logger);
+        _mockAuditService = new Mock<IAuditService>();
+        _mockProductionTrackingService = new Mock<IProductionTrackingService>();
+        _mockEmailService = new Mock<IEmailService>();
+
+        // Setup production tracking service to return successful results by default
+        _mockProductionTrackingService
+            .Setup(x => x.SyncOrderStageUpdateAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(ProductionSyncResult.Success());
+
+        _mockProductionTrackingService
+            .Setup(x => x.SyncShipDateUpdateAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(ProductionSyncResult.Success());
+
+        // Setup email service to return successful results by default
+        _mockEmailService
+            .Setup(x => x.SendOrderStageUpdateEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(true);
+
+        _mockEmailService
+            .Setup(x => x.SendShipDateChangeEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        _controller = new OrdersController(_context, _logger, _mockAuditService.Object, _mockProductionTrackingService.Object, _mockEmailService.Object);
 
         // Seed test data
         SeedTestData();

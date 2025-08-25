@@ -33,6 +33,7 @@ import {
   ExitToApp as LogoutIcon,
   Settings as SettingsIcon,
   Business as OrganizationIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
@@ -102,6 +103,20 @@ export const Navigation: React.FC = () => {
         icon: <OrganizationIcon />,
         roles: ['Director'],
         requiresOrganization: true,
+      },
+      {
+        label: 'Admin Dashboard',
+        path: '/admin/dashboard',
+        icon: <AdminIcon />,
+        roles: ['ColorGarbStaff'],
+        requiresOrganization: false,
+      },
+      {
+        label: 'User Management',
+        path: '/admin/users',
+        icon: <SettingsIcon />,
+        roles: ['ColorGarbStaff'],
+        requiresOrganization: false,
       },
     ];
 

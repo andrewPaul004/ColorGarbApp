@@ -40,6 +40,12 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Register audit service
 builder.Services.AddScoped<IAuditService, AuditService>();
 
+// Register HttpClient for production tracking service
+builder.Services.AddHttpClient<ProductionTrackingService>();
+
+// Register production tracking service
+builder.Services.AddScoped<IProductionTrackingService, ProductionTrackingService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ColorGarbApi";
@@ -150,3 +156,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Make Program class accessible for integration testing
+public partial class Program { }

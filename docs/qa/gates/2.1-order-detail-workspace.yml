@@ -1,0 +1,20 @@
+schema: 1
+story: '2.1'
+gate: CONCERNS
+status_reason: 'Missing breadcrumb navigation and QuickActions were not properly implemented until recent fix.'
+reviewer: 'Quinn'
+updated: '2025-08-25T16:30:00Z'
+top_issues:
+  - id: 'REQ-001'
+    severity: medium
+    finding: 'AC7: Breadcrumb navigation back to dashboard not implemented'
+    suggested_action: 'Add breadcrumb component to OrderDetail page header'
+  - id: 'REQ-002'
+    severity: high
+    finding: 'AC5: QuickActions component was missing entirely until recent emergency fix'
+    suggested_action: 'Verify QuickActions are working properly and test stage-specific button behavior'
+  - id: 'TEST-001'
+    severity: medium
+    finding: 'No evidence of mobile-responsive testing for AC6'
+    suggested_action: 'Test order detail page on mobile devices and tablet breakpoints'
+waiver: { active: false }

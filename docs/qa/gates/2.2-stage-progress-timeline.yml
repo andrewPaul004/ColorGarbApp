@@ -3,17 +3,24 @@
 
 schema: 1
 story: "2.2"
-story_title: "13-Stage Progress Timeline"
-gate: PASS
-status_reason: "Excellent implementation with comprehensive testing and successful architectural improvements. All acceptance criteria met with professional-grade code quality."
-reviewer: "Quinn (Test Architect)"
-updated: "2025-08-24T00:00:00Z"
-
-# No issues requiring waiver
+gate: CONCERNS
+status_reason: "Timeline component exists but lacks proper backend integration for stage history data and click functionality is incomplete."
+reviewer: "Quinn"
+updated: "2025-08-25T16:35:00Z"
+top_issues:
+  - id: 'ARCH-001'
+    severity: high
+    finding: 'AC3: Completed stages marked as done with timestamps - no backend API returns stage history data'
+    suggested_action: 'Implement StageHistory API endpoint or extend OrderDetailDto to include stage completion history'
+  - id: 'REQ-002'
+    severity: medium
+    finding: 'AC7: Click/tap functionality exists but only logs to console, no stage-specific details modal'
+    suggested_action: 'Implement stage detail modal or sidebar with stage-specific information'
+  - id: 'REQ-003'
+    severity: medium
+    finding: 'AC5: Stage descriptions present but no estimated duration information'
+    suggested_action: 'Add estimated duration data to stage descriptions or remove from AC'
 waiver: { active: false }
-
-# No blocking issues identified
-top_issues: []
 
 # Quality assessment metrics
 quality_score: 95

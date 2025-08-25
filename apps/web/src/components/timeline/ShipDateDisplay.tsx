@@ -16,7 +16,7 @@ import {
   CheckCircle,
   Warning,
   TrendingUp
-} from '@mui/icons-material/index.js';
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import type { StageHistory } from '@colorgarb/shared';
 

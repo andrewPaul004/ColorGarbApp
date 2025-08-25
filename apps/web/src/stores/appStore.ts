@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Organization, AuthTokenResponse, Order } from '../types/shared';
+import type { Organization, AuthTokenResponse, Order, OrderDetail } from '@colorgarb/shared';
 import authService from '../services/authService';
 import orderService from '../services/orderService';
 
@@ -59,8 +59,8 @@ interface AppState {
   // Orders Actions
   /** Fetch orders for the user's organization */
   fetchOrders: (status?: string, stage?: string) => Promise<void>;
-  /** Fetch a specific order by ID */
-  fetchOrder: (id: string) => Promise<Order>;
+  /** Fetch a specific order by ID with complete details */
+  fetchOrder: (id: string) => Promise<OrderDetail>;
   /** Set orders loading state */
   setOrdersLoading: (loading: boolean) => void;
   /** Set orders error message */
@@ -250,7 +250,7 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      fetchOrder: async (id: string): Promise<Order> => {
+      fetchOrder: async (id: string): Promise<OrderDetail> => {
         set({ ordersError: null });
         
         try {

@@ -37,6 +37,12 @@ export interface StageHistory {
   updatedBy: string;
   /** Optional notes about the stage transition */
   notes?: string;
+  /** Previous ship date before this stage (if changed) */
+  previousShipDate?: Date;
+  /** New ship date set during this stage (if changed) */
+  newShipDate?: Date;
+  /** Reason for ship date change (if applicable) */
+  changeReason?: string;
 }
 
 /**
@@ -65,4 +71,51 @@ export interface Order {
   createdAt: Date;
   /** When the order was last updated */
   updatedAt: Date;
+}
+
+/**
+ * Organization information interface for contact and shipping details.
+ * Contains complete organization data for order detail display.
+ * 
+ * @interface Organization
+ * @since 1.0.0
+ */
+export interface Organization {
+  /** Unique identifier for the organization */
+  id: string;
+  /** Organization name */
+  name: string;
+  /** Organization type (School, Theater, etc.) */
+  type: string;
+  /** Primary contact email address */
+  contactEmail?: string;
+  /** Primary contact phone number */
+  contactPhone?: string;
+  /** Complete address for shipping */
+  address?: string;
+  /** Payment terms for the organization */
+  paymentTerms?: string;
+}
+
+/**
+ * Extended order interface with complete organization details and financial information.
+ * Used for order detail pages requiring comprehensive information display.
+ * 
+ * @interface OrderDetail
+ * @extends Order
+ * @since 1.0.0
+ */
+export interface OrderDetail extends Order {
+  /** Complete organization information */
+  organization: Organization;
+  /** Total order amount in USD */
+  totalAmount?: number;
+  /** Current payment status */
+  paymentStatus?: string;
+  /** Additional order notes or special instructions */
+  notes?: string;
+  /** Organization name for backward compatibility */
+  organizationName: string;
+  /** Historical progression through manufacturing stages */
+  stageHistory?: StageHistory[];
 }

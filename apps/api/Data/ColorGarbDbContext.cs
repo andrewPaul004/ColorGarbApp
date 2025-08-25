@@ -34,6 +34,11 @@ public class ColorGarbDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
 
     /// <summary>
+    /// Order stage history dataset - tracks progression through manufacturing stages
+    /// </summary>
+    public DbSet<OrderStageHistory> OrderStageHistory => Set<OrderStageHistory>();
+
+    /// <summary>
     /// Login attempts dataset - tracks authentication attempts for security
     /// </summary>
     public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
@@ -91,6 +96,22 @@ public class ColorGarbDbContext : DbContext
                   .WithMany(e => e.Orders)
                   .HasForeignKey(e => e.OrganizationId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure OrderStageHistory entity
+        modelBuilder.Entity<OrderStageHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.Stage);
+            entity.HasIndex(e => e.EnteredAt);
+            entity.HasIndex(e => new { e.OrderId, e.EnteredAt });
+
+            // Configure relationship with Order
+            entity.HasOne(e => e.Order)
+                  .WithMany(e => e.StageHistory)
+                  .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure LoginAttempt entity
@@ -193,7 +214,7 @@ public class ColorGarbDbContext : DbContext
             OrderNumber = "CG-2025-001",
             OrganizationId = sampleOrgId,
             Description = "Spring Musical - Hamilton Costumes (15 performers)",
-            CurrentStage = "Initial Consultation",
+            CurrentStage = "ProductionPlanning",
             OriginalShipDate = shipDate,
             CurrentShipDate = shipDate,
             TotalAmount = 7500.00m,
@@ -203,6 +224,37 @@ public class ColorGarbDbContext : DbContext
             CreatedAt = seedDate,
             UpdatedAt = seedDate
         });
+
+        // Seed sample stage history entries
+        modelBuilder.Entity<OrderStageHistory>().HasData(
+            new OrderStageHistory
+            {
+                Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                OrderId = sampleOrderId,
+                Stage = "DesignProposal",
+                EnteredAt = new DateTime(2024, 12, 31, 10, 0, 0, DateTimeKind.Utc),
+                UpdatedBy = "ColorGarb Design Team",
+                Notes = "Initial design concepts and artwork creation"
+            },
+            new OrderStageHistory
+            {
+                Id = Guid.Parse("55555555-5555-5555-5555-555555555555"),
+                OrderId = sampleOrderId,
+                Stage = "ProofApproval",
+                EnteredAt = new DateTime(2025, 1, 4, 14, 30, 0, DateTimeKind.Utc),
+                UpdatedBy = "Band Director Johnson",
+                Notes = "Client review and approval of design proof"
+            },
+            new OrderStageHistory
+            {
+                Id = Guid.Parse("66666666-6666-6666-6666-666666666666"),
+                OrderId = sampleOrderId,
+                Stage = "Measurements",
+                EnteredAt = new DateTime(2025, 1, 10, 9, 15, 0, DateTimeKind.Utc),
+                UpdatedBy = "Measurements Team",
+                Notes = "Collection and verification of performer measurements"
+            }
+        );
     }
 
     /// <summary>
@@ -253,6 +305,11 @@ public class ColorGarbDbContext : DbContext
                 if (entry.State == EntityState.Added)
                     order.CreatedAt = DateTime.UtcNow;
                 order.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is OrderStageHistory stageHistory)
+            {
+                if (entry.State == EntityState.Added && stageHistory.EnteredAt == default)
+                    stageHistory.EnteredAt = DateTime.UtcNow;
             }
         }
     }

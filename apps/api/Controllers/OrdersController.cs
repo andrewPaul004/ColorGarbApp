@@ -257,6 +257,22 @@ public class OrdersController : ControllerBase
             }
             order.UpdatedAt = DateTime.UtcNow;
 
+            // Create stage history entry
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
+            var userName = user?.Name ?? "Unknown User";
+
+            var stageHistory = new OrderStageHistory
+            {
+                OrderId = orderId,
+                Stage = request.Stage,
+                UpdatedBy = userName,
+                Notes = request.Reason,
+                PreviousShipDate = originalShipDate,
+                NewShipDate = request.ShipDate,
+                ChangeReason = request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value ? request.Reason : null
+            };
+
+            _context.OrderStageHistory.Add(stageHistory);
             await _context.SaveChangesAsync();
 
             // Sync with production tracking system and send notifications (don't block on failure)
@@ -410,6 +426,27 @@ public class OrdersController : ControllerBase
                     }
 
                     order.UpdatedAt = DateTime.UtcNow;
+
+                    // Create stage history entry if stage changed
+                    if (!string.IsNullOrWhiteSpace(request.Stage))
+                    {
+                        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
+                        var userName = user?.Name ?? "Unknown User";
+
+                        var stageHistory = new OrderStageHistory
+                        {
+                            OrderId = orderId,
+                            Stage = request.Stage,
+                            UpdatedBy = userName,
+                            Notes = request.Reason,
+                            PreviousShipDate = originalShipDate,
+                            NewShipDate = request.ShipDate,
+                            ChangeReason = request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value ? request.Reason : null
+                        };
+
+                        _context.OrderStageHistory.Add(stageHistory);
+                    }
+
                     await _context.SaveChangesAsync();
 
                     // Sync with production tracking system (don't block on failure)
@@ -672,6 +709,7 @@ public class OrdersController : ControllerBase
 
             var query = _context.Orders
                 .Include(o => o.Organization)
+                .Include(o => o.StageHistory.OrderBy(sh => sh.EnteredAt))
                 .Where(o => o.Id == id);
 
             // Apply organization filtering (ColorGarb staff can see all orders)
@@ -688,7 +726,7 @@ public class OrdersController : ControllerBase
                 return NotFound(new { message = "Order not found or access denied" });
             }
 
-            var orderDto = new OrderDto
+            var orderDto = new OrderDetailDto
             {
                 Id = order.Id,
                 OrderNumber = order.OrderNumber,
@@ -702,7 +740,28 @@ public class OrdersController : ControllerBase
                 IsActive = order.IsActive,
                 CreatedAt = order.CreatedAt,
                 UpdatedAt = order.UpdatedAt,
-                OrganizationName = order.Organization?.Name ?? "Unknown Organization"
+                OrganizationName = order.Organization?.Name ?? "Unknown Organization",
+                Organization = order.Organization != null ? new OrganizationDetailDto
+                {
+                    Id = order.Organization.Id,
+                    Name = order.Organization.Name,
+                    Type = order.Organization.Type,
+                    ContactEmail = order.Organization.ContactEmail,
+                    ContactPhone = order.Organization.ContactPhone,
+                    Address = order.Organization.Address,
+                    PaymentTerms = "Net 30" // Default payment terms - would be configurable per organization in production
+                } : null,
+                StageHistory = order.StageHistory.Select(sh => new StageHistoryDto
+                {
+                    Id = sh.Id,
+                    Stage = sh.Stage,
+                    EnteredAt = sh.EnteredAt,
+                    UpdatedBy = sh.UpdatedBy,
+                    Notes = sh.Notes,
+                    PreviousShipDate = sh.PreviousShipDate,
+                    NewShipDate = sh.NewShipDate,
+                    ChangeReason = sh.ChangeReason
+                }).ToList()
             };
 
             _logger.LogInformation("Retrieved order {OrderId} for user {UserId}", id, GetUserId());
@@ -1048,4 +1107,109 @@ public class BulkUpdateFailure
     /// Error message describing why the update failed
     /// </summary>
     public string Error { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Data transfer object for detailed organization information.
+/// Contains complete organization data for order detail display.
+/// </summary>
+public class OrganizationDetailDto
+{
+    /// <summary>
+    /// Unique identifier for the organization
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Organization name
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Organization type (School, Theater, etc.)
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Primary contact email address
+    /// </summary>
+    public string? ContactEmail { get; set; }
+
+    /// <summary>
+    /// Primary contact phone number
+    /// </summary>
+    public string? ContactPhone { get; set; }
+
+    /// <summary>
+    /// Complete address for shipping
+    /// </summary>
+    public string? Address { get; set; }
+
+    /// <summary>
+    /// Payment terms for the organization
+    /// </summary>
+    public string? PaymentTerms { get; set; }
+}
+
+/// <summary>
+/// Data transfer object for detailed order information with complete organization data.
+/// Used for order detail endpoints requiring comprehensive information display.
+/// </summary>
+public class OrderDetailDto : OrderDto
+{
+    /// <summary>
+    /// Complete organization information
+    /// </summary>
+    public OrganizationDetailDto? Organization { get; set; }
+
+    /// <summary>
+    /// Historical progression through manufacturing stages
+    /// </summary>
+    public List<StageHistoryDto> StageHistory { get; set; } = new();
+}
+
+/// <summary>
+/// Data transfer object for order stage history information.
+/// </summary>
+public class StageHistoryDto
+{
+    /// <summary>
+    /// Unique identifier for the stage history entry
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// The stage that was entered
+    /// </summary>
+    public string Stage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Date and time when this stage was entered
+    /// </summary>
+    public DateTime EnteredAt { get; set; }
+
+    /// <summary>
+    /// ID or name of the user/system that updated the stage
+    /// </summary>
+    public string UpdatedBy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional notes about the stage progression
+    /// </summary>
+    public string? Notes { get; set; }
+
+    /// <summary>
+    /// Previous ship date before this stage (if changed)
+    /// </summary>
+    public DateTime? PreviousShipDate { get; set; }
+
+    /// <summary>
+    /// New ship date set during this stage (if changed)
+    /// </summary>
+    public DateTime? NewShipDate { get; set; }
+
+    /// <summary>
+    /// Reason for ship date change (if applicable)
+    /// </summary>
+    public string? ChangeReason { get; set; }
 }

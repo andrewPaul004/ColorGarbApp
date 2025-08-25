@@ -25,4 +25,44 @@ public interface IEmailService
     /// <param name="userName">User's display name</param>
     /// <returns>True if email was sent successfully</returns>
     Task<bool> SendAccountLockoutEmailAsync(string email, DateTime lockoutExpiryTime, string userName);
+
+    /// <summary>
+    /// Sends order stage progression notification email.
+    /// </summary>
+    /// <param name="email">Recipient email address</param>
+    /// <param name="organizationName">Name of the organization</param>
+    /// <param name="orderNumber">Human-readable order number</param>
+    /// <param name="orderDescription">Description of the order</param>
+    /// <param name="previousStage">Previous manufacturing stage</param>
+    /// <param name="newStage">New manufacturing stage</param>
+    /// <param name="currentShipDate">Current expected ship date</param>
+    /// <returns>True if email was sent successfully</returns>
+    Task<bool> SendOrderStageUpdateEmailAsync(
+        string email,
+        string organizationName,
+        string orderNumber,
+        string orderDescription,
+        string previousStage,
+        string newStage,
+        DateTime currentShipDate);
+
+    /// <summary>
+    /// Sends ship date change notification email.
+    /// </summary>
+    /// <param name="email">Recipient email address</param>
+    /// <param name="organizationName">Name of the organization</param>
+    /// <param name="orderNumber">Human-readable order number</param>
+    /// <param name="orderDescription">Description of the order</param>
+    /// <param name="previousShipDate">Previous ship date</param>
+    /// <param name="newShipDate">New ship date</param>
+    /// <param name="reason">Reason for the ship date change</param>
+    /// <returns>True if email was sent successfully</returns>
+    Task<bool> SendShipDateChangeEmailAsync(
+        string email,
+        string organizationName,
+        string orderNumber,
+        string orderDescription,
+        DateTime previousShipDate,
+        DateTime newShipDate,
+        string reason);
 }

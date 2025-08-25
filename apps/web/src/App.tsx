@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import OrderDetail from './pages/OrderDetail/OrderDetail';
 import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 /**
  * Layout component that provides consistent navigation and structure
@@ -100,6 +101,17 @@ function App() {
           />
           
           {/* Admin routes */}
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminDashboard />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route 
             path="/admin/users" 
             element={

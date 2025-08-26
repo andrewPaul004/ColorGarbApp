@@ -31,11 +31,26 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(redisConnectionString);
 });
 
+// Register Redis database for rate limiting
+builder.Services.AddScoped<IDatabase>(sp =>
+{
+    var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+    return multiplexer.GetDatabase();
+});
+
 // Register cache service
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 // Register email service
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Register SMS services
+builder.Services.AddScoped<TwilioSmsProvider>();
+builder.Services.AddScoped<ISmsService, SmsService>();
+builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
+
+// Register notification preference service (required by SMS service)
+builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
 
 // Register audit service
 builder.Services.AddScoped<IAuditService, AuditService>();

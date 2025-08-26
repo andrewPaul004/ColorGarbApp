@@ -36,7 +36,8 @@
       "Read(/C:\\Users\\apaul\\Downloads/**)",
       "Read(/C:\\Users\\apaul\\Downloads/**)",
       "Bash(grep:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(dotnet add:*)"
     ],
     "deny": [],
     "ask": []

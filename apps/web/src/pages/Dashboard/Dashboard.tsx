@@ -15,6 +15,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { OrderCard } from '../../components/common/OrderCard';
 import type { Order } from '../../types/shared';
@@ -38,6 +39,7 @@ import type { Order } from '../../types/shared';
 export const Dashboard: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
   const {
     orders,
@@ -89,12 +91,11 @@ export const Dashboard: React.FC = () => {
   };
 
   /**
-   * Handles order card click - placeholder for future navigation
+   * Handles order card click - navigates to order detail page
    * @param order Selected order
    */
   const handleOrderClick = (order: Order) => {
-    // TODO: Navigate to order detail page when implemented
-    console.log('Order selected:', order.id);
+    navigate(`/orders/${order.id}`);
   };
 
   /**

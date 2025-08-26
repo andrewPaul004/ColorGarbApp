@@ -380,7 +380,7 @@ public class UsersController : ControllerBase
                 // Check if email is already taken by another user
                 var existingUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Email == request.Email && u.Id != currentUserId);
-                
+
                 if (existingUser != null)
                 {
                     return BadRequest(new { message = "Email address is already in use" });

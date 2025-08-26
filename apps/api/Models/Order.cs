@@ -92,4 +92,9 @@ public class Order
     /// </summary>
     [ForeignKey(nameof(OrganizationId))]
     public virtual Organization Organization { get; set; } = null!;
+
+    /// <summary>
+    /// Navigation property for the stage history of this order
+    /// </summary>
+    public virtual ICollection<OrderStageHistory> StageHistory { get; set; } = new List<OrderStageHistory>();
 }

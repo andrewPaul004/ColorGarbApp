@@ -29,7 +29,14 @@
       "Bash(dotnet run:*)",
       "Bash(taskkill:*)",
       "Read(/c:\\Users\\apaul\\Downloads/**)",
-      "Read(/c:\\Users\\apaul\\Downloads/**)"
+      "Read(/c:\\Users\\apaul\\Downloads/**)",
+      "Bash(npx eslint:*)",
+      "Bash(npx vitest run:*)",
+      "Read(/C:\\Users\\apaul\\Downloads/**)",
+      "Read(/C:\\Users\\apaul\\Downloads/**)",
+      "Read(/C:\\Users\\apaul\\Downloads/**)",
+      "Bash(grep:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

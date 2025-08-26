@@ -55,8 +55,8 @@ public class RoleAuthorizationHandlerTests
     {
         // Arrange
         _mockHttpContextAccessor.Setup(x => x.HttpContext).Returns((HttpContext?)null);
-        var context = CreateAuthorizationContext();
         var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var context = CreateAuthorizationContext(requirement: requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -76,8 +76,8 @@ public class RoleAuthorizationHandlerTests
         string? userId, string? userRole)
     {
         // Arrange
-        var context = CreateAuthorizationContext(userId, userRole);
         var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var context = CreateAuthorizationContext(userId, userRole, requirement: requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -92,8 +92,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenInvalidUserRole_ShouldFailAuthorization()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "InvalidRole");
         var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var context = CreateAuthorizationContext("user123", "InvalidRole", requirement: requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -108,8 +108,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenUserLacksRequiredRole_ShouldFailAuthorization()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Finance", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var context = CreateAuthorizationContext("user123", "Finance", "org456", requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -124,8 +124,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenDirectorAccessingFinanceResource_ShouldSucceed()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Finance });
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
         SetupRouteValues("organizationId", "org456");
 
         // Act
@@ -141,8 +141,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenColorGarbStaff_ShouldGrantCrossOrganizationAccess()
     {
         // Arrange
-        var context = CreateAuthorizationContext("staff123", "ColorGarbStaff", null);
         var requirement = new RoleRequirement(new[] { UserRole.ColorGarbStaff });
+        var context = CreateAuthorizationContext("staff123", "ColorGarbStaff", null, requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -157,8 +157,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenUserAccessingOwnOrganization_ShouldSucceed()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: true);
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
         SetupRouteValues("organizationId", "org456");
 
         // Act
@@ -174,8 +174,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenUserAccessingDifferentOrganization_ShouldFailAuthorization()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: true, allowCrossOrganization: false);
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
         SetupRouteValues("organizationId", "org789");
 
         // Act
@@ -191,8 +191,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenNoOrganizationRequired_ShouldSucceed()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: false);
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -207,8 +207,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenNoOrganizationInRequest_ShouldSucceed()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: true);
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
         // No organizationId in route or query
 
         // Act
@@ -224,8 +224,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenUserHasNoOrganization_ShouldFailOrganizationCheck()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", null);
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: true);
+        var context = CreateAuthorizationContext("user123", "Director", null, requirement);
         SetupRouteValues("organizationId", "org456");
 
         // Act
@@ -241,8 +241,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WithQueryStringOrganizationId_ShouldValidateCorrectly()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Director", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director }, requireOrganization: true);
+        var context = CreateAuthorizationContext("user123", "Director", "org456", requirement);
         SetupQueryParameters("organizationId", "org456");
 
         // Act
@@ -261,8 +261,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenValidRole_ShouldLogAuditEntry(string roleName)
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", roleName, "org456");
         var requirement = new RoleRequirement(new[] { Enum.Parse<UserRole>(roleName) });
+        var context = CreateAuthorizationContext("user123", roleName, "org456", requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -270,11 +270,16 @@ public class RoleAuthorizationHandlerTests
         // Assert
         Assert.True(context.HasSucceeded);
         // Verify audit logging occurred (check that info log was called)
+        // ColorGarbStaff logs differently than other roles
+        var expectedLogMessage = roleName == "ColorGarbStaff" 
+            ? "granted cross-organization access" 
+            : "granted access";
+            
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("granted access")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(expectedLogMessage)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
@@ -284,8 +289,8 @@ public class RoleAuthorizationHandlerTests
     public async Task HandleRequirementAsync_WhenAccessDenied_ShouldLogFailureAudit()
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", "Finance", "org456");
         var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var context = CreateAuthorizationContext("user123", "Finance", "org456", requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -316,8 +321,8 @@ public class RoleAuthorizationHandlerTests
         UserRole userRole, UserRole[] requiredRoles, bool shouldSucceed)
     {
         // Arrange
-        var context = CreateAuthorizationContext("user123", userRole.ToString(), "org456");
         var requirement = new RoleRequirement(requiredRoles, requireOrganization: false);
+        var context = CreateAuthorizationContext("user123", userRole.ToString(), "org456", requirement);
 
         // Act
         await InvokeHandlerAsync(context, requirement);
@@ -333,7 +338,8 @@ public class RoleAuthorizationHandlerTests
     private AuthorizationHandlerContext CreateAuthorizationContext(
         string? userId = "testuser", 
         string? userRole = "Director", 
-        string? organizationId = "org123")
+        string? organizationId = "org123",
+        RoleRequirement? requirement = null)
     {
         var claims = new List<Claim>();
         
@@ -348,9 +354,9 @@ public class RoleAuthorizationHandlerTests
 
         var identity = new ClaimsIdentity(claims, "Test");
         var principal = new ClaimsPrincipal(identity);
-        var requirement = new RoleRequirement(new[] { UserRole.Director });
+        var defaultRequirement = requirement ?? new RoleRequirement(new[] { UserRole.Director });
 
-        return new AuthorizationHandlerContext(new[] { requirement }, principal, null);
+        return new AuthorizationHandlerContext(new[] { defaultRequirement }, principal, null);
     }
 
     /// <summary>

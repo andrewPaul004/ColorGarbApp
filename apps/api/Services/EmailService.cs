@@ -108,4 +108,123 @@ public class EmailService : IEmailService
             return false;
         }
     }
+
+    /// <summary>
+    /// Sends order stage progression notification email.
+    /// Currently logs the action for development - replace with actual email service in production.
+    /// </summary>
+    public async Task<bool> SendOrderStageUpdateEmailAsync(
+        string email,
+        string organizationName,
+        string orderNumber,
+        string orderDescription,
+        string previousStage,
+        string newStage,
+        DateTime currentShipDate)
+    {
+        try
+        {
+            var emailContent = $@"
+                Dear {organizationName} Team,
+                
+                We're pleased to update you on the progress of your costume order.
+                
+                Order Details:
+                - Order Number: {orderNumber}
+                - Description: {orderDescription}
+                
+                Progress Update:
+                - Previous Stage: {previousStage}
+                - Current Stage: {newStage}
+                - Expected Ship Date: {currentShipDate:yyyy-MM-dd}
+                
+                Your order is progressing smoothly through our manufacturing process. 
+                You can track your order progress at any time by logging into your ColorGarb portal.
+                
+                If you have any questions about your order, please don't hesitate to contact us.
+                
+                Best regards,
+                The ColorGarb Production Team
+            ";
+
+            // TODO: Replace with actual email service
+            _logger.LogInformation("Order stage update email would be sent to: {Email} for order {OrderNumber}: {PreviousStage} -> {NewStage}",
+                email, orderNumber, previousStage, newStage);
+            _logger.LogDebug("Email content: {Content}", emailContent);
+
+            // Simulate async email sending
+            await Task.Delay(100);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send order stage update email to: {Email} for order {OrderNumber}", email, orderNumber);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Sends ship date change notification email.
+    /// Currently logs the action for development - replace with actual email service in production.
+    /// </summary>
+    public async Task<bool> SendShipDateChangeEmailAsync(
+        string email,
+        string organizationName,
+        string orderNumber,
+        string orderDescription,
+        DateTime previousShipDate,
+        DateTime newShipDate,
+        string reason)
+    {
+        try
+        {
+            var isDelayed = newShipDate > previousShipDate;
+            var changeType = isDelayed ? "delayed" : "moved earlier";
+            var daysDifference = Math.Abs((newShipDate - previousShipDate).Days);
+
+            var emailContent = $@"
+                Dear {organizationName} Team,
+                
+                We need to inform you about a change to your costume order shipping schedule.
+                
+                Order Details:
+                - Order Number: {orderNumber}
+                - Description: {orderDescription}
+                
+                Shipping Schedule Change:
+                - Original Ship Date: {previousShipDate:yyyy-MM-dd}
+                - New Ship Date: {newShipDate:yyyy-MM-dd}
+                - Your order has been {changeType} by {daysDifference} day{(daysDifference != 1 ? "s" : "")}
+                
+                Reason for Change: {reason}
+                
+                {(isDelayed ?
+                    "We sincerely apologize for any inconvenience this delay may cause. We are working diligently to minimize any further delays and ensure the highest quality for your costumes." :
+                    "We're pleased to inform you that your order is progressing faster than expected!")}
+                
+                If you have any questions or concerns about this change, please contact us immediately.
+                
+                Thank you for your understanding and continued business.
+                
+                Best regards,
+                The ColorGarb Production Team
+            ";
+
+            // TODO: Replace with actual email service
+            _logger.LogInformation("Ship date change email would be sent to: {Email} for order {OrderNumber}: {PreviousDate} -> {NewDate}",
+                email, orderNumber, previousShipDate.ToString("yyyy-MM-dd"), newShipDate.ToString("yyyy-MM-dd"));
+            _logger.LogDebug("Email content: {Content}", emailContent);
+
+            // Simulate async email sending
+            await Task.Delay(100);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send ship date change email to: {Email} for order {OrderNumber}", email, orderNumber);
+            return false;
+        }
+    }
 }

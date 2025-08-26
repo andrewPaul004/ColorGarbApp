@@ -1,4 +1,4 @@
-import type { Order } from '../types/shared';
+import type { Order, OrderDetail } from '@colorgarb/shared';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
@@ -80,11 +80,11 @@ class OrderService {
   }
 
   /**
-   * Retrieves a specific order by ID with organization-based access control.
+   * Retrieves a specific order by ID with complete organization details.
    * Users can only access orders that belong to their organization.
    * 
    * @param id Unique identifier of the order to retrieve
-   * @returns Promise<Order> Order details if found and accessible
+   * @returns Promise<OrderDetail> Order details with complete organization information
    * 
    * @throws {Error} When API request fails or user is not authenticated
    * @throws {AuthorizationError} When user lacks permission to access the order
@@ -95,8 +95,9 @@ class OrderService {
    * const orderService = new OrderService();
    * 
    * try {
-   *   const order = await orderService.getOrder('12345-67890');
-   *   console.log('Order details:', order);
+   *   const orderDetail = await orderService.getOrder('12345-67890');
+   *   console.log('Order details:', orderDetail);
+   *   console.log('Organization:', orderDetail.organization);
    * } catch (error) {
    *   if (error.message.includes('not found')) {
    *     console.error('Order not found or access denied');
@@ -106,7 +107,7 @@ class OrderService {
    * 
    * @since 1.0.0
    */
-  async getOrder(id: string): Promise<Order> {
+  async getOrder(id: string): Promise<OrderDetail> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
         method: 'GET',
@@ -129,15 +130,15 @@ class OrderService {
         throw new Error(`Failed to fetch order: ${response.statusText}`);
       }
 
-      const order = await response.json();
+      const orderDetail = await response.json();
       
       // Convert date strings to Date objects
       return {
-        ...order,
-        originalShipDate: new Date(order.originalShipDate),
-        currentShipDate: new Date(order.currentShipDate),
-        createdAt: new Date(order.createdAt),
-        updatedAt: new Date(order.updatedAt),
+        ...orderDetail,
+        originalShipDate: new Date(orderDetail.originalShipDate),
+        currentShipDate: new Date(orderDetail.currentShipDate),
+        createdAt: new Date(orderDetail.createdAt),
+        updatedAt: new Date(orderDetail.updatedAt),
       };
     } catch (error) {
       console.error('Error fetching order:', error);

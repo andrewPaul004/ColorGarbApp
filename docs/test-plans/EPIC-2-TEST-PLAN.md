@@ -187,58 +187,249 @@ Ensure your development environment is properly configured with all dependencies
 
 #### Test Admin API Endpoints (Backend Phase 1)
 
-1. **Setup API Testing:**
-   - Open API client (Postman/Insomnia) or use Swagger UI at https://localhost:5001/swagger
-   - Obtain ColorGarb staff JWT token for authentication
-   - **Expected:** Access to admin endpoints requires proper staff authentication
+1. **Setup API Testing Environment:**
+   - Open API client (Postman/Insomnia) or use Swagger/OpenAPI UI
+   - Access API documentation at: https://localhost:5001/openapi/v1.json or https://localhost:5001/scalar/v1
+   - **Expected:** API documentation loads successfully with all endpoints visible
+   
+   **Obtain Staff Authentication Token:**
+   - **POST** `/api/auth/login`
+   - Body: 
+     ```json
+     {
+       "email": "production@colorgarb.com",
+       "password": "password123"
+     }
+     ```
+   - **Expected:** Response status 200 with JWT token in response body
+   - **Expected:** Token contains ColorGarbStaff role claim
+   - Copy JWT token for use in subsequent requests
 
 2. **Test Admin Orders Listing:**
+   
+   **Basic Orders Retrieval:**
    - **GET** `/api/orders/admin/orders`
    - Headers: `Authorization: Bearer {staff_token}`
-   - **Expected:** Returns paginated list of orders across all organizations
-   - **Expected:** Response includes order details, organization info, and pagination metadata
-   - **Expected:** Filtering by organization, status, and stage works properly
+   - **Expected Response:**
+     - Status: 200 OK
+     - Body contains array of orders from all organizations
+     - Each order includes: id, orderNumber, organizationName, currentStage, totalAmount, currentShipDate
+     - Pagination metadata: currentPage, totalPages, totalCount, hasNextPage
+   
+   **Test Filtering Parameters:**
+   - **GET** `/api/orders/admin/orders?organizationId=AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA`
+   - **Expected:** Only orders from Roosevelt High School returned
+   
+   - **GET** `/api/orders/admin/orders?stage=Fabric Cutting`
+   - **Expected:** Only orders currently in Fabric Cutting stage returned
+   
+   - **GET** `/api/orders/admin/orders?paymentStatus=Pending`
+   - **Expected:** Only orders with Pending payment status returned
+   
+   **Test Pagination:**
+   - **GET** `/api/orders/admin/orders?page=1&pageSize=2`
+   - **Expected:** Maximum 2 orders returned with proper pagination metadata
+   - **Expected:** hasNextPage: true if more orders exist
 
-3. **Test Individual Order Update:**
-   - **PATCH** `/api/orders/{orderId}/admin`
+3. **Test Individual Order Details:**
+   
+   **Get Specific Order for Admin:**
+   - **GET** `/api/orders/admin/orders/{orderId}` (use Order ID from test data: 11111111-2222-3333-4444-555555555555)
    - Headers: `Authorization: Bearer {staff_token}`
-   - Body: `{ "stage": "Cutting", "reason": "Production scheduling" }`
-   - **Expected:** Order stage updated successfully
-   - **Expected:** Audit trail entry created with staff member attribution
-   - **Expected:** Stage validation prevents invalid transitions
+   - **Expected Response:**
+     - Status: 200 OK
+     - Complete order details including organization info
+     - Stage history with timestamps and staff attributions
+     - Ship date change history with reasons
+     - Current production status and notes
 
-4. **Test Ship Date Update:**
-   - **PATCH** `/api/orders/{orderId}/admin`
-   - Body: `{ "shipDate": "2024-04-15", "reason": "Material delay" }`
-   - **Expected:** Ship date updated with change reason recorded
-   - **Expected:** Change history entry created
-   - **Expected:** Automatic notification triggered (email service integration)
+4. **Test Individual Order Stage Update:**
+   
+   **Valid Stage Progression:**
+   - **PATCH** `/api/orders/11111111-2222-3333-4444-555555555555/admin/stage`
+   - Headers: `Authorization: Bearer {staff_token}`, `Content-Type: application/json`
+   - Body: 
+     ```json
+     {
+       "newStage": "Initial Sewing",
+       "reason": "Production scheduling - fabric cutting completed",
+       "notes": "All fabric pieces cut and quality checked. Ready for sewing phase."
+     }
+     ```
+   - **Expected Response:**
+     - Status: 200 OK
+     - Order currentStage updated to "Initial Sewing"
+     - New entry added to OrderStageHistory table
+     - Audit trail created with staff member ID and timestamp
+   
+   **Invalid Stage Progression Test:**
+   - **PATCH** `/api/orders/11111111-2222-3333-4444-555555555555/admin/stage`
+   - Body:
+     ```json
+     {
+       "newStage": "Shipped",
+       "reason": "Invalid test"
+     }
+     ```
+   - **Expected Response:**
+     - Status: 400 Bad Request
+     - Error message: "Invalid stage progression from [current] to Shipped"
+     - Order stage remains unchanged
 
-5. **Test Bulk Order Updates:**
-   - **POST** `/api/orders/admin/orders/bulk-update`
-   - Body: Array of order updates with multiple orderIds
-   - **Expected:** Multiple orders updated in single operation
-   - **Expected:** Partial success/failure handling for mixed results
-   - **Expected:** Audit trail entries for all successful updates
+5. **Test Ship Date Update:**
+   
+   **Update Current Ship Date:**
+   - **PATCH** `/api/orders/11111111-2222-3333-4444-555555555555/admin/shipdate`
+   - Headers: `Authorization: Bearer {staff_token}`, `Content-Type: application/json`
+   - Body:
+     ```json
+     {
+       "newShipDate": "2025-12-01T00:00:00.000Z",
+       "reason": "Material delay - specialty fabric backordered",
+       "changeType": "delay"
+     }
+     ```
+   - **Expected Response:**
+     - Status: 200 OK
+     - Order currentShipDate updated to new date
+     - OrderStageHistory entry created with ship date change details
+     - ChangeReason and date change metadata recorded
+   
+   **Verify Change History:**
+   - **GET** `/api/orders/11111111-2222-3333-4444-555555555555/admin/shipdate-history`
+   - **Expected:** Array of all ship date changes with reasons and timestamps
 
-6. **Test Production System Integration:**
-   - Perform order updates and verify production tracking sync
-   - **Expected:** External production system receives update notifications
-   - **Expected:** Sync failures don't block core operations
-   - **Expected:** Health monitoring tracks production system availability
+6. **Test Bulk Order Updates:**
+   
+   **Multiple Order Stage Updates:**
+   - **POST** `/api/orders/admin/bulk-update`
+   - Headers: `Authorization: Bearer {staff_token}`, `Content-Type: application/json`
+   - Body:
+     ```json
+     {
+       "updates": [
+         {
+           "orderId": "22222222-3333-4444-5555-666666666666",
+           "newStage": "Measurements",
+           "reason": "Batch processing - measurements ready"
+         },
+         {
+           "orderId": "33333333-4444-5555-6666-777777777777", 
+           "newStage": "Fabric Sourcing",
+           "reason": "Batch processing - designs approved"
+         }
+       ]
+     }
+     ```
+   - **Expected Response:**
+     - Status: 200 OK
+     - Response includes success/failure status for each order
+     - Successful updates create audit trail entries
+     - Failed updates include specific error messages
+   
+   **Test Partial Failure Handling:**
+   - Include one invalid order ID in bulk update request
+   - **Expected:** Valid orders updated successfully, invalid ones return specific errors
+   - **Expected:** Partial success response with detailed results array
 
-7. **Verify Notification System:**
-   - Update order stages and ship dates
-   - **Expected:** Email notifications sent to organization contacts
-   - **Expected:** Different notification content for delays vs. acceleration
-   - **Expected:** Notification delivery status logged properly
+7. **Test Production System Integration:**
+   
+   **Verify External System Notifications:**
+   - Perform any order stage update from step 4
+   - Check application logs or monitoring dashboard
+   - **Expected:** Production tracking service called with order update
+   - **Expected:** External system webhook/API call logged
+   - **Expected:** Integration failure doesn't prevent core order update
+   
+   **Health Check Production Integration:**
+   - **GET** `/api/admin/production-system/health`
+   - **Expected:** Status of production system integration
+   - **Expected:** Last successful sync timestamp
+   - **Expected:** Error count and recent failure details if any
 
-8. **Test Authorization and Security:**
-   - Attempt API calls without staff token
-   - **Expected:** 401 Unauthorized response for missing authentication
-   - Attempt API calls with client user token
-   - **Expected:** 403 Forbidden response for insufficient privileges
-   - **Expected:** Organization isolation bypassed correctly for staff users
+8. **Verify Email Notification System:**
+   
+   **Test Ship Date Change Notifications:**
+   - Update ship date on any order (from step 5)
+   - Check email service logs or test email inbox
+   - **Expected:** Email sent to organization primary contact
+   - **Expected:** Email contains order number, old/new dates, and reason
+   - **Expected:** Different email templates for delays vs. accelerations
+   
+   **Test Stage Update Notifications:**
+   - Update order stage to "Quality Control" or "Shipped"
+   - **Expected:** Appropriate milestone notification email sent
+   - **Expected:** Email delivery status logged in system
+
+9. **Test Authorization and Security:**
+   
+   **Missing Authentication:**
+   - **GET** `/api/orders/admin/orders` (without Authorization header)
+   - **Expected Response:**
+     - Status: 401 Unauthorized
+     - Error message about missing authentication
+   
+   **Invalid/Expired Token:**
+   - **GET** `/api/orders/admin/orders`
+   - Headers: `Authorization: Bearer invalid_token_here`
+   - **Expected Response:**
+     - Status: 401 Unauthorized
+     - Error message about invalid token
+   
+   **Insufficient Privileges (Client User Token):**
+   - Login as client user (director@roosevelthigh.edu / password123)
+   - Use client JWT token in admin endpoint
+   - **GET** `/api/orders/admin/orders`
+   - Headers: `Authorization: Bearer {client_token}`
+   - **Expected Response:**
+     - Status: 403 Forbidden
+     - Error message about insufficient privileges
+   
+   **Cross-Organization Access Verification:**
+   - Login as staff user
+   - **GET** `/api/orders/admin/orders`
+   - **Expected:** Returns orders from ALL organizations (bypassing isolation)
+   - Verify orders from Roosevelt High School, Community Playhouse, etc. all appear
+
+10. **Test Input Validation and Error Handling:**
+
+    **Invalid Order ID Format:**
+    - **GET** `/api/orders/admin/orders/invalid-guid-format`
+    - **Expected Response:**
+      - Status: 400 Bad Request
+      - Error message about invalid GUID format
+    
+    **Non-existent Order ID:**
+    - **GET** `/api/orders/admin/orders/99999999-9999-9999-9999-999999999999`
+    - **Expected Response:**
+      - Status: 404 Not Found
+      - Error message about order not found
+    
+    **Invalid JSON in Request Body:**
+    - **PATCH** `/api/orders/11111111-2222-3333-4444-555555555555/admin/stage`
+    - Body: `{ invalid json format }`
+    - **Expected Response:**
+      - Status: 400 Bad Request
+      - JSON parsing error message
+    
+    **Missing Required Fields:**
+    - **PATCH** `/api/orders/11111111-2222-3333-4444-555555555555/admin/stage`
+    - Body: `{ "reason": "Missing stage field" }`
+    - **Expected Response:**
+      - Status: 400 Bad Request
+      - Validation error about required newStage field
+
+11. **Performance and Load Testing:**
+
+    **Large Order Set Retrieval:**
+    - **GET** `/api/orders/admin/orders?pageSize=100`
+    - **Expected:** Response time under 2 seconds
+    - **Expected:** Proper pagination prevents excessive memory usage
+    
+    **Concurrent Bulk Updates:**
+    - Submit multiple bulk update requests simultaneously
+    - **Expected:** Proper database locking prevents conflicts
+    - **Expected:** Each request processed independently
 
 **✅ Expected Result:** Complete backend API functionality for staff order management with proper security, notifications, and audit trails.
 

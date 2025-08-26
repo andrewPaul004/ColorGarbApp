@@ -16,6 +16,8 @@ public class NotificationsController : ControllerBase
 {
     private readonly INotificationPreferenceService _notificationPreferenceService;
     private readonly IEmailService _emailService;
+    private readonly ISmsService _smsService;
+    private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly ILogger<NotificationsController> _logger;
 
     /// <summary>
@@ -23,14 +25,20 @@ public class NotificationsController : ControllerBase
     /// </summary>
     /// <param name="notificationPreferenceService">Service for notification preference operations</param>
     /// <param name="emailService">Service for email operations</param>
+    /// <param name="smsService">Service for SMS operations</param>
+    /// <param name="phoneVerificationService">Service for phone verification operations</param>
     /// <param name="logger">Logger for diagnostic information</param>
     public NotificationsController(
         INotificationPreferenceService notificationPreferenceService,
         IEmailService emailService,
+        ISmsService smsService,
+        IPhoneVerificationService phoneVerificationService,
         ILogger<NotificationsController> logger)
     {
         _notificationPreferenceService = notificationPreferenceService ?? throw new ArgumentNullException(nameof(notificationPreferenceService));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+        _smsService = smsService ?? throw new ArgumentNullException(nameof(smsService));
+        _phoneVerificationService = phoneVerificationService ?? throw new ArgumentNullException(nameof(phoneVerificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -131,6 +139,7 @@ public class NotificationsController : ControllerBase
 
             // Update preferences
             existingPreferences.EmailEnabled = request.EmailEnabled;
+            existingPreferences.SmsEnabled = request.SmsEnabled;
             existingPreferences.Frequency = request.Frequency;
             existingPreferences.MilestonesJson = JsonSerializer.Serialize(request.Milestones);
 
@@ -313,6 +322,237 @@ public class NotificationsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Sends a verification code to a phone number for SMS opt-in verification.
+    /// </summary>
+    /// <param name="userId">Unique identifier of the user</param>
+    /// <param name="request">Phone verification request</param>
+    /// <returns>Verification details with expiration information</returns>
+    /// <response code="200">Verification code sent successfully</response>
+    /// <response code="400">Invalid phone number or rate limit exceeded</response>
+    /// <response code="404">User not found</response>
+    [HttpPost("users/{userId:guid}/phone/verify")]
+    [ProducesResponseType(typeof(PhoneVerificationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SendPhoneVerification(Guid userId, [FromBody] PhoneVerificationRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            return BadRequest("Phone number is required");
+        }
+
+        try
+        {
+            var verification = await _phoneVerificationService.SendVerificationCodeAsync(userId.ToString(), request.PhoneNumber);
+
+            var response = new PhoneVerificationResponse
+            {
+                Success = true,
+                Message = "Verification code sent to your phone number",
+                ExpiresAt = verification.ExpiresAt
+            };
+
+            _logger.LogInformation("Phone verification code sent to user {UserId}", userId);
+
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("Invalid phone verification request for user {UserId}: {Error}", userId, ex.Message);
+            return BadRequest($"Invalid request: {ex.Message}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("Phone verification failed for user {UserId}: {Error}", userId, ex.Message);
+            return BadRequest($"Verification failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending phone verification for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while sending verification code");
+        }
+    }
+
+    /// <summary>
+    /// Verifies a phone number using the provided verification token.
+    /// </summary>
+    /// <param name="userId">Unique identifier of the user</param>
+    /// <param name="request">Phone verification token</param>
+    /// <returns>Verification result with phone number details</returns>
+    /// <response code="200">Phone number verified successfully</response>
+    /// <response code="400">Invalid or expired verification token</response>
+    /// <response code="404">User not found</response>
+    [HttpPut("users/{userId:guid}/phone/verify")]
+    [ProducesResponseType(typeof(VerifyPhoneResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> VerifyPhoneNumber(Guid userId, [FromBody] VerifyPhoneRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.VerificationToken))
+        {
+            return BadRequest("Verification token is required");
+        }
+
+        try
+        {
+            var success = await _phoneVerificationService.VerifyPhoneNumberAsync(userId.ToString(), request.VerificationToken);
+
+            if (!success)
+            {
+                return BadRequest("Invalid or expired verification token");
+            }
+
+            // Get updated preferences to return phone number
+            var preferences = await _notificationPreferenceService.GetByUserIdAsync(userId);
+
+            var response = new VerifyPhoneResponse
+            {
+                Success = true,
+                PhoneNumber = preferences?.PhoneNumber ?? string.Empty,
+                VerifiedAt = preferences?.PhoneVerifiedAt ?? DateTime.UtcNow
+            };
+
+            _logger.LogInformation("Phone number verified successfully for user {UserId}", userId);
+
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("Invalid phone verification token for user {UserId}: {Error}", userId, ex.Message);
+            return BadRequest($"Invalid token: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying phone number for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while verifying phone number");
+        }
+    }
+
+    /// <summary>
+    /// Retrieves SMS notification history for a specific user with pagination support.
+    /// </summary>
+    /// <param name="userId">Unique identifier of the user</param>
+    /// <param name="page">Page number (1-based, default: 1)</param>
+    /// <param name="pageSize">Number of records per page (default: 50, max: 100)</param>
+    /// <returns>List of SMS notifications with delivery tracking information</returns>
+    /// <response code="200">SMS history retrieved successfully</response>
+    /// <response code="400">Invalid user ID or pagination parameters</response>
+    [HttpGet("users/{userId:guid}/sms-history")]
+    [ProducesResponseType(typeof(List<SmsNotificationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetSmsNotificationHistory(Guid userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    {
+        if (page < 1)
+        {
+            return BadRequest("Page must be greater than 0");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest("Page size must be between 1 and 100");
+        }
+
+        try
+        {
+            var notifications = await _smsService.GetSmsHistoryAsync(userId.ToString(), page, pageSize);
+
+            var response = notifications.Select(n => new SmsNotificationResponse
+            {
+                Id = n.Id,
+                PhoneNumber = n.PhoneNumber,
+                Message = n.Message,
+                Status = n.Status,
+                DeliveryAttempts = n.DeliveryAttempts,
+                CreatedAt = n.CreatedAt,
+                LastAttemptAt = n.LastAttemptAt,
+                DeliveredAt = n.DeliveredAt,
+                ErrorMessage = n.ErrorMessage,
+                Cost = n.Cost
+            }).ToList();
+
+            _logger.LogDebug("Retrieved {Count} SMS history records for user {UserId} (page {Page})",
+                response.Count, userId, page);
+
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("Invalid parameters for user {UserId}: {Error}", userId, ex.Message);
+            return BadRequest($"Invalid parameters: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving SMS history for user {UserId}", userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while retrieving SMS history");
+        }
+    }
+
+    /// <summary>
+    /// Webhook endpoint for receiving SMS delivery status updates from Twilio.
+    /// </summary>
+    /// <param name="request">Twilio webhook request</param>
+    /// <returns>No content on successful status update</returns>
+    /// <response code="204">Status updated successfully</response>
+    /// <response code="400">Invalid request data</response>
+    [HttpPost("webhook/sms-status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateSmsDeliveryStatus([FromBody] TwilioWebhookRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.MessageSid))
+        {
+            return BadRequest("MessageSid is required");
+        }
+
+        try
+        {
+            var success = await _smsService.UpdateDeliveryStatusAsync(request.MessageSid, request.MessageStatus, request.ErrorMessage);
+
+            if (!success)
+            {
+                _logger.LogWarning("SMS notification not found for MessageSid: {MessageSid}", request.MessageSid);
+            }
+
+            _logger.LogDebug("Updated SMS delivery status for MessageSid {MessageSid} to {Status}",
+                request.MessageSid, request.MessageStatus);
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating SMS delivery status for MessageSid {MessageSid}", request.MessageSid);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating delivery status");
+        }
+    }
+
+    /// <summary>
+    /// Webhook endpoint for processing inbound SMS messages including opt-out handling.
+    /// </summary>
+    /// <param name="request">Twilio inbound SMS webhook request</param>
+    /// <returns>TwiML response for Twilio</returns>
+    /// <response code="200">Message processed successfully</response>
+    [HttpPost("webhook/sms-inbound")]
+    [Produces("application/xml")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ProcessInboundSms([FromForm] TwilioInboundSmsRequest request)
+    {
+        try
+        {
+            await _smsService.ProcessInboundSmsAsync(request.From ?? string.Empty, request.Body ?? string.Empty, request.MessageSid ?? string.Empty);
+
+            // Return empty TwiML response
+            var twimlResponse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>";
+            return Content(twimlResponse, "application/xml");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing inbound SMS");
+            var errorResponse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>";
+            return Content(errorResponse, "application/xml");
+        }
+    }
+
     #region Request/Response Models
 
     /// <summary>
@@ -330,6 +570,7 @@ public class NotificationsController : ControllerBase
     public class UpdatePreferencesRequest
     {
         public bool EmailEnabled { get; set; } = true;
+        public bool SmsEnabled { get; set; } = false;
         public List<MilestonePreference> Milestones { get; set; } = new();
         public string Frequency { get; set; } = "Immediate";
     }
@@ -341,6 +582,8 @@ public class NotificationsController : ControllerBase
     {
         public string Type { get; set; } = string.Empty;
         public bool Enabled { get; set; } = true;
+        public bool EmailEnabled { get; set; } = true;
+        public bool SmsEnabled { get; set; } = false;
         public int? NotifyBefore { get; set; }
     }
 
@@ -377,6 +620,80 @@ public class NotificationsController : ControllerBase
     {
         public string Status { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for phone verification
+    /// </summary>
+    public class PhoneVerificationRequest
+    {
+        public string PhoneNumber { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Response model for phone verification
+    /// </summary>
+    public class PhoneVerificationResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for verifying phone number
+    /// </summary>
+    public class VerifyPhoneRequest
+    {
+        public string VerificationToken { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Response model for phone verification
+    /// </summary>
+    public class VerifyPhoneResponse
+    {
+        public bool Success { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public DateTime VerifiedAt { get; set; }
+    }
+
+    /// <summary>
+    /// Response model for SMS notification history
+    /// </summary>
+    public class SmsNotificationResponse
+    {
+        public Guid Id { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int DeliveryAttempts { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastAttemptAt { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+        public string? ErrorMessage { get; set; }
+        public decimal? Cost { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for Twilio webhook updates
+    /// </summary>
+    public class TwilioWebhookRequest
+    {
+        public string MessageSid { get; set; } = string.Empty;
+        public string MessageStatus { get; set; } = string.Empty;
+        public string? ErrorCode { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for Twilio inbound SMS webhook
+    /// </summary>
+    public class TwilioInboundSmsRequest
+    {
+        public string? From { get; set; }
+        public string? Body { get; set; }
+        public string? MessageSid { get; set; }
     }
 
     #endregion

@@ -64,6 +64,16 @@ public class ColorGarbDbContext : DbContext
     public DbSet<EmailNotification> EmailNotifications => Set<EmailNotification>();
 
     /// <summary>
+    /// SMS notifications dataset - tracks SMS delivery status and audit trail
+    /// </summary>
+    public DbSet<SmsNotification> SmsNotifications => Set<SmsNotification>();
+
+    /// <summary>
+    /// Phone verifications dataset - tracks phone number verification for SMS opt-in
+    /// </summary>
+    public DbSet<PhoneVerification> PhoneVerifications => Set<PhoneVerification>();
+
+    /// <summary>
     /// Configures entity relationships and constraints
     /// </summary>
     /// <param name="modelBuilder">Entity Framework model builder</param>
@@ -177,6 +187,7 @@ public class ColorGarbDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.UnsubscribeToken).IsUnique();
+            entity.HasIndex(e => e.PhoneNumber);
             entity.HasIndex(e => new { e.UserId, e.IsActive });
 
             // Configure relationship with User
@@ -206,6 +217,47 @@ public class ColorGarbDbContext : DbContext
             entity.HasOne(e => e.Order)
                   .WithMany()
                   .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure SmsNotification entity
+        modelBuilder.Entity<SmsNotification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.PhoneNumber);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.TwilioMessageSid).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.Status });
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Order
+            entity.HasOne(e => e.Order)
+                  .WithMany()
+                  .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure PhoneVerification entity
+        modelBuilder.Entity<PhoneVerification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.PhoneNumber);
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasIndex(e => new { e.UserId, e.IsVerified });
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -369,6 +421,16 @@ public class ColorGarbDbContext : DbContext
             {
                 if (entry.State == EntityState.Added)
                     notification.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is SmsNotification smsNotification)
+            {
+                if (entry.State == EntityState.Added)
+                    smsNotification.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is PhoneVerification phoneVerification)
+            {
+                if (entry.State == EntityState.Added)
+                    phoneVerification.CreatedAt = DateTime.UtcNow;
             }
         }
     }

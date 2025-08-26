@@ -65,4 +65,45 @@ public interface IEmailService
         DateTime previousShipDate,
         DateTime newShipDate,
         string reason);
+
+    /// <summary>
+    /// Sends a templated email notification with dynamic data substitution.
+    /// </summary>
+    /// <param name="templateName">Name of the email template to use</param>
+    /// <param name="recipient">Email address of the recipient</param>
+    /// <param name="templateData">Dynamic data for template substitution</param>
+    /// <returns>EmailNotification record with delivery tracking information</returns>
+    /// <exception cref="ArgumentException">Thrown when template name is invalid</exception>
+    /// <exception cref="ArgumentNullException">Thrown when required parameters are null</exception>
+    Task<Models.Entities.EmailNotification> SendTemplatedEmailAsync(string templateName, string recipient, object templateData);
+
+    /// <summary>
+    /// Sends a milestone-based notification email based on user preferences.
+    /// </summary>
+    /// <param name="userId">Unique identifier of the user</param>
+    /// <param name="orderId">Unique identifier of the order</param>
+    /// <param name="milestone">Milestone type that triggered the notification</param>
+    /// <returns>EmailNotification record if sent, null if user has notifications disabled</returns>
+    /// <exception cref="ArgumentException">Thrown when parameters are invalid</exception>
+    Task<Models.Entities.EmailNotification?> SendMilestoneNotificationAsync(string userId, string orderId, string milestone);
+
+    /// <summary>
+    /// Updates the delivery status of an email notification for tracking purposes.
+    /// </summary>
+    /// <param name="notificationId">Unique identifier of the email notification</param>
+    /// <param name="status">Updated delivery status</param>
+    /// <param name="errorMessage">Error message for failed deliveries (optional)</param>
+    /// <returns>True if status was updated successfully</returns>
+    /// <exception cref="ArgumentException">Thrown when notificationId is invalid</exception>
+    Task<bool> UpdateDeliveryStatusAsync(string notificationId, string status, string? errorMessage = null);
+
+    /// <summary>
+    /// Retrieves email notification history for a specific user.
+    /// </summary>
+    /// <param name="userId">Unique identifier of the user</param>
+    /// <param name="page">Page number for pagination (1-based)</param>
+    /// <param name="pageSize">Number of records per page</param>
+    /// <returns>List of EmailNotification records for the user</returns>
+    /// <exception cref="ArgumentException">Thrown when parameters are invalid</exception>
+    Task<List<Models.Entities.EmailNotification>> GetNotificationHistoryAsync(string userId, int page = 1, int pageSize = 50);
 }

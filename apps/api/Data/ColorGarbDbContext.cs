@@ -54,6 +54,16 @@ public class ColorGarbDbContext : DbContext
     public DbSet<RoleAccessAudit> RoleAccessAudits => Set<RoleAccessAudit>();
 
     /// <summary>
+    /// Notification preferences dataset - tracks user email notification preferences
+    /// </summary>
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
+    /// <summary>
+    /// Email notifications dataset - tracks email delivery status and audit trail
+    /// </summary>
+    public DbSet<EmailNotification> EmailNotifications => Set<EmailNotification>();
+
+    /// <summary>
     /// Configures entity relationships and constraints
     /// </summary>
     /// <param name="modelBuilder">Entity Framework model builder</param>
@@ -159,6 +169,44 @@ public class ColorGarbDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.OrganizationId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure NotificationPreference entity
+        modelBuilder.Entity<NotificationPreference>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.UnsubscribeToken).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.IsActive });
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure EmailNotification entity
+        modelBuilder.Entity<EmailNotification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => new { e.UserId, e.Status });
+
+            // Configure relationship with User
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Order
+            entity.HasOne(e => e.Order)
+                  .WithMany()
+                  .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Seed initial data for development
@@ -310,6 +358,17 @@ public class ColorGarbDbContext : DbContext
             {
                 if (entry.State == EntityState.Added && stageHistory.EnteredAt == default)
                     stageHistory.EnteredAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is NotificationPreference preference)
+            {
+                if (entry.State == EntityState.Added)
+                    preference.CreatedAt = DateTime.UtcNow;
+                preference.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is EmailNotification notification)
+            {
+                if (entry.State == EntityState.Added)
+                    notification.CreatedAt = DateTime.UtcNow;
             }
         }
     }

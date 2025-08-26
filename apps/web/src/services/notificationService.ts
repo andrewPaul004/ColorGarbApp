@@ -3,6 +3,8 @@ import { apiClient } from './apiClient';
 interface NotificationMilestone {
   type: string;
   enabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
   notifyBefore?: number;
 }
 
@@ -10,6 +12,10 @@ interface NotificationPreference {
   id: string;
   userId: string;
   emailEnabled: boolean;
+  smsEnabled: boolean;
+  phoneNumber?: string;
+  phoneVerified: boolean;
+  phoneVerifiedAt?: string;
   milestonesJson: string;
   frequency: string;
   isActive: boolean;
@@ -29,6 +35,7 @@ interface NotificationPreferencesResponse {
 
 interface UpdatePreferencesRequest {
   emailEnabled: boolean;
+  smsEnabled: boolean;
   frequency: string;
   milestones: NotificationMilestone[];
 }
@@ -43,6 +50,39 @@ interface EmailNotification {
   lastAttemptAt?: string;
   deliveredAt?: string;
   errorMessage?: string;
+}
+
+interface SmsNotification {
+  id: string;
+  phoneNumber: string;
+  message: string;
+  status: string;
+  deliveryAttempts: number;
+  createdAt: string;
+  lastAttemptAt?: string;
+  deliveredAt?: string;
+  errorMessage?: string;
+  cost?: number;
+}
+
+interface PhoneVerificationRequest {
+  phoneNumber: string;
+}
+
+interface PhoneVerificationResponse {
+  success: boolean;
+  message: string;
+  expiresAt: string;
+}
+
+interface VerifyPhoneRequest {
+  verificationToken: string;
+}
+
+interface VerifyPhoneResponse {
+  success: boolean;
+  phoneNumber: string;
+  verifiedAt: string;
 }
 
 interface UnsubscribeResponse {
@@ -160,6 +200,56 @@ class NotificationService {
   }
 
   /**
+   * Sends a verification code to a phone number for SMS opt-in verification
+   */
+  async sendPhoneVerification(userId: string, phoneNumber: string): Promise<PhoneVerificationResponse> {
+    try {
+      const response = await apiClient.post<PhoneVerificationResponse>(
+        `${this.baseUrl}/users/${userId}/phone/verify`,
+        { phoneNumber }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to send phone verification:', error);
+      throw new Error(this.getErrorMessage(error, 'Failed to send verification code'));
+    }
+  }
+
+  /**
+   * Verifies a phone number using the provided verification token
+   */
+  async verifyPhoneNumber(userId: string, verificationToken: string): Promise<VerifyPhoneResponse> {
+    try {
+      const response = await apiClient.put<VerifyPhoneResponse>(
+        `${this.baseUrl}/users/${userId}/phone/verify`,
+        { verificationToken }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to verify phone number:', error);
+      throw new Error(this.getErrorMessage(error, 'Failed to verify phone number'));
+    }
+  }
+
+  /**
+   * Retrieves SMS notification history for a specific user
+   */
+  async getSmsHistory(userId: string, page = 1, pageSize = 50): Promise<SmsNotification[]> {
+    try {
+      const response = await apiClient.get<SmsNotification[]>(
+        `${this.baseUrl}/users/${userId}/sms-history`,
+        {
+          params: { page, pageSize }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get SMS history:', error);
+      throw new Error(this.getErrorMessage(error, 'Failed to load SMS history'));
+    }
+  }
+
+  /**
    * Validates notification preferences before saving
    */
   validatePreferences(preferences: UpdatePreferencesRequest): { isValid: boolean; errors: string[] } {
@@ -180,6 +270,12 @@ class NotificationService {
         }
         if (typeof milestone.enabled !== 'boolean') {
           errors.push(`Milestone ${index + 1}: Enabled must be a boolean`);
+        }
+        if (typeof milestone.emailEnabled !== 'boolean') {
+          errors.push(`Milestone ${index + 1}: Email enabled must be a boolean`);
+        }
+        if (typeof milestone.smsEnabled !== 'boolean') {
+          errors.push(`Milestone ${index + 1}: SMS enabled must be a boolean`);
         }
         if (milestone.notifyBefore && (milestone.notifyBefore < 1 || milestone.notifyBefore > 168)) {
           errors.push(`Milestone ${index + 1}: Notify before must be between 1 and 168 hours`);
@@ -249,6 +345,92 @@ class NotificationService {
       default:
         return 'Unknown status';
     }
+  }
+
+  /**
+   * Gets the status color for SMS delivery status
+   */
+  getSmsStatusColor(status: string): 'success' | 'error' | 'warning' | 'info' {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+        return 'success';
+      case 'failed':
+      case 'undelivered':
+        return 'error';
+      case 'pending':
+      case 'queued':
+        return 'warning';
+      case 'sent':
+        return 'info';
+      default:
+        return 'info';
+    }
+  }
+
+  /**
+   * Gets a human-readable status message for SMS delivery
+   */
+  getSmsStatusMessage(notification: SmsNotification): string {
+    switch (notification.status?.toLowerCase()) {
+      case 'delivered':
+        return `Delivered ${this.formatDate(notification.deliveredAt)}`;
+      case 'sent':
+        return `Sent ${this.formatDate(notification.createdAt)}`;
+      case 'failed':
+        return `Failed: ${notification.errorMessage || 'Unknown error'}`;
+      case 'undelivered':
+        return 'SMS not delivered - invalid number or network issue';
+      case 'pending':
+        return 'Pending delivery';
+      case 'queued':
+        return 'Queued for delivery';
+      default:
+        return 'Unknown status';
+    }
+  }
+
+  /**
+   * Validates phone number format
+   */
+  validatePhoneNumber(phoneNumber: string): { isValid: boolean; error?: string } {
+    if (!phoneNumber) {
+      return { isValid: false, error: 'Phone number is required' };
+    }
+
+    // Basic phone number validation - should be E.164 format or US format
+    const e164Pattern = /^\+[1-9]\d{1,14}$/;
+    const usPattern = /^(?:\+1)?[2-9]\d{2}[2-9]\d{2}\d{4}$/;
+    
+    if (!e164Pattern.test(phoneNumber) && !usPattern.test(phoneNumber.replace(/\D/g, ''))) {
+      return { 
+        isValid: false, 
+        error: 'Please enter a valid phone number (e.g., +1234567890 or 234-567-8901)' 
+      };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Formats phone number for display
+   */
+  formatPhoneNumber(phoneNumber: string): string {
+    if (!phoneNumber) return '';
+    
+    // Remove all non-digits
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    
+    // US number formatting
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    
+    // International format - just add + if not present
+    return phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
   }
 
   /**

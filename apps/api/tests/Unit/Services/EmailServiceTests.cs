@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using ColorGarbApi.Services;
+using ColorGarbApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ColorGarbApi.Tests.Unit.Services;
 
@@ -13,18 +15,32 @@ public class EmailServiceTests
 {
     private readonly Mock<ILogger<EmailService>> _mockLogger;
     private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ColorGarbDbContext> _mockContext;
+    private readonly Mock<INotificationPreferenceService> _mockNotificationService;
     private readonly EmailService _emailService;
 
     public EmailServiceTests()
     {
         _mockLogger = new Mock<ILogger<EmailService>>();
         _mockConfiguration = new Mock<IConfiguration>();
+        
+        // Setup in-memory database for testing
+        var options = new DbContextOptionsBuilder<ColorGarbDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _mockContext = new Mock<ColorGarbDbContext>(options);
+        
+        _mockNotificationService = new Mock<INotificationPreferenceService>();
 
         // Setup configuration
         _mockConfiguration.Setup(x => x["Frontend:BaseUrl"])
             .Returns("https://portal.colorgarb.com");
 
-        _emailService = new EmailService(_mockLogger.Object, _mockConfiguration.Object);
+        _emailService = new EmailService(
+            _mockLogger.Object, 
+            _mockConfiguration.Object, 
+            _mockContext.Object, 
+            _mockNotificationService.Object);
     }
 
     /// <summary>
@@ -217,7 +233,11 @@ public class EmailServiceTests
                     throw new InvalidOperationException("Logger error");
             });
 
-        var badEmailService = new EmailService(mockBadLogger.Object, _mockConfiguration.Object);
+        var badEmailService = new EmailService(
+            mockBadLogger.Object, 
+            _mockConfiguration.Object, 
+            _mockContext.Object, 
+            _mockNotificationService.Object);
 
         var email = "test@theater.com";
         var organizationName = "Test Theater";

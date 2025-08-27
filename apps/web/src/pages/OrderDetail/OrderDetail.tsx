@@ -9,7 +9,9 @@ import { ContactInfo } from './components/ContactInfo';
 import { QuickActions } from './components/QuickActions';
 import { Breadcrumb, type BreadcrumbItem } from '../../components/common/Breadcrumb';
 import { StageDetailModal } from '../../components/timeline/StageDetailModal';
-import type { OrderStage, StageHistory, OrderDetail } from '@colorgarb/shared';
+import { MessageCenter } from '../../components/messages/MessageCenter';
+import messageService from '../../services/messageService';
+import type { OrderStage, StageHistory, OrderDetail, Message } from '@colorgarb/shared';
 
 /**
  * Order detail workspace page that displays comprehensive order information
@@ -33,6 +35,24 @@ export const OrderDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [stageModalOpen, setStageModalOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState<OrderStage | null>(null);
+  const [messageCenterOpen, setMessageCenterOpen] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+
+  /**
+   * Loads unread message count for the order.
+   */
+  const loadUnreadMessageCount = async (orderIdToLoad: string) => {
+    try {
+      const messageResponse = await messageService.getOrderMessages(orderIdToLoad, { 
+        page: 1, 
+        pageSize: 1 // Just need the count, not the messages
+      });
+      setUnreadMessageCount(messageResponse.unreadCount);
+    } catch (err) {
+      console.error('Error loading unread message count:', err);
+      // Don't set error state, just log - messages are not critical for order display
+    }
+  };
 
   /**
    * Loads order detail data from the API.
@@ -50,6 +70,9 @@ export const OrderDetail: React.FC = () => {
         setError(null);
         const detail = await fetchOrder(orderId);
         setOrderDetail(detail);
+        
+        // Load unread message count after order is loaded
+        await loadUnreadMessageCount(orderId);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load order details';
         setError(errorMessage);
@@ -249,12 +272,26 @@ export const OrderDetail: React.FC = () => {
   };
 
   /**
-   * Handles view messages action.
+   * Handles view messages action - opens the message center.
    */
   const handleViewMessages = () => {
     console.log('View messages clicked for order:', orderId);
-    // Future implementation: Navigate to messages page or open messages panel
-    alert('View Messages functionality will be implemented in a future story.');
+    setMessageCenterOpen(true);
+  };
+
+  /**
+   * Handles message center close.
+   */
+  const handleMessageCenterClose = () => {
+    setMessageCenterOpen(false);
+  };
+
+  /**
+   * Handles when new messages are sent to update unread count.
+   */
+  const handleMessageSent = (message: Message) => {
+    console.log('New message sent:', message);
+    // Optionally refresh order data or handle real-time updates
   };
 
   /**
@@ -389,6 +426,7 @@ export const OrderDetail: React.FC = () => {
         <QuickActions
           orderId={orderDetail.id}
           currentStage={orderDetail.currentStage}
+          unreadMessageCount={unreadMessageCount}
           onSubmitMeasurements={handleSubmitMeasurements}
           onViewMessages={handleViewMessages}
           onUploadDocuments={handleUploadDocuments}
@@ -425,6 +463,17 @@ export const OrderDetail: React.FC = () => {
         stageHistory={selectedStage && orderDetail ? findStageHistory(selectedStage, orderDetail) : undefined}
         status={selectedStage && orderDetail ? getStageStatus(selectedStage, orderDetail) : 'pending'}
       />
+
+      {/* Message Center */}
+      {orderId && (
+        <MessageCenter
+          orderId={orderId}
+          open={messageCenterOpen}
+          onClose={handleMessageCenterClose}
+          orderNumber={orderDetail.orderNumber}
+          orderDescription={orderDetail.description}
+        />
+      )}
     </Container>
   );
 };

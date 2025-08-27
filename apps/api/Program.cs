@@ -61,6 +61,10 @@ builder.Services.AddHttpClient<ProductionTrackingService>();
 // Register production tracking service
 builder.Services.AddScoped<IProductionTrackingService, ProductionTrackingService>();
 
+// Register message services
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ColorGarbApi";

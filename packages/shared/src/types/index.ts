@@ -13,6 +13,9 @@ export type { UserInfo } from './auth';
 // Export order types
 export * from './order';
 
+// Export message types
+export * from './message';
+
 /**
  * Organization interface for client entities
  * @interface Organization

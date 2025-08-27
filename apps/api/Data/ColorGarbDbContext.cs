@@ -74,6 +74,16 @@ public class ColorGarbDbContext : DbContext
     public DbSet<PhoneVerification> PhoneVerifications => Set<PhoneVerification>();
 
     /// <summary>
+    /// Messages dataset - tracks order-specific communication between clients and staff
+    /// </summary>
+    public DbSet<Message> Messages => Set<Message>();
+
+    /// <summary>
+    /// Message attachments dataset - tracks files attached to order messages
+    /// </summary>
+    public DbSet<MessageAttachment> MessageAttachments => Set<MessageAttachment>();
+
+    /// <summary>
     /// Configures entity relationships and constraints
     /// </summary>
     /// <param name="modelBuilder">Entity Framework model builder</param>
@@ -261,6 +271,61 @@ public class ColorGarbDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Configure Message entity
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.SenderId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.IsRead);
+            entity.HasIndex(e => new { e.OrderId, e.CreatedAt });
+            entity.HasIndex(e => new { e.OrderId, e.IsRead });
+
+            // Configure full-text search capability for message content
+            entity.HasIndex(e => e.Content);
+
+            // Configure relationship with Order
+            entity.HasOne(e => e.Order)
+                  .WithMany(e => e.Messages)
+                  .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Sender
+            entity.HasOne(e => e.Sender)
+                  .WithMany()
+                  .HasForeignKey(e => e.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure self-referencing relationship for replies
+            entity.HasOne(e => e.ReplyToMessage)
+                  .WithMany(e => e.Replies)
+                  .HasForeignKey(e => e.ReplyToMessageId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure MessageAttachment entity
+        modelBuilder.Entity<MessageAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MessageId);
+            entity.HasIndex(e => e.UploadedBy);
+            entity.HasIndex(e => e.UploadedAt);
+            entity.HasIndex(e => e.OriginalFileName);
+
+            // Configure relationship with Message
+            entity.HasOne(e => e.Message)
+                  .WithMany(e => e.Attachments)
+                  .HasForeignKey(e => e.MessageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with UploadedBy User
+            entity.HasOne(e => e.UploadedByUser)
+                  .WithMany()
+                  .HasForeignKey(e => e.UploadedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Seed initial data for development
         SeedInitialData(modelBuilder);
     }
@@ -431,6 +496,17 @@ public class ColorGarbDbContext : DbContext
             {
                 if (entry.State == EntityState.Added)
                     phoneVerification.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is Message message)
+            {
+                if (entry.State == EntityState.Added)
+                    message.CreatedAt = DateTime.UtcNow;
+                message.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is MessageAttachment messageAttachment)
+            {
+                if (entry.State == EntityState.Added)
+                    messageAttachment.UploadedAt = DateTime.UtcNow;
             }
         }
     }

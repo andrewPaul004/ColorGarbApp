@@ -59,7 +59,6 @@ public class NotificationDeliveryLog
     /// <summary>
     /// Raw webhook data from the provider stored as JSON
     /// </summary>
-    [Column(TypeName = "nvarchar(max)")]
     public string? WebhookData { get; set; }
 
     /// <summary>

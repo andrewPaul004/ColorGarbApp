@@ -197,10 +197,10 @@ public class CommunicationExportService : ICommunicationExportService
             document.Open();
 
             // Define fonts
-            var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.BLACK);
-            var headingFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
-            var normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 12, BaseColor.BLACK);
-            var smallFont = FontFactory.GetFont(FontFactory.HELVETICA, 10, BaseColor.GRAY);
+            var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.Black);
+            var headingFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.Black);
+            var normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 12, BaseColor.Black);
+            var smallFont = FontFactory.GetFont(FontFactory.HELVETICA, 10, BaseColor.Gray);
 
             // Title
             var reportTitle = request.ReportTitle ?? "Communication Compliance Report";
@@ -215,16 +215,16 @@ public class CommunicationExportService : ICommunicationExportService
             var metaTable = new PdfPTable(2) { WidthPercentage = 100 };
             metaTable.SetWidths(new float[] { 30, 70 });
             
-            metaTable.AddCell(CreateCell("Organization ID:", normalFont, BaseColor.LIGHT_GRAY));
+            metaTable.AddCell(CreateCell("Organization ID:", normalFont, BaseColor.LightGray));
             metaTable.AddCell(CreateCell(request.OrganizationId.ToString(), normalFont));
             
-            metaTable.AddCell(CreateCell("Report Period:", normalFont, BaseColor.LIGHT_GRAY));
+            metaTable.AddCell(CreateCell("Report Period:", normalFont, BaseColor.LightGray));
             metaTable.AddCell(CreateCell($"{request.DateFrom:yyyy-MM-dd} to {request.DateTo:yyyy-MM-dd}", normalFont));
             
-            metaTable.AddCell(CreateCell("Generated:", normalFont, BaseColor.LIGHT_GRAY));
+            metaTable.AddCell(CreateCell("Generated:", normalFont, BaseColor.LightGray));
             metaTable.AddCell(CreateCell(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC"), normalFont));
             
-            metaTable.AddCell(CreateCell("Total Communications:", normalFont, BaseColor.LIGHT_GRAY));
+            metaTable.AddCell(CreateCell("Total Communications:", normalFont, BaseColor.LightGray));
             metaTable.AddCell(CreateCell(summary.TotalCommunications.ToString(), normalFont));
 
             metaTable.SpacingAfter = 20;
@@ -245,9 +245,9 @@ public class CommunicationExportService : ICommunicationExportService
                 statusTable.SetWidths(new float[] { 40, 30, 30 });
 
                 // Headers
-                statusTable.AddCell(CreateCell("Status", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
-                statusTable.AddCell(CreateCell("Count", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
-                statusTable.AddCell(CreateCell("Percentage", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
+                statusTable.AddCell(CreateCell("Status", headingFont, BaseColor.DarkGray, BaseColor.White));
+                statusTable.AddCell(CreateCell("Count", headingFont, BaseColor.DarkGray, BaseColor.White));
+                statusTable.AddCell(CreateCell("Percentage", headingFont, BaseColor.DarkGray, BaseColor.White));
 
                 foreach (var status in summary.StatusCounts.OrderByDescending(x => x.Value))
                 {
@@ -257,9 +257,9 @@ public class CommunicationExportService : ICommunicationExportService
 
                     var bgColor = status.Key.ToLower() switch
                     {
-                        "delivered" => BaseColor.LIGHT_GRAY,
+                        "delivered" => BaseColor.LightGray,
                         "failed" or "bounced" => new BaseColor(255, 230, 230),
-                        _ => BaseColor.WHITE
+                        _ => BaseColor.White
                     };
 
                     statusTable.AddCell(CreateCell(status.Key, normalFont, bgColor));
@@ -285,9 +285,9 @@ public class CommunicationExportService : ICommunicationExportService
                 typeTable.SetWidths(new float[] { 40, 30, 30 });
 
                 // Headers
-                typeTable.AddCell(CreateCell("Type", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
-                typeTable.AddCell(CreateCell("Count", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
-                typeTable.AddCell(CreateCell("Percentage", headingFont, BaseColor.DARK_GRAY, BaseColor.WHITE));
+                typeTable.AddCell(CreateCell("Type", headingFont, BaseColor.DarkGray, BaseColor.White));
+                typeTable.AddCell(CreateCell("Count", headingFont, BaseColor.DarkGray, BaseColor.White));
+                typeTable.AddCell(CreateCell("Percentage", headingFont, BaseColor.DarkGray, BaseColor.White));
 
                 foreach (var type in summary.TypeCounts.OrderByDescending(x => x.Value))
                 {
@@ -327,10 +327,10 @@ public class CommunicationExportService : ICommunicationExportService
                                   successRate >= 85 ? new BaseColor(255, 255, 230) : 
                                   new BaseColor(255, 230, 230);
 
-                analysisTable.AddCell(CreateCell("Success Rate:", normalFont, BaseColor.LIGHT_GRAY));
+                analysisTable.AddCell(CreateCell("Success Rate:", normalFont, BaseColor.LightGray));
                 analysisTable.AddCell(CreateCell($"{successRate:F2}%", normalFont, successColor));
                 
-                analysisTable.AddCell(CreateCell("Failed Communications:", normalFont, BaseColor.LIGHT_GRAY));
+                analysisTable.AddCell(CreateCell("Failed Communications:", normalFont, BaseColor.LightGray));
                 analysisTable.AddCell(CreateCell(failedCount.ToString(), normalFont));
 
                 document.Add(analysisTable);
@@ -835,7 +835,7 @@ public class CommunicationExportService : ICommunicationExportService
             Padding = 8,
             Border = PdfPCell.BOX,
             BorderWidth = 0.5f,
-            BorderColor = BaseColor.GRAY
+            BorderColor = BaseColor.Gray
         };
 
         if (backgroundColor != null)

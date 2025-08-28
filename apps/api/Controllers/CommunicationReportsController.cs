@@ -393,12 +393,3 @@ public class ValidationResult
     public List<string> Errors { get; set; } = new();
 }
 
-/// <summary>
-/// Export file information for downloads.
-/// </summary>
-public class ExportFileInfo
-{
-    public byte[] Data { get; set; } = Array.Empty<byte>();
-    public string ContentType { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-}

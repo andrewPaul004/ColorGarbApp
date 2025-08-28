@@ -336,7 +336,7 @@ public class EmailService : IEmailService
             _logger.LogDebug("Email content: {Content}", emailContent);
 
             // Log to communication audit trail
-            if (notification.OrderId.HasValue)
+            if (notification.OrderId != Guid.Empty)
             {
                 await LogEmailCommunicationAsync(
                     recipient,

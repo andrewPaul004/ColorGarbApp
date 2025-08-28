@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ColorGarbApi.Migrations
 {
     [DbContext(typeof(ColorGarbDbContext))]
-    [Migration("20250826152200_AddSmsNotificationSystem")]
-    partial class AddSmsNotificationSystem
+    [Migration("20250828162808_InitialSqlServerMigration")]
+    partial class InitialSqlServerMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,117 @@ namespace ColorGarbApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.CommunicationLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommunicationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ExternalMessageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RecipientEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid?>("RecipientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RecipientPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TemplateUsed")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunicationType");
+
+                    b.HasIndex("DeliveredAt");
+
+                    b.HasIndex("DeliveryStatus");
+
+                    b.HasIndex("ExternalMessageId")
+                        .IsUnique()
+                        .HasFilter("[ExternalMessageId] IS NOT NULL");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ReadAt");
+
+                    b.HasIndex("RecipientEmail");
+
+                    b.HasIndex("RecipientId");
+
+                    b.HasIndex("RecipientPhone");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("SentAt");
+
+                    b.HasIndex("Subject");
+
+                    b.HasIndex("CommunicationType", "DeliveryStatus");
+
+                    b.HasIndex("OrderId", "SentAt");
+
+                    b.HasIndex("SenderId", "SentAt");
+
+                    b.ToTable("CommunicationLogs");
+                });
 
             modelBuilder.Entity("ColorGarbApi.Models.Entities.EmailNotification", b =>
                 {
@@ -86,6 +197,251 @@ namespace ColorGarbApi.Migrations
                     b.HasIndex("UserId", "Status");
 
                     b.ToTable("EmailNotifications");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RecipientRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("ReplyToMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsRead");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ReplyToMessageId");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("OrderId", "CreatedAt");
+
+                    b.HasIndex("OrderId", "IsRead");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("OriginalFileName");
+
+                    b.HasIndex("UploadedAt");
+
+                    b.HasIndex("UploadedBy");
+
+                    b.ToTable("MessageAttachments");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageAuditTrail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IpAddress");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique();
+
+                    b.ToTable("MessageAuditTrails");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageEdit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangeReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("EditedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EditedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MessageAuditTrailId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PreviousContent")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EditedAt");
+
+                    b.HasIndex("EditedBy");
+
+                    b.HasIndex("MessageAuditTrailId");
+
+                    b.HasIndex("MessageAuditTrailId", "EditedAt");
+
+                    b.ToTable("MessageEdits");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.NotificationDeliveryLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CommunicationLogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DeliveryProvider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StatusDetails")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("WebhookData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunicationLogId");
+
+                    b.HasIndex("DeliveryProvider");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UpdatedAt");
+
+                    b.HasIndex("CommunicationLogId", "UpdatedAt");
+
+                    b.HasIndex("DeliveryProvider", "Status");
+
+                    b.ToTable("NotificationDeliveryLogs");
                 });
 
             modelBuilder.Entity("ColorGarbApi.Models.Entities.NotificationPreference", b =>
@@ -701,6 +1057,36 @@ namespace ColorGarbApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.CommunicationLog", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.Entities.Message", null)
+                        .WithMany("CommunicationLogs")
+                        .HasForeignKey("MessageId");
+
+                    b.HasOne("ColorGarbApi.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ColorGarbApi.Models.User", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ColorGarbApi.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Recipient");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("ColorGarbApi.Models.Entities.EmailNotification", b =>
                 {
                     b.HasOne("ColorGarbApi.Models.Order", "Order")
@@ -718,6 +1104,92 @@ namespace ColorGarbApi.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.Message", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.Order", "Order")
+                        .WithMany("Messages")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ColorGarbApi.Models.Entities.Message", "ReplyToMessage")
+                        .WithMany("Replies")
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ColorGarbApi.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("ReplyToMessage");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageAttachment", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.Entities.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ColorGarbApi.Models.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("UploadedByUser");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageAuditTrail", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.Entities.Message", "Message")
+                        .WithOne("AuditTrail")
+                        .HasForeignKey("ColorGarbApi.Models.Entities.MessageAuditTrail", "MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageEdit", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.User", "Editor")
+                        .WithMany()
+                        .HasForeignKey("EditedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ColorGarbApi.Models.Entities.MessageAuditTrail", "MessageAuditTrail")
+                        .WithMany("EditHistory")
+                        .HasForeignKey("MessageAuditTrailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Editor");
+
+                    b.Navigation("MessageAuditTrail");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.NotificationDeliveryLog", b =>
+                {
+                    b.HasOne("ColorGarbApi.Models.Entities.CommunicationLog", "CommunicationLog")
+                        .WithMany("DeliveryLogs")
+                        .HasForeignKey("CommunicationLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CommunicationLog");
                 });
 
             modelBuilder.Entity("ColorGarbApi.Models.Entities.NotificationPreference", b =>
@@ -821,8 +1293,31 @@ namespace ColorGarbApi.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.CommunicationLog", b =>
+                {
+                    b.Navigation("DeliveryLogs");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.Message", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("AuditTrail");
+
+                    b.Navigation("CommunicationLogs");
+
+                    b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("ColorGarbApi.Models.Entities.MessageAuditTrail", b =>
+                {
+                    b.Navigation("EditHistory");
+                });
+
             modelBuilder.Entity("ColorGarbApi.Models.Order", b =>
                 {
+                    b.Navigation("Messages");
+
                     b.Navigation("StageHistory");
                 });
 

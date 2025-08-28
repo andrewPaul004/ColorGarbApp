@@ -302,8 +302,8 @@ public class ColorGarbDbContext : DbContext
             entity.HasIndex(e => new { e.OrderId, e.CreatedAt });
             entity.HasIndex(e => new { e.OrderId, e.IsRead });
 
-            // Configure full-text search capability for message content
-            entity.HasIndex(e => e.Content);
+            // Configure Content column to use nvarchar(max) for SQL Server
+            entity.Property(e => e.Content).HasColumnType("nvarchar(max)");
 
             // Configure relationship with Order
             entity.HasOne(e => e.Order)
@@ -363,8 +363,10 @@ public class ColorGarbDbContext : DbContext
             entity.HasIndex(e => new { e.SenderId, e.SentAt });
             entity.HasIndex(e => new { e.CommunicationType, e.DeliveryStatus });
 
-            // Configure full-text search capability for communication content
-            entity.HasIndex(e => e.Content);
+            // Configure Content column to use nvarchar(max) for SQL Server
+            entity.Property(e => e.Content).HasColumnType("nvarchar(max)");
+
+            // Configure indexes (excluding Content which is nvarchar(max))
             entity.HasIndex(e => e.Subject);
             entity.HasIndex(e => e.RecipientEmail);
             entity.HasIndex(e => e.RecipientPhone);

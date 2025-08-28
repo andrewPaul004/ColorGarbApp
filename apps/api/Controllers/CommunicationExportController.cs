@@ -165,12 +165,12 @@ public class CommunicationExportController : ControllerBase
             }
 
             // Validate date range
-            if (request.From >= request.To)
+            if (request.DateFrom >= request.DateTo)
             {
-                return BadRequest("Invalid date range: From date must be before To date");
+                return BadRequest("Invalid date range: DateFrom must be before DateTo");
             }
 
-            if ((request.To - request.From).TotalDays > 365)
+            if ((request.DateTo - request.DateFrom).TotalDays > 365)
             {
                 return BadRequest("Date range cannot exceed 365 days");
             }
@@ -285,7 +285,7 @@ public class CommunicationExportController : ControllerBase
                 return BadRequest(string.Join("; ", validationErrors));
             }
 
-            var result = await _exportService.QueueLargeExportAsync(request, format);
+            var result = await _exportService.QueueExportAsync(request, format);
             
             return Accepted(result);
         }

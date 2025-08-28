@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using ColorGarbApi.Models;
 using ColorGarbApi.Models.Entities;
+using ColorGarbApi.Controllers;
 using Microsoft.Extensions.Logging;
 using CsvHelper;
 using OfficeOpenXml;
@@ -240,14 +241,14 @@ public class CommunicationExportServiceV2 : ICommunicationExportService
             var searchCriteria = new CommunicationAuditSearchRequest
             {
                 OrganizationId = request.OrganizationId,
-                DateFrom = request.From.DateTime,
-                DateTo = request.To.DateTime,
+                DateFrom = request.DateFrom,
+                DateTo = request.DateTo,
                 PageSize = 10000
             };
 
             var result = await _auditService.SearchCommunicationLogsAsync(searchCriteria);
             var summary = await _auditService.GetDeliveryStatusSummaryAsync(
-                request.OrganizationId, request.From, request.To);
+                request.OrganizationId, new DateTimeOffset(request.DateFrom), new DateTimeOffset(request.DateTo));
 
             // Simple PDF generation using System.Text approach
             // In a real implementation, you'd use a proper PDF library like iTextSharp or PdfSharpCore
@@ -293,7 +294,7 @@ public class CommunicationExportServiceV2 : ICommunicationExportService
     }
 
     /// <inheritdoc />
-    public async Task<ExportCommunicationResult> QueueLargeExportAsync(
+    public async Task<ExportCommunicationResult> QueueExportAsync(
         ExportCommunicationRequest request, string format)
     {
         try
@@ -311,13 +312,104 @@ public class CommunicationExportServiceV2 : ICommunicationExportService
                 JobId = jobId,
                 Status = "Processing",
                 EstimatedSize = estimatedCount * 1024, // Rough estimate
-                RecordCount = estimatedCount
+                RecordCount = estimatedCount,
+                Format = format,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error queuing large export");
             throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ExportCommunicationResult?> GetExportStatusAsync(string jobId)
+    {
+        try
+        {
+            _logger.LogInformation("Retrieving export status for job {JobId}", jobId);
+
+            // In a real implementation, this would check job status from a queue/database
+            // For now, return a mock completed status
+            await Task.CompletedTask;
+            return new ExportCommunicationResult
+            {
+                JobId = jobId,
+                Status = "Completed",
+                EstimatedSize = 2048,
+                RecordCount = 100,
+                Format = "CSV",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
+                CompletedAt = DateTime.UtcNow.AddMinutes(-5),
+                ProgressPercentage = 100,
+                DownloadUrl = $"/api/exports/{jobId}/download",
+                FileName = $"export_{jobId}.csv",
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving export status for job {JobId}", jobId);
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ExportFileInfo?> GetExportFileAsync(string jobId)
+    {
+        try
+        {
+            _logger.LogInformation("Retrieving export file info for job {JobId}", jobId);
+
+            // In a real implementation, this would check file storage
+            // For now, return mock file info
+            await Task.CompletedTask;
+            return new ExportFileInfo
+            {
+                JobId = jobId,
+                FileName = $"communication_export_{jobId}.csv",
+                FileSizeBytes = 2048,
+                ContentType = "text/csv",
+                DownloadUrl = $"/api/exports/{jobId}/download",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                Format = "CSV",
+                RecordCount = 100,
+                Description = "Communication audit export"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving export file info for job {JobId}", jobId);
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<int> CleanupExpiredExportsAsync(int retentionDays = 7)
+    {
+        try
+        {
+            _logger.LogInformation("Cleaning up exports older than {RetentionDays} days", retentionDays);
+
+            // In a real implementation, this would:
+            // 1. Query database for expired export jobs
+            // 2. Delete associated files from storage
+            // 3. Remove job records from database
+            // For now, return mock cleanup count
+            await Task.CompletedTask;
+            var cleanedUpCount = 5;
+            
+            _logger.LogInformation("Cleaned up {Count} expired export jobs", cleanedUpCount);
+            return cleanedUpCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during export cleanup");
+            return 0;
         }
     }
 
@@ -392,7 +484,7 @@ public class CommunicationExportServiceV2 : ICommunicationExportService
         sb.AppendLine("=====================================");
         sb.AppendLine();
         sb.AppendLine($"Organization: {request.OrganizationId}");
-        sb.AppendLine($"Report Period: {request.From:yyyy-MM-dd} to {request.To:yyyy-MM-dd}");
+        sb.AppendLine($"Report Period: {request.DateFrom:yyyy-MM-dd} to {request.DateTo:yyyy-MM-dd}");
         sb.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
         sb.AppendLine();
         
@@ -429,33 +521,3 @@ public class CommunicationExportServiceV2 : ICommunicationExportService
     #endregion
 }
 
-/// <summary>
-/// Request model for compliance report generation
-/// </summary>
-public class ComplianceReportRequest
-{
-    /// <summary>
-    /// Organization ID for the compliance report
-    /// </summary>
-    public Guid OrganizationId { get; set; }
-
-    /// <summary>
-    /// Start date for the compliance period
-    /// </summary>
-    public DateTimeOffset From { get; set; }
-
-    /// <summary>
-    /// End date for the compliance period
-    /// </summary>
-    public DateTimeOffset To { get; set; }
-
-    /// <summary>
-    /// Include detailed communication logs in the report
-    /// </summary>
-    public bool IncludeDetailedLogs { get; set; } = false;
-
-    /// <summary>
-    /// Report title (optional)
-    /// </summary>
-    public string? ReportTitle { get; set; }
-}

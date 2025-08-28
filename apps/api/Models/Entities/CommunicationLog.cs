@@ -110,7 +110,6 @@ public class CommunicationLog
     /// <summary>
     /// Additional metadata stored as JSON for extensibility
     /// </summary>
-    [Column(TypeName = "nvarchar(max)")]
     public string? Metadata { get; set; }
 
     /// <summary>

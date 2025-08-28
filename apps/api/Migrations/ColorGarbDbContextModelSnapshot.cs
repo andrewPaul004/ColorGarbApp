@@ -36,7 +36,7 @@ namespace ColorGarbApi.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(10000)
-                        .HasColumnType("nvarchar(10000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -97,8 +97,6 @@ namespace ColorGarbApi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CommunicationType");
-
-                    b.HasIndex("Content");
 
                     b.HasIndex("DeliveredAt");
 
@@ -207,7 +205,7 @@ namespace ColorGarbApi.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(5000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -251,8 +249,6 @@ namespace ColorGarbApi.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Content");
 
                     b.HasIndex("CreatedAt");
 

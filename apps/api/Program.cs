@@ -20,8 +20,8 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ColorGarbDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Server=(localdb)\\mssqllocaldb;Database=ColorGarbDb;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=true";
-    options.UseSqlServer(connectionString);
+        ?? "Data Source=ColorGarbDb.db";
+    options.UseSqlite(connectionString);
 });
 
 // Configure Redis

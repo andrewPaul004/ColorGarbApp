@@ -85,7 +85,7 @@ public class WebhooksController : ControllerBase
         try
         {
             // Verify Twilio webhook signature for security
-            if (!await VerifyTwilioSignature())
+            if (!VerifyTwilioSignature())
             {
                 _logger.LogWarning("Twilio webhook signature verification failed");
                 return Unauthorized();
@@ -303,7 +303,7 @@ public class WebhooksController : ControllerBase
     /// Verifies Twilio webhook signature for security.
     /// </summary>
     /// <returns>True if signature is valid</returns>
-    private async Task<bool> VerifyTwilioSignature()
+    private bool VerifyTwilioSignature()
     {
         var authToken = _configuration["Twilio:AuthToken"];
         if (string.IsNullOrEmpty(authToken))

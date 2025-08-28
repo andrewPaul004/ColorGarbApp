@@ -171,7 +171,7 @@ public class CommunicationAuditController : ControllerBase
                 return Forbid();
             }
 
-            var summary = await _auditService.GetDeliveryStatusSummaryAsync(targetOrgId.Value, from, to);
+            var summary = await _auditService.GetDeliveryStatusSummaryAsync(targetOrgId!.Value, from, to);
             
             _logger.LogInformation("Generated delivery summary for organization {OrganizationId}: {TotalCount} communications", 
                 targetOrgId, summary.TotalCommunications);

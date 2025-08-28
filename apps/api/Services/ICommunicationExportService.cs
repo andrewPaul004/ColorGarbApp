@@ -1,5 +1,5 @@
-using ColorGarbApi.Controllers;
 using ColorGarbApi.Models;
+using ColorGarbApi.Controllers;
 
 namespace ColorGarbApi.Services;
 

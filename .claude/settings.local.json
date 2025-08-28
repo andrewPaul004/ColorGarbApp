@@ -37,7 +37,17 @@
       "Read(/C:\\Users\\apaul\\Downloads/**)",
       "Bash(grep:*)",
       "Bash(findstr:*)",
-      "Bash(dotnet add:*)"
+      "Bash(dotnet add:*)",
+      "Bash(powershell:*)",
+      "Bash(dotnet clean:*)",
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Bash(sqllocaldb:*)",
+      "Bash(del ColorGarbDb.db)",
+      "Bash(del \"Migrations\\20250828160629_InitialSQLiteClean.cs\")",
+      "Bash(del \"Migrations\\20250828160629_InitialSQLiteClean.Designer.cs\")",
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Read(C:\\Users\\apaul/**)",
+      "Read(C:\\Users\\apaul/**)"
     ],
     "deny": [],
     "ask": []

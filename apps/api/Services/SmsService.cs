@@ -18,6 +18,7 @@ public class SmsService : ISmsService
     private readonly IDatabase _redis;
     private readonly ILogger<SmsService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly ICommunicationAuditService _auditService;
 
     private static readonly Dictionary<string, string> SmsTemplates = new()
     {
@@ -44,13 +45,15 @@ public class SmsService : ISmsService
     /// <param name="redis">Redis database for rate limiting</param>
     /// <param name="logger">Logger for diagnostic information</param>
     /// <param name="configuration">Application configuration for portal URLs</param>
+    /// <param name="auditService">Communication audit service for tracking SMS delivery</param>
     public SmsService(
         ColorGarbDbContext context,
         TwilioSmsProvider smsProvider,
         INotificationPreferenceService notificationPreferenceService,
         IDatabase redis,
         ILogger<SmsService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ICommunicationAuditService auditService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _smsProvider = smsProvider ?? throw new ArgumentNullException(nameof(smsProvider));
@@ -58,6 +61,7 @@ public class SmsService : ISmsService
         _redis = redis ?? throw new ArgumentNullException(nameof(redis));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
     }
 
     /// <summary>
@@ -113,6 +117,18 @@ public class SmsService : ISmsService
             }
 
             await _context.SaveChangesAsync();
+
+            // Log to communication audit trail
+            if (smsNotification.OrderId.HasValue)
+            {
+                await LogSmsCommunicationAsync(
+                    phoneNumber,
+                    smsNotification.OrderId.Value,
+                    message,
+                    twilioMessage.Sid,
+                    smsNotification.UserId == Guid.Empty ? null : smsNotification.UserId
+                );
+            }
 
             _logger.LogInformation("SMS sent successfully to {PhoneNumber}. MessageSid: {MessageSid}", 
                 phoneNumber, twilioMessage.Sid);
@@ -406,6 +422,45 @@ public class SmsService : ISmsService
         if (preferences.Any())
         {
             await _context.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
+    /// Logs SMS communication to the audit trail for tracking and compliance purposes.
+    /// </summary>
+    /// <param name="phoneNumber">Recipient phone number</param>
+    /// <param name="orderId">Order ID associated with the SMS</param>
+    /// <param name="message">SMS message content</param>
+    /// <param name="twilioMessageSid">Twilio message SID for tracking</param>
+    /// <param name="senderId">User ID of the sender, if applicable</param>
+    /// <returns>Task for async operation</returns>
+    private async Task LogSmsCommunicationAsync(
+        string phoneNumber,
+        Guid orderId,
+        string message,
+        string twilioMessageSid,
+        Guid? senderId)
+    {
+        try
+        {
+            var communicationLog = new CommunicationLog
+            {
+                OrderId = orderId,
+                CommunicationType = "SMS",
+                SenderId = senderId ?? Guid.Empty, // System user ID or actual sender
+                RecipientPhone = phoneNumber,
+                Content = message,
+                DeliveryStatus = "Sent",
+                ExternalMessageId = twilioMessageSid,
+                SentAt = DateTime.UtcNow
+            };
+
+            await _auditService.LogCommunicationAsync(communicationLog);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to log SMS communication to audit trail for {PhoneNumber}", phoneNumber);
+            // Don't throw - audit logging failure shouldn't prevent SMS operations
         }
     }
 }

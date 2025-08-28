@@ -119,4 +119,14 @@ public class Message
     /// </summary>
     [InverseProperty(nameof(ReplyToMessage))]
     public virtual ICollection<Message> Replies { get; set; } = new List<Message>();
+
+    /// <summary>
+    /// Navigation property for audit trail tracking
+    /// </summary>
+    public virtual MessageAuditTrail? AuditTrail { get; set; }
+
+    /// <summary>
+    /// Navigation property for communication logs related to this message
+    /// </summary>
+    public virtual ICollection<CommunicationLog> CommunicationLogs { get; set; } = new List<CommunicationLog>();
 }

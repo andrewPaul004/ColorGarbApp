@@ -65,6 +65,10 @@ builder.Services.AddScoped<IProductionTrackingService, ProductionTrackingService
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 
+// Register communication audit services
+builder.Services.AddScoped<ICommunicationAuditRepository, CommunicationAuditRepository>();
+builder.Services.AddScoped<ICommunicationAuditService, CommunicationAuditService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ColorGarbApi";

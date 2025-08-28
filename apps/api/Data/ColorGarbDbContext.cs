@@ -84,6 +84,26 @@ public class ColorGarbDbContext : DbContext
     public DbSet<MessageAttachment> MessageAttachments => Set<MessageAttachment>();
 
     /// <summary>
+    /// Communication logs dataset - comprehensive audit trail for all communications
+    /// </summary>
+    public DbSet<CommunicationLog> CommunicationLogs => Set<CommunicationLog>();
+
+    /// <summary>
+    /// Notification delivery logs dataset - detailed delivery status tracking
+    /// </summary>
+    public DbSet<NotificationDeliveryLog> NotificationDeliveryLogs => Set<NotificationDeliveryLog>();
+
+    /// <summary>
+    /// Message audit trails dataset - tracks message creation and edit history
+    /// </summary>
+    public DbSet<MessageAuditTrail> MessageAuditTrails => Set<MessageAuditTrail>();
+
+    /// <summary>
+    /// Message edits dataset - tracks individual message modifications
+    /// </summary>
+    public DbSet<MessageEdit> MessageEdits => Set<MessageEdit>();
+
+    /// <summary>
     /// Configures entity relationships and constraints
     /// </summary>
     /// <param name="modelBuilder">Entity Framework model builder</param>
@@ -326,6 +346,104 @@ public class ColorGarbDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // Configure CommunicationLog entity
+        modelBuilder.Entity<CommunicationLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.SenderId);
+            entity.HasIndex(e => e.RecipientId);
+            entity.HasIndex(e => e.CommunicationType);
+            entity.HasIndex(e => e.DeliveryStatus);
+            entity.HasIndex(e => e.SentAt);
+            entity.HasIndex(e => e.DeliveredAt);
+            entity.HasIndex(e => e.ReadAt);
+            entity.HasIndex(e => e.ExternalMessageId).IsUnique();
+            entity.HasIndex(e => new { e.OrderId, e.SentAt });
+            entity.HasIndex(e => new { e.SenderId, e.SentAt });
+            entity.HasIndex(e => new { e.CommunicationType, e.DeliveryStatus });
+
+            // Configure full-text search capability for communication content
+            entity.HasIndex(e => e.Content);
+            entity.HasIndex(e => e.Subject);
+            entity.HasIndex(e => e.RecipientEmail);
+            entity.HasIndex(e => e.RecipientPhone);
+
+            // Configure relationship with Order
+            entity.HasOne(e => e.Order)
+                  .WithMany()
+                  .HasForeignKey(e => e.OrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Sender
+            entity.HasOne(e => e.Sender)
+                  .WithMany()
+                  .HasForeignKey(e => e.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure relationship with Recipient
+            entity.HasOne(e => e.Recipient)
+                  .WithMany()
+                  .HasForeignKey(e => e.RecipientId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure NotificationDeliveryLog entity
+        modelBuilder.Entity<NotificationDeliveryLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.CommunicationLogId);
+            entity.HasIndex(e => e.DeliveryProvider);
+            entity.HasIndex(e => e.ExternalId).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.UpdatedAt);
+            entity.HasIndex(e => new { e.CommunicationLogId, e.UpdatedAt });
+            entity.HasIndex(e => new { e.DeliveryProvider, e.Status });
+
+            // Configure relationship with CommunicationLog
+            entity.HasOne(e => e.CommunicationLog)
+                  .WithMany(e => e.DeliveryLogs)
+                  .HasForeignKey(e => e.CommunicationLogId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure MessageAuditTrail entity
+        modelBuilder.Entity<MessageAuditTrail>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MessageId).IsUnique();
+            entity.HasIndex(e => e.IpAddress);
+            entity.HasIndex(e => e.CreatedAt);
+
+            // Configure one-to-one relationship with Message
+            entity.HasOne(e => e.Message)
+                  .WithOne(e => e.AuditTrail)
+                  .HasForeignKey<MessageAuditTrail>(e => e.MessageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure MessageEdit entity
+        modelBuilder.Entity<MessageEdit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MessageAuditTrailId);
+            entity.HasIndex(e => e.EditedBy);
+            entity.HasIndex(e => e.EditedAt);
+            entity.HasIndex(e => new { e.MessageAuditTrailId, e.EditedAt });
+
+            // Configure relationship with MessageAuditTrail
+            entity.HasOne(e => e.MessageAuditTrail)
+                  .WithMany(e => e.EditHistory)
+                  .HasForeignKey(e => e.MessageAuditTrailId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with Editor
+            entity.HasOne(e => e.Editor)
+                  .WithMany()
+                  .HasForeignKey(e => e.EditedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Seed initial data for development
         SeedInitialData(modelBuilder);
     }
@@ -507,6 +625,26 @@ public class ColorGarbDbContext : DbContext
             {
                 if (entry.State == EntityState.Added)
                     messageAttachment.UploadedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is CommunicationLog communicationLog)
+            {
+                if (entry.State == EntityState.Added)
+                    communicationLog.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is NotificationDeliveryLog deliveryLog)
+            {
+                if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+                    deliveryLog.UpdatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is MessageAuditTrail auditTrail)
+            {
+                if (entry.State == EntityState.Added)
+                    auditTrail.CreatedAt = DateTime.UtcNow;
+            }
+            else if (entry.Entity is MessageEdit messageEdit)
+            {
+                if (entry.State == EntityState.Added)
+                    messageEdit.EditedAt = DateTime.UtcNow;
             }
         }
     }

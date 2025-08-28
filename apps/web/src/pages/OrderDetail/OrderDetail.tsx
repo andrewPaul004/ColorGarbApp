@@ -10,6 +10,7 @@ import { QuickActions } from './components/QuickActions';
 import { Breadcrumb, type BreadcrumbItem } from '../../components/common/Breadcrumb';
 import { StageDetailModal } from '../../components/timeline/StageDetailModal';
 import { MessageCenter } from '../../components/messages/MessageCenter';
+import { DeliveryStatusUpdates } from '../../components/communication/DeliveryStatusUpdates';
 import messageService from '../../services/messageService';
 import type { OrderStage, StageHistory, OrderDetail, Message } from '@colorgarb/shared';
 
@@ -430,6 +431,14 @@ export const OrderDetail: React.FC = () => {
           onSubmitMeasurements={handleSubmitMeasurements}
           onViewMessages={handleViewMessages}
           onUploadDocuments={handleUploadDocuments}
+        />
+
+        {/* Communication Delivery Status Section */}
+        <DeliveryStatusUpdates
+          orderId={orderDetail.id}
+          maxItems={5}
+          autoRefresh={true}
+          refreshInterval={30000}
         />
 
         {/* Ship Date Information Section */}

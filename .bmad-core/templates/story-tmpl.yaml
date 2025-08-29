@@ -57,13 +57,19 @@ sections:
     instruction: |
       Break down the story into specific tasks and subtasks needed for implementation.
       Reference applicable acceptance criteria numbers where relevant.
+      CRITICAL: Always include explicit UI integration tasks for components.
     template: |
-      - [ ] Task 1 (AC: # if applicable)
+      - [ ] Task 1: Build/Implement Core Functionality (AC: # if applicable)
         - [ ] Subtask1.1...
-      - [ ] Task 2 (AC: # if applicable)
-        - [ ] Subtask 2.1...
-      - [ ] Task 3 (AC: # if applicable)
-        - [ ] Subtask 3.1...
+      - [ ] Task 2: UI Integration (REQUIRED for components)
+        - [ ] Import component into target page/layout
+        - [ ] Add component to user navigation flow
+        - [ ] Verify component accessible via intended route
+        - [ ] Manual browser test of complete user journey
+      - [ ] Task 3: Testing & Validation (AC: # if applicable)
+        - [ ] Unit tests for component functionality
+        - [ ] Integration tests for UI flow
+        - [ ] QA smoke test verification
     elicit: true
     owner: scrum-master
     editors: [scrum-master, dev-agent]

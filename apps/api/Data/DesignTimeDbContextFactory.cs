@@ -18,8 +18,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ColorGarbD
     {
         var optionsBuilder = new DbContextOptionsBuilder<ColorGarbDbContext>();
         
-        // Use a default connection string for migrations
-        optionsBuilder.UseSqlServer("Server=localhost;Database=ColorGarb_Dev;Trusted_Connection=true;MultipleActiveResultSets=true");
+        // Use SQL Server for migrations
+        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ColorGarbDb;Trusted_Connection=true;MultipleActiveResultSets=true");
 
         return new ColorGarbDbContext(optionsBuilder.Options);
     }

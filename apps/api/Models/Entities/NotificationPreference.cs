@@ -61,7 +61,6 @@ public class NotificationPreference
     /// JSON-serialized array of NotificationMilestone objects for milestone-specific settings
     /// </summary>
     [Required]
-    [Column(TypeName = "nvarchar(max)")]
     public string MilestonesJson { get; set; } = "[]";
 
     /// <summary>

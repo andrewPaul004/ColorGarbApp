@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ColorGarbApi.Models.Entities;
 
 namespace ColorGarbApi.Models;
 
@@ -97,4 +98,9 @@ public class Order
     /// Navigation property for the stage history of this order
     /// </summary>
     public virtual ICollection<OrderStageHistory> StageHistory { get; set; } = new List<OrderStageHistory>();
+
+    /// <summary>
+    /// Navigation property for messages associated with this order
+    /// </summary>
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 }

@@ -70,7 +70,7 @@ export const Dashboard: React.FC = () => {
     };
 
     loadOrders();
-  }, [fetchOrders, statusFilter, stageFilter]);
+  }, [statusFilter, stageFilter]); // fetchOrders removed to prevent double calls due to function reference changes
 
   /**
    * Handles status filter change

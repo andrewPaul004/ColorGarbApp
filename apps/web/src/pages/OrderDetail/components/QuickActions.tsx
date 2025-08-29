@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, Button, Grid, Chip } from '@mui/material';
+import { Box, Typography, Paper, Button, Grid, Chip, Badge } from '@mui/material';
 import { 
   Upload as UploadIcon, 
   Message as MessageIcon, 
@@ -34,6 +34,8 @@ export interface QuickActionsProps {
   orderId: string;
   /** Current stage of the order */
   currentStage: OrderStage;
+  /** Number of unread messages */
+  unreadMessageCount?: number;
   /** Handler for submitting measurements */
   onSubmitMeasurements?: () => void;
   /** Handler for viewing messages */
@@ -45,6 +47,7 @@ export interface QuickActionsProps {
 export const QuickActions: React.FC<QuickActionsProps> = ({
   orderId,
   currentStage,
+  unreadMessageCount = 0,
   onSubmitMeasurements,
   onViewMessages,
   onUploadDocuments
@@ -219,15 +222,23 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
 
         {/* Always Available Actions */}
         <Grid item xs={12} sm="auto">
-          <Button
-            variant="outlined"
-            size="large"
-            startIcon={<MessageIcon />}
-            onClick={onViewMessages}
-            sx={{ minWidth: 160 }}
+          <Badge 
+            badgeContent={unreadMessageCount} 
+            color="error"
+            invisible={unreadMessageCount === 0}
+            max={99}
           >
-            View Messages
-          </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<MessageIcon />}
+              onClick={onViewMessages}
+              sx={{ minWidth: 160 }}
+              color={unreadMessageCount > 0 ? "error" : "inherit"}
+            >
+              View Messages
+            </Button>
+          </Badge>
         </Grid>
 
         <Grid item xs={12} sm="auto">

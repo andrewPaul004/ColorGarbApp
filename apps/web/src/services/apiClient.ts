@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
 /**
  * HTTP client configuration and interceptors for API communication.
@@ -17,7 +17,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 // Base configuration for API client
 const createApiClient = (): AxiosInstance => {
   const baseURL = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:5000'  // Development API URL
+    ? 'http://localhost:5132'  // Development API URL
     : '/';                     // Production API URL (proxied)
 
   const client = axios.create({

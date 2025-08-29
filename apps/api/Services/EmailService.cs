@@ -16,17 +16,20 @@ public class EmailService : IEmailService
     private readonly IConfiguration _configuration;
     private readonly ColorGarbDbContext _context;
     private readonly INotificationPreferenceService _notificationPreferenceService;
+    private readonly ICommunicationAuditService _auditService;
 
     public EmailService(
         ILogger<EmailService> logger, 
         IConfiguration configuration,
         ColorGarbDbContext context,
-        INotificationPreferenceService notificationPreferenceService)
+        INotificationPreferenceService notificationPreferenceService,
+        ICommunicationAuditService auditService)
     {
         _logger = logger;
         _configuration = configuration;
         _context = context;
         _notificationPreferenceService = notificationPreferenceService;
+        _auditService = auditService;
     }
 
     /// <summary>
@@ -66,6 +69,16 @@ public class EmailService : IEmailService
             _logger.LogInformation("Password reset email would be sent to: {Email}", email);
             _logger.LogDebug("Reset URL: {ResetUrl}", resetUrl);
             _logger.LogDebug("Email content: {Content}", emailContent);
+
+            // Log to communication audit trail
+            await LogEmailCommunicationAsync(
+                email, 
+                null, // No specific order for password reset
+                "Password Reset Request",
+                emailContent,
+                "password-reset-template",
+                null // No specific sender user for system emails
+            );
 
             // Simulate async email sending
             await Task.Delay(100);
@@ -164,6 +177,22 @@ public class EmailService : IEmailService
                 email, orderNumber, previousStage, newStage);
             _logger.LogDebug("Email content: {Content}", emailContent);
 
+            // Find order ID for audit logging
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
+
+            if (order != null)
+            {
+                await LogEmailCommunicationAsync(
+                    email,
+                    order.Id,
+                    $"Order Stage Update: {orderNumber}",
+                    emailContent,
+                    "order-stage-update-template",
+                    null // System-generated email
+                );
+            }
+
             // Simulate async email sending
             await Task.Delay(100);
 
@@ -228,6 +257,22 @@ public class EmailService : IEmailService
                 email, orderNumber, previousShipDate.ToString("yyyy-MM-dd"), newShipDate.ToString("yyyy-MM-dd"));
             _logger.LogDebug("Email content: {Content}", emailContent);
 
+            // Find order ID for audit logging
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
+
+            if (order != null)
+            {
+                await LogEmailCommunicationAsync(
+                    email,
+                    order.Id,
+                    $"Ship Date Change: {orderNumber}",
+                    emailContent,
+                    "ship-date-change-template",
+                    null // System-generated email
+                );
+            }
+
             // Simulate async email sending
             await Task.Delay(100);
 
@@ -289,6 +334,19 @@ public class EmailService : IEmailService
             _logger.LogInformation("Templated email would be sent - Template: {Template}, Recipient: {Recipient}, Subject: {Subject}",
                 templateName, recipient, notification.Subject);
             _logger.LogDebug("Email content: {Content}", emailContent);
+
+            // Log to communication audit trail
+            if (notification.OrderId != Guid.Empty)
+            {
+                await LogEmailCommunicationAsync(
+                    recipient,
+                    notification.OrderId,
+                    notification.Subject,
+                    emailContent,
+                    templateName,
+                    notification.UserId
+                );
+            }
 
             // Simulate async email sending
             await Task.Delay(100);
@@ -619,6 +677,58 @@ public class EmailService : IEmailService
     }
 
     #endregion
+
+    /// <summary>
+    /// Logs email communication to the audit trail for tracking and compliance purposes.
+    /// </summary>
+    /// <param name="recipientEmail">Email address of the recipient</param>
+    /// <param name="orderId">Order ID if email is order-related</param>
+    /// <param name="subject">Email subject line</param>
+    /// <param name="content">Full email content</param>
+    /// <param name="templateName">Template used for the email</param>
+    /// <param name="senderId">User ID of the sender, if applicable</param>
+    /// <returns>Task for async operation</returns>
+    private async Task LogEmailCommunicationAsync(
+        string recipientEmail, 
+        Guid? orderId, 
+        string subject, 
+        string content, 
+        string? templateName, 
+        Guid? senderId)
+    {
+        try
+        {
+            // Find a suitable order ID for system emails if not provided
+            if (orderId == null && !string.IsNullOrEmpty(recipientEmail))
+            {
+                // For system emails without specific order context, we might need to create a default
+                // For now, we'll skip logging system emails without order context
+                // In production, you might want to create system-level communication logs
+                return;
+            }
+
+            var communicationLog = new CommunicationLog
+            {
+                OrderId = orderId.Value,
+                CommunicationType = "Email",
+                SenderId = senderId ?? Guid.Empty, // System user ID or actual sender
+                RecipientEmail = recipientEmail,
+                Subject = subject,
+                Content = content,
+                TemplateUsed = templateName,
+                DeliveryStatus = "Sent",
+                ExternalMessageId = $"email-{Guid.NewGuid()}", // Generate unique ID for tracking
+                SentAt = DateTime.UtcNow
+            };
+
+            await _auditService.LogCommunicationAsync(communicationLog);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to log email communication to audit trail for {Email}", recipientEmail);
+            // Don't throw - audit logging failure shouldn't prevent email sending
+        }
+    }
 
     /// <summary>
     /// Nested class representing notification milestone configuration

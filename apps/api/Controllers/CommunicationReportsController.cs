@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using ColorGarbApi.Services;
 using ColorGarbApi.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace ColorGarbApi.Controllers;
@@ -330,17 +331,11 @@ public class CommunicationReportsController : ControllerBase
     /// <returns>Current user's GUID</returns>
     private Guid GetCurrentUserId()
     {
-        // TODO: Extract from JWT claims or authentication context
-        // For now, return a placeholder - implement based on your auth system
-        var userIdClaim = User.FindFirst("userId")?.Value 
-                         ?? User.FindFirst("sub")?.Value 
-                         ?? User.FindFirst("id")?.Value;
-        
-        if (Guid.TryParse(userIdClaim, out var userId))
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        if (Guid.TryParse(userIdString, out var userId))
         {
             return userId;
         }
-        
         throw new UnauthorizedAccessException("Unable to determine current user ID");
     }
 }

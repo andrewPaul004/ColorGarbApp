@@ -47,7 +47,16 @@
       "Bash(del \"Migrations\\20250828160629_InitialSQLiteClean.Designer.cs\")",
       "Read(C:\\Users\\apaul\\Downloads/**)",
       "Read(C:\\Users\\apaul/**)",
-      "Read(C:\\Users\\apaul/**)"
+      "Read(C:\\Users\\apaul/**)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(dotnet user-secrets:*)",
+      "Bash(tasklist:*)",
+      "Bash(claude logout)",
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Read(C:\\Users\\apaul\\Downloads/**)"
     ],
     "deny": [],
     "ask": []

@@ -163,14 +163,9 @@ public class CommunicationAuditService : ICommunicationAuditService
             _logger.LogDebug("Searching communication logs with criteria: {SearchTerm}, Page: {Page}", 
                 searchRequest.SearchTerm, searchRequest.Page);
 
-            // Get logs and total count concurrently
-            var logsTask = _auditRepository.SearchCommunicationLogsAsync(searchRequest);
-            var countTask = _auditRepository.GetCommunicationCountAsync(searchRequest);
-
-            await Task.WhenAll(logsTask, countTask);
-
-            var logs = await logsTask;
-            var totalCount = await countTask;
+            // Get logs and total count sequentially (EF doesn't support concurrent operations on same context)
+            var logs = await _auditRepository.SearchCommunicationLogsAsync(searchRequest);
+            var totalCount = await _auditRepository.GetCommunicationCountAsync(searchRequest);
 
             // Generate status summary
             var statusSummary = logs

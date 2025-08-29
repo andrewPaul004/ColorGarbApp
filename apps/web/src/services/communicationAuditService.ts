@@ -1,4 +1,3 @@
-import { apiClient, downloadFile } from './apiClient';
 import type {
   CommunicationLog,
   CommunicationAuditSearchRequest,
@@ -8,6 +7,19 @@ import type {
   ExportCommunicationResult,
   ComplianceReportRequest
 } from '../types/shared';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+
+/**
+ * Gets authentication token from storage
+ */
+const getAuthToken = (): string => {
+  const token = localStorage.getItem('colorgarb_auth_token');
+  if (!token) {
+    throw new Error('No authentication token found. Please log in.');
+  }
+  return token;
+};
 
 /**
  * Service for communication audit trail API operations.
@@ -23,15 +35,33 @@ class CommunicationAuditService {
    */
   async searchCommunicationLogs(request: CommunicationAuditSearchRequest): Promise<CommunicationAuditResult> {
     try {
-      const response = await apiClient.post<CommunicationAuditResult>(
-        `${this.baseUrl}/search`,
-        this.sanitizeSearchRequest(request)
-      );
+      const url = `${API_BASE_URL}${this.baseUrl}/search`;
+      const sanitizedRequest = this.sanitizeSearchRequest(request);
       
-      return this.parseCommunicationResult(response.data);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify(sanitizedRequest),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to search communication logs.');
+        }
+        throw new Error(`Failed to search communication logs: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return this.parseCommunicationResult(data);
     } catch (error) {
       console.error('Failed to search communication logs:', error);
-      throw new Error('Failed to load communication audit data');
+      throw error;
     }
   }
 
@@ -50,14 +80,31 @@ class CommunicationAuditService {
         to: to.toISOString()
       });
 
-      const response = await apiClient.get<DeliveryStatusSummary>(
-        `${this.baseUrl}/summary?${params}`
-      );
+      const url = `${API_BASE_URL}${this.baseUrl}/summary?${params.toString()}`;
       
-      return this.parseDeliveryStatusSummary(response.data);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view delivery summaries.');
+        }
+        throw new Error(`Failed to get delivery status summary: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return this.parseDeliveryStatusSummary(data);
     } catch (error) {
       console.error('Failed to get delivery status summary:', error);
-      throw new Error('Failed to load delivery status summary');
+      throw error;
     }
   }
 

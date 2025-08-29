@@ -7,7 +7,8 @@ import type {
   BulkReadRequest,
   BulkReadResponse
 } from '@colorgarb/shared';
-import { apiClient } from './apiClient';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 
 /**
  * Message service for handling order-specific communication API calls
@@ -20,24 +21,46 @@ class MessageService {
    * @returns Promise containing message search results
    */
   async getOrderMessages(orderId: string, searchParams?: Partial<MessageSearchRequest>): Promise<MessageSearchResponse> {
-    const queryParams = new URLSearchParams();
-    
-    if (searchParams) {
-      if (searchParams.searchTerm) queryParams.append('searchTerm', searchParams.searchTerm);
-      if (searchParams.messageType) queryParams.append('messageType', searchParams.messageType);
-      if (searchParams.senderRole) queryParams.append('senderRole', searchParams.senderRole);
-      if (searchParams.dateFrom) queryParams.append('dateFrom', searchParams.dateFrom);
-      if (searchParams.dateTo) queryParams.append('dateTo', searchParams.dateTo);
-      if (searchParams.includeAttachments !== undefined) queryParams.append('includeAttachments', searchParams.includeAttachments.toString());
-      if (searchParams.page) queryParams.append('page', searchParams.page.toString());
-      if (searchParams.pageSize) queryParams.append('pageSize', searchParams.pageSize.toString());
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (searchParams) {
+        if (searchParams.searchTerm) queryParams.append('searchTerm', searchParams.searchTerm);
+        if (searchParams.messageType) queryParams.append('messageType', searchParams.messageType);
+        if (searchParams.senderRole) queryParams.append('senderRole', searchParams.senderRole);
+        if (searchParams.dateFrom) queryParams.append('dateFrom', searchParams.dateFrom);
+        if (searchParams.dateTo) queryParams.append('dateTo', searchParams.dateTo);
+        if (searchParams.includeAttachments !== undefined) queryParams.append('includeAttachments', searchParams.includeAttachments.toString());
+        if (searchParams.page) queryParams.append('page', searchParams.page.toString());
+        if (searchParams.pageSize) queryParams.append('pageSize', searchParams.pageSize.toString());
+      }
+
+      const queryString = queryParams.toString();
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view messages.');
+        }
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
     }
-
-    const queryString = queryParams.toString();
-    const url = `/api/orders/${orderId}/messages${queryString ? `?${queryString}` : ''}`;
-
-    const response = await apiClient.get<MessageSearchResponse>(url);
-    return response;
   }
 
   /**
@@ -77,7 +100,7 @@ class MessageService {
       }
     );
 
-    return response;
+    return response.data;
   }
 
   /**
@@ -87,8 +110,35 @@ class MessageService {
    * @returns Promise containing the message
    */
   async getMessageById(orderId: string, messageId: string): Promise<Message> {
-    const response = await apiClient.get<Message>(`/api/orders/${orderId}/messages/${messageId}`);
-    return response;
+    try {
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages/${messageId}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view this message.');
+        }
+        if (response.status === 404) {
+          throw new Error('Message not found.');
+        }
+        throw new Error(`Failed to fetch message: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching message:', error);
+      throw error;
+    }
   }
 
   /**
@@ -98,7 +148,30 @@ class MessageService {
    * @returns Promise that resolves when operation is complete
    */
   async markMessageAsRead(orderId: string, messageId: string): Promise<void> {
-    await apiClient.put(`/api/orders/${orderId}/messages/${messageId}/read`);
+    try {
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages/${messageId}/read`;
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to mark this message as read.');
+        }
+        throw new Error(`Failed to mark message as read: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
   }
 
   /**
@@ -113,7 +186,7 @@ class MessageService {
       `/api/orders/${orderId}/messages/mark-read`,
       request
     );
-    return response;
+    return response.data;
   }
 
   /**
@@ -128,7 +201,18 @@ class MessageService {
       `/api/orders/${orderId}/messages/${messageId}/attachments/${attachmentId}/download`,
       { responseType: 'blob' }
     );
-    return response;
+    return response.data;
+  }
+
+  /**
+   * Gets authentication token from storage
+   */
+  private getAuthToken(): string {
+    const token = localStorage.getItem('colorgarb_auth_token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in.');
+    }
+    return token;
   }
 }
 

@@ -1,4 +1,3 @@
-import { apiClient } from './apiClient';
 import type {
   CommunicationAuditSearchRequest,
   CommunicationAuditResult,
@@ -11,6 +10,19 @@ import type {
   SearchFacets
 } from '../types/communicationAudit';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+
+/**
+ * Gets authentication token from storage
+ */
+const getAuthToken = (): string => {
+  const token = localStorage.getItem('colorgarb_auth_token');
+  if (!token) {
+    throw new Error('No authentication token found. Please log in.');
+  }
+  return token;
+};
+
 /**
  * API service for communication audit trail operations.
  * Handles all communication with the backend audit trail endpoints.
@@ -22,23 +34,78 @@ export const communicationAuditApi = {
    * Searches communication logs with filtering and pagination
    */
   async searchCommunications(request: CommunicationAuditSearchRequest): Promise<CommunicationAuditResult> {
-    const response = await apiClient.get('/communication-audit/logs', {
-      params: {
+    try {
+      const params = new URLSearchParams();
+      Object.entries({
         ...request,
         communicationType: request.communicationType?.join(','),
         deliveryStatus: request.deliveryStatus?.join(',')
+      }).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, value.toString());
+        }
+      });
+
+      const url = `${API_BASE_URL}/api/communication-audit/logs?${params.toString()}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view communication logs.');
+        }
+        throw new Error(`Failed to search communications: ${response.statusText}`);
       }
-    });
-    
-    return response.data;
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching communications:', error);
+      throw error;
+    }
   },
 
   /**
    * Gets communication history for a specific order
    */
   async getOrderHistory(orderId: string): Promise<CommunicationLog[]> {
-    const response = await apiClient.get(`/communication-audit/orders/${orderId}`);
-    return response.data;
+    try {
+      const url = `${API_BASE_URL}/api/communication-audit/orders/${orderId}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view order communication history.');
+        }
+        if (response.status === 404) {
+          throw new Error('Order not found.');
+        }
+        throw new Error(`Failed to get order history: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting order history:', error);
+      throw error;
+    }
   },
 
   /**
@@ -57,13 +124,37 @@ export const communicationAuditApi = {
     from: string,
     to: string
   ): Promise<DeliveryStatusSummary> {
-    const params: any = { from, to };
-    if (organizationId) {
-      params.organizationId = organizationId;
-    }
+    try {
+      const params = new URLSearchParams({ from, to });
+      if (organizationId) {
+        params.append('organizationId', organizationId);
+      }
 
-    const response = await apiClient.get('/communication-audit/delivery-summary', { params });
-    return response.data;
+      const url = `${API_BASE_URL}/api/communication-audit/delivery-summary?${params.toString()}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view delivery summaries.');
+        }
+        throw new Error(`Failed to get delivery summary: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting delivery summary:', error);
+      throw error;
+    }
   },
 
   /**

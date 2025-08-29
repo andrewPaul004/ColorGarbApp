@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using StackExchange.Redis;
 using System.Text;
+using System.Text.Json;
 using System.Threading.RateLimiting;
 using ColorGarbApi.Data;
 using ColorGarbApi.Services;
@@ -14,14 +15,19 @@ using ColorGarbApi.Models.Entities;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // Configure Entity Framework
 builder.Services.AddDbContext<ColorGarbDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=ColorGarbDb.db";
-    options.UseSqlite(connectionString);
+        ?? "Server=(localdb)\\mssqllocaldb;Database=ColorGarbDb;Trusted_Connection=true;MultipleActiveResultSets=true";
+    options.UseSqlServer(connectionString);
 });
 
 // Configure Redis
@@ -68,6 +74,9 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 // Register communication audit services
 builder.Services.AddScoped<ICommunicationAuditRepository, CommunicationAuditRepository>();
 builder.Services.AddScoped<ICommunicationAuditService, CommunicationAuditService>();
+
+// Register communication export service
+builder.Services.AddScoped<ICommunicationExportService, CommunicationExportServiceV2>();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-secret-key-that-should-be-changed-in-production";

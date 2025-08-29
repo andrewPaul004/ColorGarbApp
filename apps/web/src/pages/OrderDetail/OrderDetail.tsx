@@ -84,7 +84,7 @@ export const OrderDetail: React.FC = () => {
     };
 
     loadOrderDetail();
-  }, [orderId, fetchOrder]);
+  }, [orderId]); // fetchOrder removed to prevent double calls due to function reference changes
 
   /**
    * Gets the stage history from the API data or falls back to mock data if not available.

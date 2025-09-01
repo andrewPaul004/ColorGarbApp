@@ -19,7 +19,7 @@ import {
   Circle as UnreadIcon
 } from '@mui/icons-material';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
-import type { Message } from '@colorgarb/shared';
+import type { Message } from '../../types/shared';
 import messageService from '../../services/messageService';
 
 /**

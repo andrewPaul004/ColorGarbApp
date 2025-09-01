@@ -29,33 +29,10 @@ public class NotificationPreference
     public bool EmailEnabled { get; set; } = true;
 
     /// <summary>
-    /// Global SMS notification toggle for this user
+    /// Global SMS notification toggle for this user (disabled - kept for database compatibility)
     /// </summary>
     [Required]
     public bool SmsEnabled { get; set; } = false;
-
-    /// <summary>
-    /// Verified phone number for SMS notifications (E.164 format)
-    /// </summary>
-    [StringLength(20)]
-    public string? PhoneNumber { get; set; }
-
-    /// <summary>
-    /// Indicates if the phone number has been verified
-    /// </summary>
-    [Required]
-    public bool PhoneVerified { get; set; } = false;
-
-    /// <summary>
-    /// Verification token for phone number verification
-    /// </summary>
-    [StringLength(100)]
-    public string? PhoneVerificationToken { get; set; }
-
-    /// <summary>
-    /// Timestamp when the phone number was verified
-    /// </summary>
-    public DateTime? PhoneVerifiedAt { get; set; }
 
     /// <summary>
     /// JSON-serialized array of NotificationMilestone objects for milestone-specific settings

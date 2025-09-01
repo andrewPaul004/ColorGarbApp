@@ -124,14 +124,24 @@ public class NotificationPreferenceService : INotificationPreferenceService
                 throw new InvalidOperationException($"User {userId} does not exist");
             }
 
-            // Default milestones JSON with all notification types enabled
+            // Default milestones JSON with all order stages and special milestone types enabled
             const string defaultMilestones = """
                 [
-                    {"type": "MeasurementsDue", "enabled": true, "notifyBefore": 24},
-                    {"type": "ProofApproval", "enabled": true, "notifyBefore": 0},
-                    {"type": "ProductionStart", "enabled": true, "notifyBefore": 0},
-                    {"type": "Shipping", "enabled": true, "notifyBefore": 0},
-                    {"type": "Delivery", "enabled": true, "notifyBefore": 0}
+                    {"type": "Initial Consultation", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Design Proposal", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Proof Approval", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Measurements", "enabled": true, "emailEnabled": true, "notifyBefore": 24},
+                    {"type": "Production Planning", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Cutting", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Sewing", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Quality Control", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Finishing", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Final Inspection", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Packaging", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Shipping Preparation", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Ship Order", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Delivery", "enabled": true, "emailEnabled": true, "notifyBefore": 0},
+                    {"type": "Ship Date Change", "enabled": true, "emailEnabled": true, "notifyBefore": 0}
                 ]
                 """;
 

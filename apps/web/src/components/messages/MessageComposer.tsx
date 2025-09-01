@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -24,7 +24,7 @@ import {
   CameraAlt as CameraIcon,
   PhotoLibrary as PhotoLibraryIcon
 } from '@mui/icons-material';
-import type { Message, SendMessageRequest } from '@colorgarb/shared';
+import type { Message, SendMessageRequest } from '../../types/shared';
 import messageService from '../../services/messageService';
 
 /**

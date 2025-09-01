@@ -1,14 +1,14 @@
-import type { 
-  Message, 
-  MessageSearchRequest, 
-  MessageSearchResponse, 
-  SendMessageRequest, 
+import type {
+  Message,
+  MessageSearchRequest,
+  MessageSearchResponse,
+  SendMessageRequest,
   MessageCreationResponse,
   BulkReadRequest,
   BulkReadResponse
-} from '@colorgarb/shared';
+} from '../types/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5132';
 
 /**
  * Message service for handling order-specific communication API calls
@@ -85,22 +85,38 @@ class MessageService {
     
     // Add file attachments if present
     if (messageData.attachments && messageData.attachments.length > 0) {
-      messageData.attachments.forEach((file) => {
+      messageData.attachments.forEach((file: File) => {
         formData.append('attachments', file);
       });
     }
 
-    const response = await apiClient.post<MessageCreationResponse>(
-      `/api/orders/${orderId}/messages`,
-      formData,
-      {
+    try {
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+          // Don't set Content-Type for FormData, let browser set it with boundary
         },
-      }
-    );
+        body: formData,
+      });
 
-    return response.data;
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to send messages.');
+        }
+        throw new Error(`Failed to send message: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
   }
 
   /**
@@ -181,12 +197,34 @@ class MessageService {
    * @returns Promise containing bulk operation results
    */
   async markMessagesAsRead(orderId: string, messageIds: string[]): Promise<BulkReadResponse> {
-    const request: BulkReadRequest = { messageIds };
-    const response = await apiClient.put<BulkReadResponse>(
-      `/api/orders/${orderId}/messages/mark-read`,
-      request
-    );
-    return response.data;
+    try {
+      const request: BulkReadRequest = { messageIds };
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages/mark-read`;
+      
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+        },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to mark messages as read.');
+        }
+        throw new Error(`Failed to mark messages as read: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      throw error;
+    }
   }
 
   /**
@@ -197,11 +235,34 @@ class MessageService {
    * @returns Promise containing the file blob
    */
   async downloadAttachment(orderId: string, messageId: string, attachmentId: string): Promise<Blob> {
-    const response = await apiClient.get(
-      `/api/orders/${orderId}/messages/${messageId}/attachments/${attachmentId}/download`,
-      { responseType: 'blob' }
-    );
-    return response.data;
+    try {
+      const url = `${API_BASE_URL}/api/orders/${orderId}/messages/${messageId}/attachments/${attachmentId}/download`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.getAuthToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to download this attachment.');
+        }
+        if (response.status === 404) {
+          throw new Error('Attachment not found.');
+        }
+        throw new Error(`Failed to download attachment: ${response.statusText}`);
+      }
+
+      return await response.blob();
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      throw error;
+    }
   }
 
   /**

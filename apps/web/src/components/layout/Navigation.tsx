@@ -28,7 +28,6 @@ import {
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  Receipt as OrdersIcon,
   AccountCircle as AccountIcon,
   ExitToApp as LogoutIcon,
   Settings as SettingsIcon,
@@ -82,6 +81,10 @@ export const Navigation: React.FC = () => {
    * @returns Array of navigation items
    */
   const getNavigationItems = (): NavItem[] => {
+    // Debug: Log user info to understand navigation filtering
+    console.log('Navigation - Current user:', user);
+    console.log('Navigation - User organizationId:', user?.organizationId);
+    
     const baseItems: NavItem[] = [
       {
         label: 'Dashboard',
@@ -91,17 +94,10 @@ export const Navigation: React.FC = () => {
         requiresOrganization: true,
       },
       {
-        label: 'Orders',
-        path: '/orders',
-        icon: <OrdersIcon />,
-        roles: ['Director', 'Finance'],
-        requiresOrganization: true,
-      },
-      {
         label: 'Organization',
         path: '/organization',
         icon: <OrganizationIcon />,
-        roles: ['Director'],
+        roles: ['Director', 'Finance'],
         requiresOrganization: true,
       },
       {
@@ -118,15 +114,37 @@ export const Navigation: React.FC = () => {
         roles: ['ColorGarbStaff'],
         requiresOrganization: false,
       },
+      {
+        label: 'Organizations',
+        path: '/admin/organizations',
+        icon: <OrganizationIcon />,
+        roles: ['ColorGarbStaff'],
+        requiresOrganization: false,
+      },
+      {
+        label: 'System Settings',
+        path: '/admin/settings',
+        icon: <SettingsIcon />,
+        roles: ['ColorGarbStaff'],
+        requiresOrganization: false,
+      },
     ];
 
     // Filter items based on user role
     if (!user) return [];
 
-    return baseItems.filter(item => 
-      item.roles.includes(user.role) &&
-      (!item.requiresOrganization || user.organizationId)
-    );
+    const filteredItems = baseItems.filter(item => {
+      const hasRole = item.roles.includes(user.role);
+      const hasOrgAccess = !item.requiresOrganization || user.organizationId;
+      
+      // Debug: Log filtering decisions
+      console.log(`Navigation - Item: ${item.label}, hasRole: ${hasRole}, hasOrgAccess: ${hasOrgAccess}, requiresOrganization: ${item.requiresOrganization}`);
+      
+      return hasRole && hasOrgAccess;
+    });
+    
+    console.log('Navigation - Final filtered items:', filteredItems.map(item => item.label));
+    return filteredItems;
   };
 
   /**

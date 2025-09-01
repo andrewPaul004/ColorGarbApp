@@ -56,7 +56,11 @@
       "Read(C:\\Users\\apaul\\Downloads/**)",
       "Read(C:\\Users\\apaul\\Downloads/**)",
       "Read(C:\\Users\\apaul\\Downloads/**)",
-      "Read(C:\\Users\\apaul\\Downloads/**)"
+      "Read(C:\\Users\\apaul\\Downloads/**)",
+      "Bash(del \"C:\\Users\\apaul\\source\\repos\\ColorGarbApp\\apps\\web\\src\\components\\notifications\\PhoneVerificationDialog.tsx\")",
+      "Bash(dir:*)",
+      "Bash(/bashes)",
+      "Bash(sqlcmd:*)"
     ],
     "deny": [],
     "ask": []

@@ -50,12 +50,7 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 // Register email service
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Register SMS services
-builder.Services.AddScoped<TwilioSmsProvider>();
-builder.Services.AddScoped<ISmsService, SmsService>();
-builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
-
-// Register notification preference service (required by SMS service)
+// Register notification preference service
 builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
 
 // Register audit service

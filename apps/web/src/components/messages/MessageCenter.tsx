@@ -14,7 +14,7 @@ import {
   Refresh as RefreshIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
-import type { Message, MessageSearchRequest } from '@colorgarb/shared';
+import type { Message, MessageSearchRequest } from '../../types/shared';
 import messageService from '../../services/messageService';
 import { MessageList } from './MessageList';
 import { MessageComposer } from './MessageComposer';

@@ -4,7 +4,6 @@ import {
   Paper,
   Typography,
   Box,
-  Grid,
   TextField,
   Button,
   Alert,
@@ -20,6 +19,8 @@ import {
   DialogActions,
   DialogContentText,
 } from '@mui/material';
+// @ts-ignore - Grid import issue with newer MUI versions
+import Grid from '@mui/material/Grid';
 import {
   Edit as EditIcon,
   ExitToApp as LogoutIcon,
@@ -28,6 +29,7 @@ import {
   Business as OrganizationIcon,
 } from '@mui/icons-material';
 import { useAppStore } from '../../stores/appStore';
+import NotificationPreferences from '../../components/profile/NotificationPreferences';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -379,8 +381,13 @@ export const UserProfile: React.FC = () => {
           </Grid>
         )}
 
-        {/* Actions Card */}
+        {/* Notification Preferences */}
         <Grid item xs={12}>
+          <NotificationPreferences userId={user.id} />
+        </Grid>
+
+        {/* Actions Card */}
+        <Grid item xs={12} md={6}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" component="h2" sx={{ mb: 3 }}>

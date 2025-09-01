@@ -3,6 +3,7 @@ using ColorGarbApi.Models;
 using ColorGarbApi.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ColorGarbApi.Services;
 
@@ -47,7 +48,7 @@ public class EmailService : IEmailService
             // In production, replace this with actual email service integration
             // e.g., SendGrid, AWS SES, Azure Communication Services, etc.
 
-            var resetUrl = $"{_configuration["Frontend:BaseUrl"]}/reset-password?token={resetToken}";
+            var resetUrl = $"{_configuration["Frontend:BaseUrl"]}/auth/reset-password?token={resetToken}";
 
             var emailContent = $@"
                 Dear {userName},
@@ -66,9 +67,17 @@ public class EmailService : IEmailService
             ";
 
             // TODO: Replace with actual email service
-            _logger.LogInformation("Password reset email would be sent to: {Email}", email);
-            _logger.LogDebug("Reset URL: {ResetUrl}", resetUrl);
-            _logger.LogDebug("Email content: {Content}", emailContent);
+            // DEVELOPMENT MODE: Outputting password reset details for testing
+            _logger.LogWarning("=== DEVELOPMENT MODE: Password Reset Email ===");
+            _logger.LogWarning("Recipient: {Email}", email);
+            _logger.LogWarning("Reset URL: {ResetUrl}", resetUrl);
+            _logger.LogWarning("=== Copy the above URL to test password reset ===");
+            
+            // Also write to console for immediate visibility
+            Console.WriteLine("================================");
+            Console.WriteLine($"PASSWORD RESET EMAIL for: {email}");
+            Console.WriteLine($"Reset URL: {resetUrl}");
+            Console.WriteLine("================================");
 
             // Log to communication audit trail
             await LogEmailCommunicationAsync(
@@ -404,10 +413,10 @@ public class EmailService : IEmailService
                 return null;
             }
 
-            // Parse milestones and check if this milestone is enabled
+            // Parse milestones and check if this milestone is enabled for email
             var milestones = JsonSerializer.Deserialize<List<NotificationMilestone>>(preferences.MilestonesJson);
             var milestoneConfig = milestones?.FirstOrDefault(m => m.Type == milestone);
-            if (milestoneConfig == null || !milestoneConfig.Enabled)
+            if (milestoneConfig == null || !milestoneConfig.Enabled || !milestoneConfig.EmailEnabled)
             {
                 _logger.LogDebug("Skipping milestone notification for user {UserId} - milestone {Milestone} disabled", 
                     userId, milestone);
@@ -709,7 +718,7 @@ public class EmailService : IEmailService
 
             var communicationLog = new CommunicationLog
             {
-                OrderId = orderId.Value,
+                OrderId = orderId!.Value,
                 CommunicationType = "Email",
                 SenderId = senderId ?? Guid.Empty, // System user ID or actual sender
                 RecipientEmail = recipientEmail,
@@ -735,8 +744,16 @@ public class EmailService : IEmailService
     /// </summary>
     public class NotificationMilestone
     {
+        [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
+        
+        [JsonPropertyName("enabled")]
         public bool Enabled { get; set; } = true;
+        
+        [JsonPropertyName("emailEnabled")]
+        public bool EmailEnabled { get; set; } = true;
+        
+        [JsonPropertyName("notifyBefore")]
         public int? NotifyBefore { get; set; }
     }
 }

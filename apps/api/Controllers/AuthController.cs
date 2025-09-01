@@ -227,6 +227,69 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Completes password reset process using secure token.
+    /// Validates token and updates user password if valid.
+    /// </summary>
+    /// <param name="request">Password reset completion request containing token and new password</param>
+    /// <returns>Success confirmation</returns>
+    /// <response code="200">Password reset successful</response>
+    /// <response code="400">Invalid request format or token</response>
+    /// <response code="401">Invalid or expired token</response>
+    [HttpPost("reset-password")]
+    [EnableRateLimiting("AuthLimiter")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                return BadRequest(new { message = "Token and new password are required" });
+            }
+
+            // Validate password strength
+            if (request.NewPassword.Length < 8)
+            {
+                return BadRequest(new { message = "Password must be at least 8 characters long" });
+            }
+
+            // Find all valid, non-expired tokens and verify in memory
+            var validTokens = await _context.PasswordResetTokens
+                .Include(t => t.User)
+                .Where(t => t.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+
+            var resetToken = validTokens.FirstOrDefault(t => BCrypt.Net.BCrypt.Verify(request.Token, t.TokenHash));
+
+            if (resetToken == null)
+            {
+                _logger.LogWarning("Invalid or expired password reset token used");
+                return Unauthorized(new { message = "Invalid or expired reset token" });
+            }
+
+            // Update user password
+            resetToken.User.PasswordHash = HashPassword(request.NewPassword);
+            resetToken.User.UpdatedAt = DateTime.UtcNow;
+
+            // Mark token as used by removing it
+            _context.PasswordResetTokens.Remove(resetToken);
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Password successfully reset for user: {UserId}", resetToken.User.Id);
+
+            return Ok(new { message = "Password has been reset successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during password reset");
+            return StatusCode(500, new { message = "An error occurred during password reset" });
+        }
+    }
+
+    /// <summary>
     /// Registers a new user with automatic role assignment based on organization type.
     /// Creates user account with appropriate default role and organization association.
     /// </summary>
@@ -696,6 +759,22 @@ public class PasswordResetRequest
     /// Email address for password reset
     /// </summary>
     public string Email { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Password reset completion request model
+/// </summary>
+public class ResetPasswordRequest
+{
+    /// <summary>
+    /// Reset token from email
+    /// </summary>
+    public string Token { get; set; } = string.Empty;
+
+    /// <summary>
+    /// New password to set
+    /// </summary>
+    public string NewPassword { get; set; } = string.Empty;
 }
 
 /// <summary>

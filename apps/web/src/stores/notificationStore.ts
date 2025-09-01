@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { notificationService } from '../services/notificationService';
+import notificationService from '../services/notificationService';
 
 interface NotificationMilestone {
   type: string;
   enabled: boolean;
   emailEnabled: boolean;
-  smsEnabled: boolean;
   notifyBefore?: number;
 }
 
@@ -13,10 +12,7 @@ interface NotificationPreference {
   id: string;
   userId: string;
   emailEnabled: boolean;
-  smsEnabled: boolean;
-  phoneNumber?: string;
-  phoneVerified: boolean;
-  phoneVerifiedAt?: string;
+  smsEnabled: boolean; // Keep for API compatibility but will always be false
   milestonesJson: string;
   frequency: string;
   isActive: boolean;
@@ -37,239 +33,84 @@ interface EmailNotification {
   errorMessage?: string;
 }
 
-interface SmsNotification {
-  id: string;
-  phoneNumber: string;
-  message: string;
-  status: string;
-  deliveryAttempts: number;
-  createdAt: string;
-  lastAttemptAt?: string;
-  deliveredAt?: string;
-  errorMessage?: string;
-  cost?: number;
-}
-
-interface UpdatePreferencesRequest {
-  emailEnabled: boolean;
-  smsEnabled: boolean;
-  frequency: string;
-  milestones: NotificationMilestone[];
-}
-
 interface NotificationState {
-  // State
   preferences: NotificationPreference | null;
+  availableMilestones: { type: string; name: string; description: string; }[];
   emailHistory: EmailNotification[];
-  smsHistory: SmsNotification[];
   loading: boolean;
   error: string | null;
-  phoneVerificationLoading: boolean;
-
-  // Actions
-  fetchPreferences: (userId: string) => Promise<void>;
-  updatePreferences: (userId: string, preferences: UpdatePreferencesRequest) => Promise<void>;
-  fetchNotificationHistory: (userId: string, page?: number, pageSize?: number) => Promise<void>;
-  fetchSmsHistory: (userId: string, page?: number, pageSize?: number) => Promise<void>;
-  sendPhoneVerification: (userId: string, phoneNumber: string) => Promise<void>;
-  verifyPhoneNumber: (userId: string, verificationToken: string) => Promise<void>;
-  clearError: () => void;
-  reset: () => void;
 }
 
-/**
- * Zustand store for managing notification preferences and email notification state.
- * Provides centralized state management for notification-related data and operations.
- * 
- * Features:
- * - Load and manage user notification preferences
- * - Update preference settings with optimistic updates
- * - Fetch notification delivery history
- * - Error handling and loading states
- * - Store reset functionality
- * 
- * @since 3.1.0
- */
-export const useNotificationStore = create<NotificationState>((set, get) => ({
-  // Initial state
+interface NotificationActions {
+  fetchPreferences: (userId: string) => Promise<void>;
+  updatePreferences: (userId: string, preferences: {
+    emailEnabled: boolean;
+    smsEnabled: boolean;
+    frequency: string;
+    milestonesJson: string;
+  }) => Promise<void>;
+  fetchNotificationHistory: (userId: string) => Promise<void>;
+  clearError: () => void;
+  setError: (error: string | null) => void;
+}
+
+type NotificationStore = NotificationState & NotificationActions;
+
+export const useNotificationStore = create<NotificationStore>((set, get) => ({
+  // State
   preferences: null,
+  availableMilestones: [],
   emailHistory: [],
-  smsHistory: [],
   loading: false,
   error: null,
-  phoneVerificationLoading: false,
 
-  /**
-   * Fetches notification preferences for a specific user
-   */
+  // Actions
   fetchPreferences: async (userId: string) => {
     set({ loading: true, error: null });
-    
     try {
       const response = await notificationService.getPreferences(userId);
       set({ 
-        preferences: response.preferences,
-        loading: false,
-        error: null 
+        preferences: response.preferences, 
+        availableMilestones: response.availableMilestones || [],
+        loading: false 
       });
     } catch (error) {
-      console.error('Failed to fetch notification preferences:', error);
       set({ 
-        loading: false, 
-        error: error instanceof Error ? error.message : 'Failed to load preferences' 
+        error: error instanceof Error ? error.message : 'Failed to load preferences',
+        loading: false 
       });
     }
   },
 
-  /**
-   * Updates notification preferences for a specific user
-   */
-  updatePreferences: async (userId: string, preferencesUpdate: UpdatePreferencesRequest) => {
-    const currentPreferences = get().preferences;
-    
-    // Optimistic update
-    if (currentPreferences) {
-      set({
-        preferences: {
-          ...currentPreferences,
-          emailEnabled: preferencesUpdate.emailEnabled,
-          smsEnabled: preferencesUpdate.smsEnabled,
-          frequency: preferencesUpdate.frequency,
-          milestonesJson: JSON.stringify(preferencesUpdate.milestones),
-          updatedAt: new Date().toISOString(),
-        },
-        error: null,
-      });
-    }
-
-    try {
-      await notificationService.updatePreferences(userId, preferencesUpdate);
-      
-      // Refresh preferences after successful update
-      await get().fetchPreferences(userId);
-    } catch (error) {
-      console.error('Failed to update notification preferences:', error);
-      
-      // Revert optimistic update on error
-      set({ 
-        preferences: currentPreferences,
-        error: error instanceof Error ? error.message : 'Failed to save preferences' 
-      });
-      
-      throw error; // Re-throw to allow component to handle the error
-    }
-  },
-
-  /**
-   * Fetches email notification history for a specific user
-   */
-  fetchNotificationHistory: async (userId: string, page = 1, pageSize = 50) => {
+  updatePreferences: async (userId: string, preferences) => {
     set({ loading: true, error: null });
-    
     try {
-      const emailHistory = await notificationService.getNotificationHistory(userId, page, pageSize);
-      set({ 
-        emailHistory,
-        loading: false,
-        error: null 
-      });
+      await notificationService.updatePreferences(userId, preferences);
+      // Refresh preferences after update
+      const response = await notificationService.getPreferences(userId);
+      set({ preferences: response.preferences, loading: false });
     } catch (error) {
-      console.error('Failed to fetch notification history:', error);
       set({ 
-        loading: false, 
-        error: error instanceof Error ? error.message : 'Failed to load notification history' 
-      });
-    }
-  },
-
-  /**
-   * Fetches SMS notification history for a specific user
-   */
-  fetchSmsHistory: async (userId: string, page = 1, pageSize = 50) => {
-    set({ loading: true, error: null });
-    
-    try {
-      const smsHistory = await notificationService.getSmsHistory(userId, page, pageSize);
-      set({ 
-        smsHistory,
-        loading: false,
-        error: null 
-      });
-    } catch (error) {
-      console.error('Failed to fetch SMS history:', error);
-      set({ 
-        loading: false, 
-        error: error instanceof Error ? error.message : 'Failed to load SMS history' 
-      });
-    }
-  },
-
-  /**
-   * Sends a phone verification code to the user
-   */
-  sendPhoneVerification: async (userId: string, phoneNumber: string) => {
-    set({ phoneVerificationLoading: true, error: null });
-    
-    try {
-      await notificationService.sendPhoneVerification(userId, phoneNumber);
-      set({ 
-        phoneVerificationLoading: false,
-        error: null 
-      });
-    } catch (error) {
-      console.error('Failed to send phone verification:', error);
-      set({ 
-        phoneVerificationLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to send verification code' 
+        error: error instanceof Error ? error.message : 'Failed to save preferences',
+        loading: false 
       });
       throw error;
     }
   },
 
-  /**
-   * Verifies the user's phone number with the verification token
-   */
-  verifyPhoneNumber: async (userId: string, verificationToken: string) => {
-    set({ phoneVerificationLoading: true, error: null });
-    
+  fetchNotificationHistory: async (userId: string) => {
+    set({ loading: true, error: null });
     try {
-      await notificationService.verifyPhoneNumber(userId, verificationToken);
-      
-      // Refresh preferences to get updated phone verification status
-      await get().fetchPreferences(userId);
-      
-      set({ 
-        phoneVerificationLoading: false,
-        error: null 
-      });
+      const emailHistory = await notificationService.getEmailHistory(userId);
+      set({ emailHistory, loading: false });
     } catch (error) {
-      console.error('Failed to verify phone number:', error);
       set({ 
-        phoneVerificationLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to verify phone number' 
+        error: error instanceof Error ? error.message : 'Failed to load notification history',
+        loading: false 
       });
-      throw error;
     }
   },
 
-  /**
-   * Clears any error state
-   */
-  clearError: () => {
-    set({ error: null });
-  },
-
-  /**
-   * Resets the store to initial state
-   */
-  reset: () => {
-    set({
-      preferences: null,
-      emailHistory: [],
-      smsHistory: [],
-      loading: false,
-      error: null,
-      phoneVerificationLoading: false,
-    });
-  },
+  clearError: () => set({ error: null }),
+  setError: (error: string | null) => set({ error }),
 }));

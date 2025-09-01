@@ -12,9 +12,15 @@ import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/Auth/ResetPasswordPage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import { OrderDetail } from './pages/OrderDetail/OrderDetail';
+import OrdersList from './pages/Orders/OrdersList';
 import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+
+// Placeholder components for new routes
+const OrganizationPage = () => <div style={{padding: '20px'}}><h1>Organization Management</h1><p>Coming soon...</p></div>;
+const AdminOrganizationsPage = () => <div style={{padding: '20px'}}><h1>Organizations Management</h1><p>Coming soon...</p></div>;
+const AdminSystemSettingsPage = () => <div style={{padding: '20px'}}><h1>System Settings</h1><p>Coming soon...</p></div>;
 
 /**
  * Layout component that provides consistent navigation and structure
@@ -38,8 +44,14 @@ function Layout({ children }: { children: React.ReactNode }) {
  * @returns {JSX.Element} Main application with routing
  */
 function App() {
-  const { isAuthenticated, initializeAuth } = useAppStore();
+  const { isAuthenticated, user, initializeAuth } = useAppStore();
   
+  // Get default route based on user role
+  const getDefaultRoute = () => {
+    if (!isAuthenticated) return "/auth/login";
+    if (user?.role === "ColorGarbStaff") return "/admin/dashboard";
+    return "/dashboard";
+  };
   
   // Initialize authentication state on app start
   React.useEffect(() => {
@@ -54,15 +66,15 @@ function App() {
           {/* Public routes - no navigation */}
           <Route 
             path="/auth/login" 
-            element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" replace />} 
+            element={!isAuthenticated ? <LoginPage /> : <Navigate to={getDefaultRoute()} replace />} 
           />
           <Route 
             path="/auth/forgot-password" 
-            element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to="/dashboard" replace />} 
+            element={!isAuthenticated ? <ForgotPasswordPage /> : <Navigate to={getDefaultRoute()} replace />} 
           />
           <Route 
             path="/auth/reset-password" 
-            element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/dashboard" replace />} 
+            element={!isAuthenticated ? <ResetPasswordPage /> : <Navigate to={getDefaultRoute()} replace />} 
           />
           
           {/* Protected routes with layout */}
@@ -89,6 +101,17 @@ function App() {
           />
           
           {/* Order routes */}
+          <Route 
+            path="/orders" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OrdersList />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
           <Route 
             path="/orders/:orderId" 
             element={
@@ -123,16 +146,49 @@ function App() {
             } 
           />
           
+          <Route 
+            path="/admin/organizations" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminOrganizationsPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/settings" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminSystemSettingsPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/organization" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OrganizationPage />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
           {/* Default redirect based on authentication */}
           <Route 
             path="/" 
-            element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth/login"} replace />} 
+            element={<Navigate to={getDefaultRoute()} replace />} 
           />
           
           {/* Catch all - redirect to appropriate page */}
           <Route 
             path="*" 
-            element={<Navigate to={isAuthenticated ? "/dashboard" : "/auth/login"} replace />} 
+            element={<Navigate to={getDefaultRoute()} replace />} 
           />
         </Routes>
       </Router>

@@ -227,23 +227,8 @@ public class OrdersController : ControllerBase
                 return NotFound(new { message = "Order not found" });
             }
 
-            // Validate the stage transition (basic validation)
-            if (!IsValidStageTransition(order.CurrentStage, request.Stage))
-            {
-                await _auditService.LogRoleAccessAttemptAsync(
-                    userGuid,
-                    UserRole.ColorGarbStaff,
-                    $"PATCH /api/orders/{orderId}/admin",
-                    "PATCH",
-                    false,
-                    order.OrganizationId,
-                    HttpContext.Connection.RemoteIpAddress?.ToString(),
-                    Request.Headers.UserAgent.FirstOrDefault(),
-                    $"Invalid stage transition: {order.CurrentStage} -> {request.Stage}"
-                );
-
-                return BadRequest(new { message = $"Invalid stage transition from {order.CurrentStage} to {request.Stage}" });
-            }
+            // Admin users can transition to any stage without restrictions
+            // Note: Removed stage transition validation for admin users as per requirements
 
             // Store original values for audit trail
             var originalStage = order.CurrentStage;
@@ -273,14 +258,31 @@ public class OrdersController : ControllerBase
             };
 
             _context.OrderStageHistory.Add(stageHistory);
+
+            // If only ship date changed (no stage change), create a separate history entry for ship date tracking
+            if (originalStage == request.Stage && request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value)
+            {
+                var shipDateHistory = new OrderStageHistory
+                {
+                    OrderId = orderId,
+                    Stage = originalStage, // Keep same stage
+                    UpdatedBy = userName,
+                    Notes = $"Ship date updated: {request.Reason}",
+                    PreviousShipDate = originalShipDate,
+                    NewShipDate = request.ShipDate,
+                    ChangeReason = request.Reason
+                };
+
+                _context.OrderStageHistory.Add(shipDateHistory);
+            }
             await _context.SaveChangesAsync();
 
             // Sync with production tracking system and send notifications (don't block on failure)
-            _ = Task.Run(async () =>
+             _ = Task.Run(async () =>
             {
                 try
                 {
-                    // Production tracking sync
+                    /* // Production tracking sync
                     var syncResult = await _productionTrackingService.SyncOrderStageUpdateAsync(
                         orderId,
                         order.OrderNumber,
@@ -292,10 +294,10 @@ public class OrdersController : ControllerBase
                     {
                         _logger.LogWarning("Production tracking sync failed for order {OrderNumber}: {Error}",
                             order.OrderNumber, syncResult.ErrorMessage);
-                    }
+                    } */
 
                     // Also sync ship date if it changed
-                    if (request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value)
+                    /* if (request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value)
                     {
                         var shipDateSyncResult = await _productionTrackingService.SyncShipDateUpdateAsync(
                             orderId,
@@ -310,11 +312,13 @@ public class OrdersController : ControllerBase
                             _logger.LogWarning("Production tracking ship date sync failed for order {OrderNumber}: {Error}",
                                 order.OrderNumber, shipDateSyncResult.ErrorMessage);
                         }
-                    }
+                    } */
 
                     // Send notifications
                     await SendOrderNotificationsAsync(
-                        order,
+                        orderId,
+                        order.OrganizationId,
+                        order.OrderNumber,
                         originalStage,
                         request.Stage,
                         originalShipDate,
@@ -326,7 +330,7 @@ public class OrdersController : ControllerBase
                     _logger.LogError(ex, "Unexpected error during production tracking sync and notifications for order {OrderNumber}",
                         order.OrderNumber);
                 }
-            });
+            }); 
 
             // Log successful audit entry
             await _auditService.LogRoleAccessAttemptAsync(
@@ -399,16 +403,8 @@ public class OrdersController : ControllerBase
                         continue;
                     }
 
-                    // Validate stage transition if stage update is requested
-                    if (!string.IsNullOrWhiteSpace(request.Stage) && !IsValidStageTransition(order.CurrentStage, request.Stage))
-                    {
-                        failed.Add(new BulkUpdateFailure
-                        {
-                            OrderId = orderId.ToString(),
-                            Error = $"Invalid stage transition from {order.CurrentStage} to {request.Stage}"
-                        });
-                        continue;
-                    }
+                    // Admin users can transition to any stage without restrictions in bulk updates
+                    // Note: Removed stage transition validation for admin bulk updates as per requirements
 
                     // Store original values for audit trail
                     var originalStage = order.CurrentStage;
@@ -427,12 +423,13 @@ public class OrdersController : ControllerBase
 
                     order.UpdatedAt = DateTime.UtcNow;
 
-                    // Create stage history entry if stage changed
+                    // Create stage history entry for any changes
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
+                    var userName = user?.Name ?? "Unknown User";
+
+                    // Create history entry if stage changed
                     if (!string.IsNullOrWhiteSpace(request.Stage))
                     {
-                        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userGuid);
-                        var userName = user?.Name ?? "Unknown User";
-
                         var stageHistory = new OrderStageHistory
                         {
                             OrderId = orderId,
@@ -447,6 +444,23 @@ public class OrdersController : ControllerBase
                         _context.OrderStageHistory.Add(stageHistory);
                     }
 
+                    // If only ship date changed (no stage change), create a separate history entry for ship date tracking
+                    if (string.IsNullOrWhiteSpace(request.Stage) && request.ShipDate.HasValue && originalShipDate != request.ShipDate.Value)
+                    {
+                        var shipDateHistory = new OrderStageHistory
+                        {
+                            OrderId = orderId,
+                            Stage = originalStage, // Keep same stage
+                            UpdatedBy = userName,
+                            Notes = $"Ship date updated: {request.Reason}",
+                            PreviousShipDate = originalShipDate,
+                            NewShipDate = request.ShipDate,
+                            ChangeReason = request.Reason
+                        };
+
+                        _context.OrderStageHistory.Add(shipDateHistory);
+                    }
+
                     await _context.SaveChangesAsync();
 
                     // Sync with production tracking system (don't block on failure)
@@ -454,7 +468,7 @@ public class OrdersController : ControllerBase
                     {
                         try
                         {
-                            if (!string.IsNullOrWhiteSpace(request.Stage))
+                            /* if (!string.IsNullOrWhiteSpace(request.Stage))
                             {
                                 var syncResult = await _productionTrackingService.SyncOrderStageUpdateAsync(
                                     orderId,
@@ -485,11 +499,13 @@ public class OrdersController : ControllerBase
                                     _logger.LogWarning("Bulk production tracking ship date sync failed for order {OrderNumber}: {Error}",
                                         order.OrderNumber, shipDateSyncResult.ErrorMessage);
                                 }
-                            }
+                            } */
 
                             // Send notifications for bulk updates too
                             await SendOrderNotificationsAsync(
-                                order,
+                                orderId,
+                                order.OrganizationId,
+                                order.OrderNumber,
                                 originalStage,
                                 order.CurrentStage,
                                 originalShipDate,
@@ -501,7 +517,7 @@ public class OrdersController : ControllerBase
                             _logger.LogError(ex, "Unexpected error during bulk production tracking sync and notifications for order {OrderNumber}",
                                 order.OrderNumber);
                         }
-                    });
+                    }); 
 
                     // Log audit entry for successful update
                     await _auditService.LogRoleAccessAttemptAsync(
@@ -808,82 +824,132 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
-    /// Sends notifications for order updates (stage changes and ship date changes).
+    /// Sends notifications for order updates (stage changes and ship date changes) to users based on their notification preferences.
+    /// This method is designed to be called from background tasks and creates its own service scope.
     /// </summary>
-    /// <param name="order">Updated order with organization loaded</param>
+    /// <param name="orderId">Order ID</param>
+    /// <param name="organizationId">Organization ID</param>
+    /// <param name="orderNumber">Order number for logging</param>
     /// <param name="originalStage">Previous stage</param>
     /// <param name="newStage">New stage</param>
     /// <param name="originalShipDate">Previous ship date</param>
     /// <param name="newShipDate">New ship date (if changed)</param>
     /// <param name="reason">Reason for the update</param>
     private async Task SendOrderNotificationsAsync(
-        Order order,
+        Guid orderId,
+        Guid organizationId,
+        string orderNumber,
         string originalStage,
         string newStage,
         DateTime originalShipDate,
         DateTime? newShipDate,
         string reason)
     {
+        // Create a new service scope for background task to avoid disposed context issues
+        using var scope = HttpContext.RequestServices.CreateScope();
+        var scopedServices = scope.ServiceProvider;
+        
         try
         {
-            if (order.Organization == null)
-            {
-                _logger.LogWarning("Cannot send notifications for order {OrderNumber}: Organization not loaded", order.OrderNumber);
-                return;
-            }
+            var context = scopedServices.GetRequiredService<ColorGarbDbContext>();
+            var emailService = scopedServices.GetRequiredService<IEmailService>();
+            var logger = scopedServices.GetRequiredService<ILogger<OrdersController>>();
 
-            var organizationEmail = order.Organization.ContactEmail;
-            var organizationName = order.Organization.Name;
+            // Get all users for this organization who might have notification preferences
+            var organizationUsers = await context.Users
+                .Where(u => u.OrganizationId == organizationId && u.IsActive)
+                .Select(u => u.Id.ToString())
+                .ToListAsync();
 
-            // Send stage update notification if stage changed
+            var notificationsSent = 0;
+            var notificationsFailed = 0;
+
+            // Send stage milestone notification to each user based on their preferences
             if (originalStage != newStage)
             {
-                var stageEmailSent = await _emailService.SendOrderStageUpdateEmailAsync(
-                    organizationEmail,
-                    organizationName,
-                    order.OrderNumber,
-                    order.Description,
-                    originalStage,
-                    newStage,
-                    order.CurrentShipDate);
+                foreach (var userId in organizationUsers)
+                {
+                    try
+                    {
+                        var notification = await emailService.SendMilestoneNotificationAsync(
+                            userId,
+                            orderId.ToString(),
+                            newStage);
 
-                if (stageEmailSent)
-                {
-                    _logger.LogInformation("Stage update notification sent for order {OrderNumber}: {PreviousStage} -> {NewStage}",
-                        order.OrderNumber, originalStage, newStage);
+                        if (notification != null)
+                        {
+                            notificationsSent++;
+                            logger.LogDebug("Stage milestone notification sent to user {UserId} for order {OrderNumber}: {NewStage}",
+                                userId, orderNumber, newStage);
+                        }
+                        else
+                        {
+                            logger.LogDebug("No notification sent to user {UserId} for order {OrderNumber} - user has notifications disabled or milestone not enabled",
+                                userId, orderNumber);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        notificationsFailed++;
+                        logger.LogWarning(ex, "Failed to send milestone notification to user {UserId} for order {OrderNumber}",
+                            userId, orderNumber);
+                    }
                 }
-                else
+
+                if (notificationsSent > 0)
                 {
-                    _logger.LogWarning("Failed to send stage update notification for order {OrderNumber}", order.OrderNumber);
+                    logger.LogInformation("Stage update notifications sent for order {OrderNumber}: {PreviousStage} -> {NewStage} ({Sent} sent, {Failed} failed)",
+                        orderNumber, originalStage, newStage, notificationsSent, notificationsFailed);
                 }
             }
 
-            // Send ship date change notification if ship date changed
+            // Send ship date change milestone notification (treated as a separate milestone type)
             if (newShipDate.HasValue && originalShipDate != newShipDate.Value)
             {
-                var shipDateEmailSent = await _emailService.SendShipDateChangeEmailAsync(
-                    organizationEmail,
-                    organizationName,
-                    order.OrderNumber,
-                    order.Description,
-                    originalShipDate,
-                    newShipDate.Value,
-                    reason);
+                var shipNotificationsSent = 0;
+                var shipNotificationsFailed = 0;
 
-                if (shipDateEmailSent)
+                foreach (var userId in organizationUsers)
                 {
-                    _logger.LogInformation("Ship date change notification sent for order {OrderNumber}: {PreviousDate} -> {NewDate}",
-                        order.OrderNumber, originalShipDate.ToString("yyyy-MM-dd"), newShipDate.Value.ToString("yyyy-MM-dd"));
+                    try
+                    {
+                        // Use "Ship Date Change" as a special milestone type for ship date updates
+                        var notification = await emailService.SendMilestoneNotificationAsync(
+                            userId,
+                            orderId.ToString(),
+                            "Ship Date Change");
+
+                        if (notification != null)
+                        {
+                            shipNotificationsSent++;
+                            logger.LogDebug("Ship date change notification sent to user {UserId} for order {OrderNumber}",
+                                userId, orderNumber);
+                        }
+                        else
+                        {
+                            logger.LogDebug("No ship date notification sent to user {UserId} for order {OrderNumber} - user has notifications disabled or milestone not enabled",
+                                userId, orderNumber);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        shipNotificationsFailed++;
+                        logger.LogWarning(ex, "Failed to send ship date change notification to user {UserId} for order {OrderNumber}",
+                            userId, orderNumber);
+                    }
                 }
-                else
+
+                if (shipNotificationsSent > 0)
                 {
-                    _logger.LogWarning("Failed to send ship date change notification for order {OrderNumber}", order.OrderNumber);
+                    logger.LogInformation("Ship date change notifications sent for order {OrderNumber}: {PreviousDate} -> {NewDate} ({Sent} sent, {Failed} failed)",
+                        orderNumber, originalShipDate.ToString("yyyy-MM-dd"), newShipDate.Value.ToString("yyyy-MM-dd"), 
+                        shipNotificationsSent, shipNotificationsFailed);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending notifications for order {OrderNumber}", order.OrderNumber);
+            _logger.LogError(ex, "Error sending notifications for order {OrderNumber}", orderNumber);
         }
     }
 }

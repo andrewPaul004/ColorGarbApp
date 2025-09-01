@@ -14,6 +14,8 @@ import {
   Button,
   Chip,
   Badge,
+  TextField,
+  InputAdornment,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -26,10 +28,11 @@ import {
   TrendingUp,
   Schedule,
   CheckCircle,
+  Search,
 } from '@mui/icons-material';
 import { useAdminStore } from '../../stores/adminStore';
 import { useAdminAccess } from '../../hooks/useAdminAccess';
-import RoleBasedNavigation from '../../components/common/RoleBasedNavigation';
+// RoleBasedNavigation removed - using Layout wrapper in App.tsx instead
 import { AdminOrdersList } from '../../components/admin/AdminOrdersList';
 import { BulkUpdateModal } from '../../components/admin/BulkUpdateModal';
 
@@ -68,6 +71,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Local state
   const [bulkUpdateModalOpen, setBulkUpdateModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   /**
    * Load initial admin data on component mount
@@ -160,21 +164,19 @@ export const AdminDashboard: React.FC = () => {
    */
   const getAvailableStages = (): string[] => {
     return [
-      'Initial Consultation',
-      'Contract & Payment',
-      'Design Development',
+      'Design Proposal',
+      'Proof Approval', 
       'Measurements',
-      'Fabric Selection',
-      'Pattern Development',
       'Production Planning',
-      'First Fitting',
-      'Production',
-      'Second Fitting',
-      'Final Alterations',
+      'Cutting',
+      'Sewing',
       'Quality Control',
+      'Finishing',
+      'Final Inspection',
       'Packaging',
-      'Shipped',
-      'Delivered',
+      'Shipping Preparation',
+      'Ship Order',
+      'Delivery',
     ];
   };
 
@@ -198,10 +200,7 @@ export const AdminDashboard: React.FC = () => {
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      <RoleBasedNavigation />
-      
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
         {/* Page Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -305,7 +304,24 @@ export const AdminDashboard: React.FC = () => {
         {/* Filters and Actions */}
         <Paper sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6} md={2}>
               <FormControl fullWidth size="small">
                 <InputLabel>Organization</InputLabel>
                 <Select
@@ -442,15 +458,13 @@ export const AdminDashboard: React.FC = () => {
         )}
 
         {/* Orders List */}
-        {!ordersLoading && <AdminOrdersList />}
-      </Container>
-
+        {!ordersLoading && <AdminOrdersList searchQuery={searchQuery} />}
       {/* Bulk Update Modal */}
       <BulkUpdateModal
         open={bulkUpdateModalOpen}
         onClose={handleCloseBulkUpdate}
       />
-    </Box>
+    </Container>
   );
 };
 

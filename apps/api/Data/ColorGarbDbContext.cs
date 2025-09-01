@@ -63,15 +63,7 @@ public class ColorGarbDbContext : DbContext
     /// </summary>
     public DbSet<EmailNotification> EmailNotifications => Set<EmailNotification>();
 
-    /// <summary>
-    /// SMS notifications dataset - tracks SMS delivery status and audit trail
-    /// </summary>
-    public DbSet<SmsNotification> SmsNotifications => Set<SmsNotification>();
-
-    /// <summary>
-    /// Phone verifications dataset - tracks phone number verification for SMS opt-in
-    /// </summary>
-    public DbSet<PhoneVerification> PhoneVerifications => Set<PhoneVerification>();
+    // SMS functionality removed - keeping for historical reference in comments only
 
     /// <summary>
     /// Messages dataset - tracks order-specific communication between clients and staff
@@ -217,7 +209,6 @@ public class ColorGarbDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.UnsubscribeToken).IsUnique();
-            entity.HasIndex(e => e.PhoneNumber);
             entity.HasIndex(e => new { e.UserId, e.IsActive });
 
             // Configure relationship with User
@@ -250,46 +241,7 @@ public class ColorGarbDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Configure SmsNotification entity
-        modelBuilder.Entity<SmsNotification>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.OrderId);
-            entity.HasIndex(e => e.PhoneNumber);
-            entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.CreatedAt);
-            entity.HasIndex(e => e.TwilioMessageSid).IsUnique();
-            entity.HasIndex(e => new { e.UserId, e.Status });
-
-            // Configure relationship with User
-            entity.HasOne(e => e.User)
-                  .WithMany()
-                  .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationship with Order
-            entity.HasOne(e => e.Order)
-                  .WithMany()
-                  .HasForeignKey(e => e.OrderId)
-                  .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        // Configure PhoneVerification entity
-        modelBuilder.Entity<PhoneVerification>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => e.PhoneNumber);
-            entity.HasIndex(e => e.ExpiresAt);
-            entity.HasIndex(e => new { e.UserId, e.IsVerified });
-
-            // Configure relationship with User
-            entity.HasOne(e => e.User)
-                  .WithMany()
-                  .HasForeignKey(e => e.UserId)
-                  .OnDelete(DeleteBehavior.Cascade);
-        });
+        // SMS and Phone verification entities removed - SMS functionality disabled
 
         // Configure Message entity
         modelBuilder.Entity<Message>(entity =>
@@ -475,21 +427,51 @@ public class ColorGarbDbContext : DbContext
             UpdatedAt = seedDate
         });
 
-        // Seed a sample user with password hash for "password123"
+        // Seed sample users with password hash for "password123"
         var sampleUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        modelBuilder.Entity<User>().HasData(new User
-        {
-            Id = sampleUserId,
-            Email = "director@lincolnhigh.edu",
-            Name = "Jane Smith",
-            Role = UserRole.Director,
-            Phone = "(555) 123-4567",
-            OrganizationId = sampleOrgId,
-            PasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewKXhK9Pq3qKwP0O", // BCrypt hash of "password123"
-            IsActive = true,
-            CreatedAt = seedDate,
-            UpdatedAt = seedDate
-        });
+        var financeUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+        var adminUserId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        
+        modelBuilder.Entity<User>().HasData(
+            new User
+            {
+                Id = sampleUserId,
+                Email = "director@lincolnhigh.edu",
+                Name = "Jane Smith",
+                Role = UserRole.Director,
+                Phone = "(555) 123-4567",
+                OrganizationId = sampleOrgId,
+                PasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewKXhK9Pq3qKwP0O", // BCrypt hash of "password123"
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new User
+            {
+                Id = financeUserId,
+                Email = "finance@lincolnhigh.edu",
+                Name = "John Doe",
+                Role = UserRole.Finance,
+                Phone = "(555) 123-4568",
+                OrganizationId = sampleOrgId,
+                PasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewKXhK9Pq3qKwP0O", // BCrypt hash of "password123"
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            },
+            new User
+            {
+                Id = adminUserId,
+                Email = "admin@colorgarb.com",
+                Name = "Admin User",
+                Role = UserRole.ColorGarbStaff,
+                Phone = "(555) 999-0000",
+                OrganizationId = null, // ColorGarb staff don't belong to specific organizations
+                PasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewKXhK9Pq3qKwP0O", // BCrypt hash of "password123"
+                IsActive = true,
+                CreatedAt = seedDate,
+                UpdatedAt = seedDate
+            });
 
         // Seed a sample order
         var sampleOrderId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -607,16 +589,7 @@ public class ColorGarbDbContext : DbContext
                 if (entry.State == EntityState.Added)
                     notification.CreatedAt = DateTime.UtcNow;
             }
-            else if (entry.Entity is SmsNotification smsNotification)
-            {
-                if (entry.State == EntityState.Added)
-                    smsNotification.CreatedAt = DateTime.UtcNow;
-            }
-            else if (entry.Entity is PhoneVerification phoneVerification)
-            {
-                if (entry.State == EntityState.Added)
-                    phoneVerification.CreatedAt = DateTime.UtcNow;
-            }
+            // SMS and Phone verification tracking removed
             else if (entry.Entity is Message message)
             {
                 if (entry.State == EntityState.Added)

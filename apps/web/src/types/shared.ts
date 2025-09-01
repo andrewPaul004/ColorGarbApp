@@ -7,7 +7,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'client' | 'colorgarb_staff';
+  role: 'Director' | 'Finance' | 'ColorGarbStaff';
   phone?: string;
   organizationId?: string;
   isActive: boolean;
@@ -72,6 +72,7 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   organizationName: string;
+  customerName?: string;
 }
 
 // Communication Audit Trail Types
@@ -146,6 +147,119 @@ export interface ExportCommunicationResult {
   estimatedSize: number;
   recordCount: number;
   errorMessage?: string;
+}
+
+// Message System Types
+export interface Message {
+  id: string;
+  orderId: string;
+  content: string;
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  messageType: string;
+  createdAt: Date;
+  readAt?: Date;
+  attachments?: any[];
+}
+
+export interface MessageSearchRequest {
+  searchTerm?: string;
+  messageType?: string;
+  senderRole?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  includeAttachments?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MessageSearchResponse {
+  messages: Message[];
+  totalCount: number;
+  unreadCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface SendMessageRequest {
+  content: string;
+  messageType?: string;
+  recipientRole?: string;
+  replyToMessageId?: string;
+  attachments?: File[];
+}
+
+export interface MessageCreationResponse {
+  message: Message;
+  success: boolean;
+}
+
+export interface BulkReadRequest {
+  messageIds: string[];
+}
+
+export interface BulkReadResponse {
+  successCount: number;
+  failedIds: string[];
+}
+
+// Order Detail and Stage Types
+export interface OrderStage {
+  id: string;
+  stageName: string;
+  stageNumber: number;
+  description: string;
+  isCompleted: boolean;
+  completedAt?: Date;
+  estimatedDuration?: number;
+  actualDuration?: number;
+  notes?: string;
+}
+
+export interface StageHistory {
+  id: string;
+  orderId: string;
+  stageId: string;
+  stageName: string;
+  previousStage?: string;
+  completedAt: Date;
+  completedBy: string;
+  completedByName: string;
+  notes?: string;
+  durationHours?: number;
+}
+
+export interface OrderDetail {
+  id: string;
+  orderNumber: string;
+  description: string;
+  currentStage: string;
+  originalShipDate: Date;
+  currentShipDate: Date;
+  totalAmount: number;
+  paymentStatus: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  organizationName: string;
+  customerName?: string;
+  stages: OrderStage[];
+  stageHistory: StageHistory[];
+  shipDateHistory?: ShipDateChangeHistory[];
+}
+
+export interface ShipDateChangeHistory {
+  id: string;
+  orderId: string;
+  oldShipDate: Date;
+  newShipDate: Date;
+  reason: string;
+  changedBy: string;
+  changedByName: string;
+  changedAt: Date;
 }
 
 export interface ComplianceReportRequest {

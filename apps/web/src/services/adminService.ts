@@ -1,6 +1,6 @@
 import type { Order, Organization } from '../types/shared';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5132';
 
 /**
  * Admin-specific data transfer objects that match the backend DTOs
@@ -94,7 +94,7 @@ class AdminService {
       params.append('pageSize', filters.pageSize.toString());
 
       const queryString = params.toString();
-      const url = `${API_BASE_URL}/orders/admin/orders?${queryString}`;
+      const url = `${API_BASE_URL}/api/orders/admin/orders?${queryString}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -163,7 +163,7 @@ class AdminService {
    */
   async updateOrderStage(orderId: string, updates: UpdateOrderStageRequest): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/admin`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/admin`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ class AdminService {
    */
   async bulkUpdateOrders(updates: BulkUpdateRequest): Promise<BulkUpdateResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/orders/admin/orders/bulk-update`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/admin/orders/bulk-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

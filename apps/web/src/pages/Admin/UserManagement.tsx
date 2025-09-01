@@ -36,8 +36,29 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 } from '@mui/icons-material';
-import { UserRole, type User, RoleUtils } from '../../../../../packages/shared/src/types/user';
-import RoleBasedNavigation from '../../components/common/RoleBasedNavigation';
+// import { UserRole, type User, RoleUtils } from '../../../../../packages/shared/src/types/user';
+// import RoleBasedNavigation from '../../components/common/RoleBasedNavigation'; // Component removed
+import type { User } from '../../types/shared';
+import organizationService, { type Organization } from '../../services/organizationService';
+
+// Simplified role definitions for this component
+const UserRole = {
+  Director: 'Director',
+  Finance: 'Finance', 
+  ColorGarbStaff: 'ColorGarbStaff'
+} as const;
+
+const RoleUtils = {
+  getDisplayName: (role: string) => role,
+  getIcon: (role: string) => role,
+  getRoleInfo: (role: string) => ({
+    name: role,
+    description: role === UserRole.Director ? 'Full access to organization orders and settings' : 
+                 role === UserRole.Finance ? 'Access to financial and payment information' : 
+                 role === UserRole.ColorGarbStaff ? 'Administrative access across all organizations' : 'Standard access'
+  }),
+  getAllRoles: () => Object.values(UserRole)
+};
 import useRolePermissions from '../../hooks/useRolePermissions';
 
 /**
@@ -120,12 +141,39 @@ export const UserManagement: React.FC = () => {
   const { isColorGarbStaff, canPerformAction } = useRolePermissions();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<UserRole>(UserRole.Director);
+  const [newUserEmail, setNewUserEmail] = useState<string>('');
+  const [newUserName, setNewUserName] = useState<string>('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>(UserRole.Director);
+  const [newUserOrganizationId, setNewUserOrganizationId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState<boolean>(false);
 
   // Check if user can manage other users
   const canManageUsers = canPerformAction('manage_all_organizations').hasPermission;
+
+  // Load organizations when component mounts
+  React.useEffect(() => {
+    const loadOrganizations = async () => {
+      if (!isColorGarbStaff) return;
+
+      setOrganizationsLoading(true);
+      try {
+        const orgs = await organizationService.getAllOrganizations();
+        setOrganizations(orgs);
+      } catch (err) {
+        console.error('Failed to load organizations:', err);
+        setError('Failed to load organizations');
+      } finally {
+        setOrganizationsLoading(false);
+      }
+    };
+
+    loadOrganizations();
+  }, [isColorGarbStaff]);
 
   if (!isColorGarbStaff || !canManageUsers) {
     return (
@@ -186,9 +234,57 @@ export const UserManagement: React.FC = () => {
     setError(null);
   };
 
+  const handleAddUser = () => {
+    setNewUserEmail('');
+    setNewUserName('');
+    setNewUserRole(UserRole.Director);
+    setNewUserOrganizationId(organizations[0]?.id || '');
+    setAddUserDialogOpen(true);
+    setError(null);
+  };
+
+  const handleSaveNewUser = async () => {
+    if (!newUserEmail.trim() || !newUserName.trim()) {
+      setError('Email and name are required');
+      return;
+    }
+
+    try {
+      const newUser: User = {
+        id: (users.length + 1).toString(),
+        email: newUserEmail.trim(),
+        name: newUserName.trim(),
+        role: newUserRole,
+        organizationId: newUserRole === UserRole.ColorGarbStaff ? undefined : newUserOrganizationId,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      setAddUserDialogOpen(false);
+      setNewUserEmail('');
+      setNewUserName('');
+      setNewUserRole(UserRole.Director);
+      setNewUserOrganizationId('');
+      setError(null);
+    } catch {
+      setError('Failed to create new user');
+    }
+  };
+
+  const handleCloseAddUserDialog = () => {
+    setAddUserDialogOpen(false);
+    setNewUserEmail('');
+    setNewUserName('');
+    setNewUserRole(UserRole.Director);
+    setNewUserOrganizationId('');
+    setError(null);
+  };
+
   return (
     <Box className="min-h-screen bg-gray-50">
-      <RoleBasedNavigation />
+      {/* RoleBasedNavigation removed - using Layout wrapper instead */}
       
       <Container maxWidth="lg" className="py-8">
         <Box className="mb-6">
@@ -289,7 +385,7 @@ export const UserManagement: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<PersonAdd />}
-            onClick={() => {/* Handle add user */}}
+            onClick={handleAddUser}
           >
             Add New User
           </Button>
@@ -347,6 +443,104 @@ export const UserManagement: React.FC = () => {
             disabled={!selectedUser || newRole === selectedUser.role}
           >
             Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog
+        open={addUserDialogOpen}
+        onClose={handleCloseAddUserDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Add New User
+        </DialogTitle>
+        <DialogContent>
+          <Box className="pt-4 space-y-4">
+            <TextField
+              label="Name"
+              value={newUserName}
+              onChange={(e) => setNewUserName(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Email"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+              fullWidth
+              required
+              type="email"
+            />
+            <FormControl fullWidth>
+              <InputLabel>Role</InputLabel>
+              <Select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value as UserRole)}
+                label="Role"
+              >
+                {Object.values(UserRole).map((role) => (
+                  <MenuItem key={role} value={role}>
+                    <Box className="flex items-center gap-2">
+                      {getRoleIcon(role)}
+                      {RoleUtils.getDisplayName(role)}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            {newUserRole !== UserRole.ColorGarbStaff && (
+              <FormControl fullWidth>
+                <InputLabel>Organization</InputLabel>
+                <Select
+                  value={newUserOrganizationId}
+                  onChange={(e) => setNewUserOrganizationId(e.target.value)}
+                  label="Organization"
+                  required
+                  disabled={organizationsLoading}
+                >
+                  {organizationsLoading ? (
+                    <MenuItem value="" disabled>
+                      Loading organizations...
+                    </MenuItem>
+                  ) : organizations.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      No organizations available
+                    </MenuItem>
+                  ) : (
+                    organizations.map((org) => (
+                      <MenuItem key={org.id} value={org.id}>
+                        {org.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+            )}
+            
+            {newUserRole && (
+              <Typography variant="body2" color="text.secondary" className="mt-2">
+                {RoleUtils.getDisplayName(newUserRole)} permissions will be assigned to this user.
+                {newUserRole === UserRole.ColorGarbStaff && " ColorGarb staff users have access across all organizations."}
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddUserDialog}>Cancel</Button>
+          <Button
+            onClick={handleSaveNewUser}
+            variant="contained"
+            disabled={
+              !newUserEmail.trim() || 
+              !newUserName.trim() || 
+              (newUserRole !== UserRole.ColorGarbStaff && !newUserOrganizationId)
+            }
+          >
+            Add User
           </Button>
         </DialogActions>
       </Dialog>

@@ -12,7 +12,7 @@ import { StageDetailModal } from '../../components/timeline/StageDetailModal';
 import { MessageCenter } from '../../components/messages/MessageCenter';
 import { DeliveryStatusUpdates } from '../../components/communication/DeliveryStatusUpdates';
 import messageService from '../../services/messageService';
-import type { OrderStage, StageHistory, OrderDetail, Message } from '@colorgarb/shared';
+import type { OrderStage, StageHistory, OrderDetail, Message } from '../../types/shared';
 
 /**
  * Order detail workspace page that displays comprehensive order information
@@ -191,19 +191,27 @@ export const OrderDetail: React.FC = () => {
     }));
   };
 
-  // Mock ship date change history for demonstration - would come from API in production
-  const mockShipDateHistory: ShipDateChangeHistory[] = [
-    {
-      id: 'ship-1',
-      stage: 'ProductionPlanning',
-      enteredAt: new Date('2023-01-10'),
-      updatedBy: 'Production Manager Smith',
-      notes: 'Initial ship date revision due to material procurement delays',
-      previousShipDate: new Date('2023-09-15'),
-      newShipDate: new Date('2023-09-20'),
-      changeReason: 'material-delay'
-    }
-  ];
+  /**
+   * Extracts ship date change history from the order's stage history.
+   * Filters for entries that have ship date changes.
+   * 
+   * @param {OrderDetail} order - Order detail with stage history
+   * @returns {ShipDateChangeHistory[]} Array of ship date change entries
+   */
+  const getShipDateHistory = (order: OrderDetail): ShipDateChangeHistory[] => {
+    if (!order.stageHistory) return [];
+    
+    return order.stageHistory
+      .filter(history => history.previousShipDate || history.newShipDate)
+      .map(history => ({
+        ...history,
+        enteredAt: new Date(history.enteredAt),
+        previousShipDate: history.previousShipDate ? new Date(history.previousShipDate) : undefined,
+        newShipDate: history.newShipDate ? new Date(history.newShipDate) : undefined,
+        changeReason: history.changeReason
+      }))
+      .sort((a, b) => b.enteredAt.getTime() - a.enteredAt.getTime()); // Most recent first
+  };
 
   /**
    * Handles click events on timeline stages.
@@ -446,7 +454,7 @@ export const OrderDetail: React.FC = () => {
           orderId={orderDetail.id}
           originalShipDate={orderDetail.originalShipDate}
           currentShipDate={orderDetail.currentShipDate}
-          changeHistory={mockShipDateHistory}
+          changeHistory={getShipDateHistory(orderDetail)}
           onHistoryExpand={() => console.log('Ship date history expanded')}
         />
 

@@ -1,0 +1,13 @@
+Demo 1
+
+Feedback
+
+For clients 
+  - only show Active, and then below show past orders
+  - need a way to get notifications
+  - Organization doesn't do anything
+
+For staff 
+  - filter by client
+  - Communication summary at end of day?
+

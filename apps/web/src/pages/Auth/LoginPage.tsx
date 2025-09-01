@@ -110,8 +110,13 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(formData.email, formData.password);
-      // Navigate to dashboard on successful login
-      navigate('/dashboard');
+      // Navigate based on user role after successful login
+      const user = useAppStore.getState().user;
+      if (user?.role === 'ColorGarbStaff') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       // Error is handled by the store, but we can add local handling if needed
       console.error('Login failed:', err);

@@ -16,10 +16,11 @@ import {
   Chip,
   Divider,
   LinearProgress,
-  Grid,
+  CircularProgress,
   Avatar,
   Stack,
 } from '@mui/material';
+// Grid component replaced with Box for layout
 import {
   Assignment,
   Business,
@@ -93,21 +94,19 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
    */
   const getAvailableStages = (): string[] => {
     return [
-      'Initial Consultation',
-      'Contract & Payment',
-      'Design Development',
+      'Design Proposal',
+      'Proof Approval', 
       'Measurements',
-      'Fabric Selection',
-      'Pattern Development',
       'Production Planning',
-      'First Fitting',
-      'Production',
-      'Second Fitting',
-      'Final Alterations',
+      'Cutting',
+      'Sewing',
       'Quality Control',
+      'Finishing',
+      'Final Inspection',
       'Packaging',
-      'Shipped',
-      'Delivered',
+      'Shipping Preparation',
+      'Ship Order',
+      'Delivery',
     ];
   };
 
@@ -178,14 +177,18 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
       return false;
     }
 
-    if (!reason.trim()) {
-      setFormError('Reason for update is required');
-      return false;
-    }
+    // Only require reason when ship date is changing
+    const shipDateChanged = shipDate?.getTime() !== order.currentShipDate.getTime();
+    if (shipDateChanged) {
+      if (!reason.trim()) {
+        setFormError('Reason is required when changing ship date');
+        return false;
+      }
 
-    if (reason.length < 5) {
-      setFormError('Reason must be at least 5 characters');
-      return false;
+      if (reason.length < 5) {
+        setFormError('Reason must be at least 5 characters');
+        return false;
+      }
     }
 
     return true;
@@ -269,8 +272,8 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
             <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
               Order Information
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Business sx={{ fontSize: 16, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
@@ -289,8 +292,8 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
                     {formatCurrency(order.totalAmount)}
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              </Box>
+              <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Schedule sx={{ fontSize: 16, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
@@ -325,8 +328,8 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
                     />
                   )}
                 </Stack>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
             
             <Box sx={{ mt: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -425,7 +428,11 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
               onChange={(e) => setReason(e.target.value)}
               disabled={isUpdating}
               placeholder="Explain why this update is being made..."
-              helperText={`${reason.length}/500 characters`}
+              helperText={
+                shipDate?.getTime() !== order.currentShipDate.getTime() 
+                  ? `Required for ship date changes • ${reason.length}/500 characters`
+                  : `Optional for stage changes • ${reason.length}/500 characters`
+              }
               inputProps={{ maxLength: 500 }}
               fullWidth
             />
@@ -480,8 +487,8 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={isUpdating || !hasChanges() || !reason.trim()}
-            startIcon={isUpdating ? <LinearProgress size={20} /> : <Save />}
+            disabled={isUpdating || !hasChanges() || (shipDate?.getTime() !== order.currentShipDate.getTime() && !reason.trim())}
+            startIcon={isUpdating ? <CircularProgress size={20} /> : <Save />}
           >
             {isUpdating ? 'Updating...' : 'Update Order'}
           </Button>

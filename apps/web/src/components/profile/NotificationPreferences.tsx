@@ -14,32 +14,17 @@ import {
   Button,
   Alert,
   Divider,
-  Chip,
   CircularProgress,
-  TextField,
-  InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import { 
   Notifications as NotificationsIcon,
   Email as EmailIcon,
-  Sms as SmsIcon,
-  Phone as PhoneIcon,
   Schedule as ScheduleIcon,
   Save as SaveIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
-  Verified as VerifiedIcon,
-  History as HistoryIcon,
 } from '@mui/icons-material';
 import { useNotificationStore } from '../../stores/notificationStore';
-import PhoneVerificationDialog from '../notifications/PhoneVerificationDialog';
-import SmsHistory from '../notifications/SmsHistory';
 
 interface NotificationMilestone {
   type: string;
@@ -47,8 +32,13 @@ interface NotificationMilestone {
   description: string;
   enabled: boolean;
   emailEnabled: boolean;
-  smsEnabled: boolean;
   notifyBefore?: number;
+}
+
+interface AvailableMilestone {
+  type: string;
+  name: string;
+  description: string;
 }
 
 interface NotificationPreferencesProps {
@@ -56,46 +46,41 @@ interface NotificationPreferencesProps {
 }
 
 /**
- * NotificationPreferences component provides user interface for managing email and SMS notification settings.
- * Allows users to control which milestones trigger notifications, delivery methods, and frequency.
+ * NotificationPreferences component provides user interface for managing email notification settings.
+ * Allows users to control which milestones trigger notifications and delivery frequency.
  * 
  * Features:
- * - Toggle email and SMS notifications on/off globally
- * - Phone number verification for SMS opt-in compliance
- * - Configure milestone-specific notification settings (email/SMS per milestone)
+ * - Toggle email notifications on/off globally
+ * - Configure milestone-specific notification settings
  * - Set notification frequency preferences
- * - View SMS notification history with delivery tracking
  * - Save changes with validation feedback
  * 
- * @since 3.2.0 (Extended from 3.1.0)
+ * @since 3.2.0
  */
 export const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({ userId }) => {
   const { 
     preferences, 
+    availableMilestones: storeAvailableMilestones,
     loading, 
     error, 
     fetchPreferences, 
     updatePreferences,
-    fetchNotificationHistory 
   } = useNotificationStore();
 
   const [localPreferences, setLocalPreferences] = useState<{
     emailEnabled: boolean;
-    smsEnabled: boolean;
     frequency: string;
     milestones: NotificationMilestone[];
   }>({
     emailEnabled: true,
-    smsEnabled: false,
     frequency: 'Immediate',
     milestones: [],
   });
 
+
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const [phoneVerificationOpen, setPhoneVerificationOpen] = useState(false);
 
   // Load preferences on component mount
   useEffect(() => {
@@ -109,7 +94,6 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
         const milestones = JSON.parse(preferences.milestonesJson || '[]');
         setLocalPreferences({
           emailEnabled: preferences.emailEnabled,
-          smsEnabled: preferences.smsEnabled,
           frequency: preferences.frequency,
           milestones: milestones,
         });
@@ -118,111 +102,64 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
         // Use default milestones if parsing fails
         setLocalPreferences({
           emailEnabled: preferences.emailEnabled,
-          smsEnabled: preferences.smsEnabled,
           frequency: preferences.frequency,
-          milestones: getDefaultMilestones(),
+          milestones: createDefaultMilestones(storeAvailableMilestones),
         });
       }
     }
-  }, [preferences]);
+  }, [preferences, storeAvailableMilestones]);
+
+  // Initialize milestones when available milestones are loaded and no existing milestones
+  useEffect(() => {
+    if (storeAvailableMilestones.length > 0 && localPreferences.milestones.length === 0 && preferences) {
+      setLocalPreferences(prev => ({
+        ...prev,
+        milestones: createDefaultMilestones(storeAvailableMilestones),
+      }));
+    }
+  }, [storeAvailableMilestones, localPreferences.milestones.length, preferences]);
 
   /**
-   * Returns default milestone configuration with all notifications enabled
+   * Creates default milestone configuration based on available milestones from API
    */
-  const getDefaultMilestones = (): NotificationMilestone[] => [
-    {
-      type: 'MeasurementsDue',
-      name: 'Measurements Due',
-      description: 'When performer measurements need to be submitted',
+  const createDefaultMilestones = (availableMilestones: AvailableMilestone[]): NotificationMilestone[] => {
+    return availableMilestones.map(milestone => ({
+      type: milestone.type,
+      name: milestone.name,
+      description: milestone.description,
       enabled: true,
       emailEnabled: true,
-      smsEnabled: false,
-      notifyBefore: 24,
-    },
-    {
-      type: 'ProofApproval',
-      name: 'Proof Approval',
-      description: 'When design proof is ready for review',
-      enabled: true,
-      emailEnabled: true,
-      smsEnabled: false,
-    },
-    {
-      type: 'ProductionStart',
-      name: 'Production Start',
-      description: 'When production begins on your costumes',
-      enabled: true,
-      emailEnabled: true,
-      smsEnabled: false,
-    },
-    {
-      type: 'Shipping',
-      name: 'Shipping',
-      description: 'When your order is shipped',
-      enabled: true,
-      emailEnabled: true,
-      smsEnabled: true, // Default SMS enabled for critical shipping notifications
-    },
-    {
-      type: 'Delivery',
-      name: 'Delivery',
-      description: 'When your order is delivered',
-      enabled: true,
-      emailEnabled: true,
-      smsEnabled: false,
-    },
-  ];
+      // Add special timing for measurements stage
+      notifyBefore: milestone.type === 'Measurements' ? 24 : undefined,
+    }));
+  };
 
   /**
-   * Handles changes to the global email enabled setting
+   * Handles changes to global email notification toggle
    */
-  const handleEmailEnabledChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = event.target.checked;
+  const handleEmailEnabledChange = (enabled: boolean) => {
     setLocalPreferences(prev => ({
       ...prev,
       emailEnabled: enabled,
     }));
     setHasChanges(true);
-    setSaveSuccess(false);
   };
 
   /**
-   * Handles changes to the global SMS enabled setting
+   * Handles changes to notification frequency
    */
-  const handleSmsEnabledChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = event.target.checked;
-    
-    // If enabling SMS and phone is not verified, open verification dialog
-    if (enabled && !preferences?.phoneVerified) {
-      setPhoneVerificationOpen(true);
-      return;
-    }
-    
-    setLocalPreferences(prev => ({
-      ...prev,
-      smsEnabled: enabled,
-    }));
-    setHasChanges(true);
-    setSaveSuccess(false);
-  };
-
-  /**
-   * Handles changes to notification frequency setting
-   */
-  const handleFrequencyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const frequency = event.target.value;
+  const handleFrequencyChange = (frequency: string) => {
     setLocalPreferences(prev => ({
       ...prev,
       frequency,
     }));
     setHasChanges(true);
-    setSaveSuccess(false);
   };
 
   /**
    * Handles changes to milestone-specific notification settings
    */
-  const handleMilestoneChange = (milestoneType: string, field: keyof NotificationMilestone, value: any) => {
+  const handleMilestoneChange = (milestoneType: string, field: keyof NotificationMilestone, value: boolean | number) => {
     setLocalPreferences(prev => ({
       ...prev,
       milestones: prev.milestones.map(milestone =>
@@ -232,43 +169,10 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
       ),
     }));
     setHasChanges(true);
-    setSaveSuccess(false);
   };
 
   /**
-   * Handles tab change for switching between settings and history
-   */
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
-  /**
-   * Handles phone verification completion
-   */
-  const handlePhoneVerificationComplete = async () => {
-    setPhoneVerificationOpen(false);
-    
-    // Refresh preferences to get updated phone verification status
-    await fetchPreferences(userId);
-    
-    // Enable SMS notifications after successful verification
-    setLocalPreferences(prev => ({
-      ...prev,
-      smsEnabled: true,
-    }));
-    setHasChanges(true);
-    setSaveSuccess(false);
-  };
-
-  /**
-   * Opens phone verification dialog
-   */
-  const handleVerifyPhone = () => {
-    setPhoneVerificationOpen(true);
-  };
-
-  /**
-   * Saves notification preference changes
+   * Saves notification preferences
    */
   const handleSave = async () => {
     setSaving(true);
@@ -277,24 +181,18 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
     try {
       await updatePreferences(userId, {
         emailEnabled: localPreferences.emailEnabled,
-        smsEnabled: localPreferences.smsEnabled,
+        smsEnabled: false, // SMS disabled - keep for API compatibility
         frequency: localPreferences.frequency,
-        milestones: localPreferences.milestones.map(m => ({
-          type: m.type,
-          enabled: m.enabled,
-          emailEnabled: m.emailEnabled,
-          smsEnabled: m.smsEnabled,
-          notifyBefore: m.notifyBefore,
-        })),
+        milestonesJson: JSON.stringify(localPreferences.milestones),
       });
-
+      
       setHasChanges(false);
       setSaveSuccess(true);
-
-      // Auto-hide success message after 3 seconds
+      
+      // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      console.error('Failed to save notification preferences:', error);
+      console.error('Error saving notification preferences:', error);
     } finally {
       setSaving(false);
     }
@@ -302,422 +200,136 @@ export const NotificationPreferences: React.FC<NotificationPreferencesProps> = (
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        <Typography variant="h6">Error Loading Preferences</Typography>
-        <Typography>{error}</Typography>
-      </Alert>
+      <Card>
+        <CardContent>
+          <Box display="flex" justifyContent="center" py={4}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', p: 2 }}>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box display="flex" alignItems="center" gap={2} mb={3}>
-            <NotificationsIcon color="primary" sx={{ fontSize: 32 }} />
-            <Box>
-              <Typography variant="h5" component="h1">
-                Notification Preferences
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Manage when and how you receive email and SMS notifications about your orders
-              </Typography>
+    <Card>
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <NotificationsIcon color="primary" />
+          <Typography variant="h6" component="h2">
+            Email Notification Preferences
+          </Typography>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {saveSuccess && (
+          <Alert severity="success" sx={{ mb: 3 }} icon={<CheckCircleIcon />}>
+            Notification preferences saved successfully!
+          </Alert>
+        )}
+
+        {/* Email Notifications Toggle */}
+        <FormControl component="fieldset" sx={{ mb: 4, width: '100%' }}>
+          <FormLabel component="legend" sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EmailIcon />
+              Email Notifications
             </Box>
-          </Box>
-
-          {/* Tabs for switching between Settings and History */}
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-            <Tabs value={activeTab} onChange={handleTabChange} aria-label="notification tabs">
-              <Tab label="Settings" icon={<NotificationsIcon />} />
-              <Tab label="SMS History" icon={<HistoryIcon />} />
-            </Tabs>
-          </Box>
-
-          {/* Settings Tab */}
-          {activeTab === 0 && (
-            <Box>
-
-          {/* Global Email Toggle */}
-          <Box sx={{ mb: 4 }}>
+          </FormLabel>
+          <FormGroup>
             <FormControlLabel
               control={
                 <Switch
                   checked={localPreferences.emailEnabled}
-                  onChange={handleEmailEnabledChange}
+                  onChange={(e) => handleEmailEnabledChange(e.target.checked)}
                   color="primary"
-                  size="large"
                 />
               }
-              label={
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmailIcon />
-                    Email Notifications
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Receive email updates when your orders reach important milestones
-                  </Typography>
-                </Box>
-              }
+              label="Receive email notifications for order updates"
             />
-          </Box>
+          </FormGroup>
+        </FormControl>
 
-          {/* Global SMS Toggle */}
-          <Box sx={{ mb: 4 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={localPreferences.smsEnabled}
-                  onChange={handleSmsEnabledChange}
-                  color="primary"
-                  size="large"
-                  disabled={!preferences?.phoneVerified}
-                />
-              }
-              label={
-                <Box sx={{ ml: 1 }}>
-                  <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SmsIcon />
-                    SMS Notifications
-                    {preferences?.phoneVerified && (
-                      <VerifiedIcon color="success" fontSize="small" />
-                    )}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Receive SMS alerts for critical order updates like shipping confirmations
-                  </Typography>
-                </Box>
-              }
-            />
-            
-            {/* Phone verification status and actions */}
-            <Box sx={{ ml: 4, mt: 2 }}>
-              {preferences?.phoneVerified ? (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2">
-                        Phone Number Verified
-                      </Typography>
-                      <Typography variant="body2">
-                        {preferences.phoneNumber && (
-                          <>SMS notifications will be sent to {preferences.phoneNumber}</>
-                        )}
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      onClick={handleVerifyPhone}
-                      startIcon={<PhoneIcon />}
-                    >
-                      Change Number
-                    </Button>
-                  </Box>
-                </Alert>
-              ) : (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2">
-                        Phone Verification Required
-                      </Typography>
-                      <Typography variant="body2">
-                        Verify your phone number to receive SMS notifications
-                      </Typography>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={handleVerifyPhone}
-                      startIcon={<PhoneIcon />}
-                    >
-                      Verify Phone
-                    </Button>
-                  </Box>
-                </Alert>
-              )}
+        <Divider sx={{ my: 3 }} />
+
+        {/* Notification Frequency */}
+        <FormControl component="fieldset" sx={{ mb: 4, width: '100%' }}>
+          <FormLabel component="legend" sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ScheduleIcon />
+              Email Frequency
             </Box>
-          </Box>
+          </FormLabel>
+          <RadioGroup
+            value={localPreferences.frequency}
+            onChange={(e) => handleFrequencyChange(e.target.value)}
+            disabled={!localPreferences.emailEnabled}
+          >
+            <FormControlLabel value="Immediate" control={<Radio />} label="Immediate - Send notifications right away" />
+            <FormControlLabel value="Daily" control={<Radio />} label="Daily Digest - Send a summary once per day" />
+            <FormControlLabel value="Weekly" control={<Radio />} label="Weekly Summary - Send a summary once per week" />
+          </RadioGroup>
+        </FormControl>
 
-          <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ my: 3 }} />
 
-          {/* Notification Frequency */}
-          <Box sx={{ mb: 4 }}>
-            <FormControl component="fieldset" disabled={!localPreferences.emailEnabled && !localPreferences.smsEnabled}>
-              <FormLabel component="legend" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <ScheduleIcon />
-                <Typography variant="h6">Notification Frequency</Typography>
-              </FormLabel>
-              <RadioGroup
-                value={localPreferences.frequency}
-                onChange={handleFrequencyChange}
-                sx={{ ml: 4 }}
-              >
-                <FormControlLabel
-                  value="Immediate"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>Immediate</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Receive notifications as soon as milestones are reached
-                      </Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  value="Daily"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>Daily Summary</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Receive a daily digest of all milestone updates (email only)
-                      </Typography>
-                    </Box>
-                  }
-                />
-                <FormControlLabel
-                  value="Weekly"
-                  control={<Radio />}
-                  label={
-                    <Box>
-                      <Typography>Weekly Summary</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Receive a weekly digest of milestone updates (email only)
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </RadioGroup>
-            </FormControl>
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          {/* Milestone-Specific Settings */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Milestone Notifications
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Choose which order milestones you want to be notified about and how you want to receive them
-            </Typography>
-
-            <FormGroup>
-              {localPreferences.milestones.map((milestone) => (
-                <Card key={milestone.type} variant="outlined" sx={{ mb: 2, p: 3 }}>
-                  <Box>
-                    {/* Milestone Header */}
-                    <Box display="flex" alignItems="flex-start" justifyContent="space-between" mb={2}>
-                      <Box flex="1">
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'medium', mb: 0.5 }}>
-                          {milestone.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {milestone.description}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        label={milestone.enabled ? 'Active' : 'Inactive'}
-                        color={milestone.enabled ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </Box>
-
-                    {/* Notification Method Toggles */}
-                    <Box sx={{ pl: 2, borderLeft: 2, borderColor: milestone.enabled ? 'primary.light' : 'grey.300' }}>
-                      {/* Email Toggle */}
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={milestone.emailEnabled}
-                            onChange={(e) => {
-                              const enabled = e.target.checked;
-                              handleMilestoneChange(milestone.type, 'emailEnabled', enabled);
-                              // Update overall milestone enabled state
-                              handleMilestoneChange(milestone.type, 'enabled', enabled || milestone.smsEnabled);
-                            }}
-                            disabled={!localPreferences.emailEnabled}
-                            color="primary"
-                            size="small"
-                          />
-                        }
-                        label={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <EmailIcon fontSize="small" color={milestone.emailEnabled && localPreferences.emailEnabled ? 'primary' : 'disabled'} />
-                            <Typography variant="body2">
-                              Email notification
-                            </Typography>
-                          </Box>
-                        }
-                      />
-
-                      {/* SMS Toggle */}
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={milestone.smsEnabled}
-                            onChange={(e) => {
-                              const enabled = e.target.checked;
-                              handleMilestoneChange(milestone.type, 'smsEnabled', enabled);
-                              // Update overall milestone enabled state
-                              handleMilestoneChange(milestone.type, 'enabled', milestone.emailEnabled || enabled);
-                            }}
-                            disabled={!localPreferences.smsEnabled || !preferences?.phoneVerified}
-                            color="primary"
-                            size="small"
-                          />
-                        }
-                        label={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <SmsIcon fontSize="small" color={milestone.smsEnabled && localPreferences.smsEnabled ? 'primary' : 'disabled'} />
-                            <Typography variant="body2">
-                              SMS notification
-                              {milestone.type === 'Shipping' && (
-                                <Chip label="Recommended" size="small" color="warning" sx={{ ml: 1 }} />
-                              )}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-
-                      {/* Advanced notification timing for certain milestones */}
-                      {milestone.type === 'MeasurementsDue' && milestone.enabled && (
-                        <Box sx={{ mt: 2 }}>
-                          <TextField
-                            size="small"
-                            type="number"
-                            label="Notify before deadline"
-                            value={milestone.notifyBefore || 24}
-                            onChange={(e) => handleMilestoneChange(milestone.type, 'notifyBefore', parseInt(e.target.value) || 24)}
-                            InputProps={{
-                              endAdornment: <InputAdornment position="end">hours</InputAdornment>,
-                            }}
-                            sx={{ width: 200 }}
-                            inputProps={{ min: 1, max: 168 }}
-                            disabled={!milestone.enabled}
-                          />
-                        </Box>
-                      )}
-
-                      {/* Show notification methods summary */}
-                      <Box sx={{ mt: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {!milestone.enabled && 'No notifications'}
-                          {milestone.enabled && milestone.emailEnabled && milestone.smsEnabled && 'Email + SMS notifications'}
-                          {milestone.enabled && milestone.emailEnabled && !milestone.smsEnabled && 'Email notifications only'}
-                          {milestone.enabled && !milestone.emailEnabled && milestone.smsEnabled && 'SMS notifications only'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Card>
-              ))}
-            </FormGroup>
-          </Box>
-
-          {/* Success Message */}
-          {saveSuccess && (
-            <Alert severity="success" sx={{ mb: 2 }} icon={<CheckCircleIcon />}>
-              <Typography>Notification preferences saved successfully!</Typography>
-            </Alert>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} icon={<ErrorIcon />}>
-              <Typography>Failed to save preferences. Please try again.</Typography>
-            </Alert>
-          )}
-
-          {/* Save Button */}
-          <Box display="flex" justifyContent="flex-end" gap={2}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSave}
-              disabled={!hasChanges || saving}
-              startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-              size="large"
-            >
-              {saving ? 'Saving...' : 'Save Preferences'}
-            </Button>
-          </Box>
-            </Box>
-          )}
-
-          {/* SMS History Tab */}
-          {activeTab === 1 && (
-            <Box>
-              <SmsHistory userId={userId} />
-            </Box>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Information Card */}
-      <Card variant="outlined">
-        <CardContent>
+        {/* Milestone Notifications */}
+        <Box sx={{ mb: 4 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            About Notifications
+            Notification Milestones
           </Typography>
-          
-          {/* Email Section */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <EmailIcon fontSize="small" />
-              Email Notifications
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Email notifications help you stay informed about your costume orders without having to constantly check the portal.
-              You'll receive updates when your order reaches important milestones in our production process.
-            </Typography>
-          </Box>
-
-          {/* SMS Section */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <SmsIcon fontSize="small" />
-              SMS Notifications
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              SMS notifications provide instant alerts for critical updates like shipping confirmations and urgent issues.
-              Perfect for when you're away from email but need to stay informed about time-sensitive updates.
-            </Typography>
-            <Alert severity="info" sx={{ mt: 1 }}>
-              <Typography variant="body2">
-                <strong>Message and data rates may apply.</strong> SMS notifications require phone verification for TCPA compliance.
-                You can opt out at any time by replying "STOP" to any SMS or disabling SMS here.
-              </Typography>
-            </Alert>
-          </Box>
-
-          <Divider sx={{ mb: 2 }} />
-          
-          <Typography variant="body2" color="text.secondary">
-            You can unsubscribe from notifications at any time by clicking the unsubscribe link in any email, 
-            replying "STOP" to any SMS, or by disabling notifications here in your preferences.
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Choose which order milestones should trigger email notifications.
           </Typography>
-        </CardContent>
-      </Card>
 
-      {/* Phone Verification Dialog */}
-      <PhoneVerificationDialog
-        open={phoneVerificationOpen}
-        onClose={() => setPhoneVerificationOpen(false)}
-        userId={userId}
-        onVerificationComplete={handlePhoneVerificationComplete}
-      />
-    </Box>
+          {localPreferences.milestones.map((milestone) => (
+            <Card key={milestone.type} variant="outlined" sx={{ mb: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {milestone.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {milestone.description}
+                    </Typography>
+                  </Box>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={milestone.emailEnabled && localPreferences.emailEnabled}
+                        onChange={(e) => handleMilestoneChange(milestone.type, 'emailEnabled', e.target.checked)}
+                        disabled={!localPreferences.emailEnabled}
+                        color="primary"
+                      />
+                    }
+                    label="Email"
+                    sx={{ ml: 2 }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+
+        {/* Save Button */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={!hasChanges || saving}
+            startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
+            size="large"
+          >
+            {saving ? 'Saving...' : 'Save Preferences'}
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

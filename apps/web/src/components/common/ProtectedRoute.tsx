@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { UserRole, RoleUtils } from '../../../../../packages/shared/src/types/user';
+// import { UserRole, RoleUtils } from '../../../../../packages/shared/src/types/user'; // Using local types instead
 import { useAppStore } from '../../stores/appStore';
 
 /**
@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
   /** Child components to render if access is granted */
   children: React.ReactNode;
   /** Required role for access (optional - if not provided, only checks authentication) */
-  requiredRole?: UserRole;
+  requiredRole?: string;
   /** Required organization ID for organization-scoped access */
   organizationId?: string;
   /** Whether to allow cross-organization access for ColorGarb staff */
@@ -36,12 +36,12 @@ interface ProtectedRouteProps {
  * </ProtectedRoute>
  * 
  * // Require Director role
- * <ProtectedRoute requiredRole={UserRole.Director}>
+ * <ProtectedRoute requiredRole="Director">
  *   <OrganizationSettings />
  * </ProtectedRoute>
  * 
  * // Require ColorGarb staff access
- * <ProtectedRoute requiredRole={UserRole.ColorGarbStaff}>
+ * <ProtectedRoute requiredRole="ColorGarbStaff">
  *   <AdminDashboard />
  * </ProtectedRoute>
  * ```

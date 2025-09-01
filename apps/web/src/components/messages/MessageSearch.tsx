@@ -34,7 +34,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import type { MessageSearchRequest } from '@colorgarb/shared';
+import type { MessageSearchRequest } from '../../types/shared';
 
 /**
  * Search history item interface

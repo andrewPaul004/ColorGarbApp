@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -37,17 +38,27 @@ import { OrderStatusUpdate } from './OrderStatusUpdate';
 import type { AdminOrder } from '../../services/adminService';
 
 /**
+ * Props for AdminOrdersList component
+ */
+interface AdminOrdersListProps {
+  /** Search query to filter orders */
+  searchQuery?: string;
+}
+
+/**
  * Admin Orders List component with advanced filtering, selection, and bulk operations.
  * Features responsive design with mobile optimization and comprehensive order management.
  * 
  * @component
+ * @param {AdminOrdersListProps} props - Component props
  * @returns {JSX.Element} Admin orders list component
  * 
  * @since 2.4.0
  */
-export const AdminOrdersList: React.FC = () => {
+export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = '' }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
 
   // Admin store state
   const {
@@ -120,17 +131,20 @@ export const AdminOrdersList: React.FC = () => {
    * Handle update status action
    */
   const handleUpdateStatus = () => {
-    setStatusUpdateOpen(true);
-    handleMenuClose();
+    if (selectedOrder) {
+      setStatusUpdateOpen(true);
+      setAnchorEl(null); // Close menu but keep selectedOrder for modal
+    }
   };
 
   /**
-   * Handle view order details (placeholder)
+   * Handle view order details - Navigate to order detail page
    */
   const handleViewOrder = () => {
-    // TODO: Navigate to order detail page
-    console.log('View order:', selectedOrder?.id);
-    handleMenuClose();
+    if (selectedOrder) {
+      navigate(`/orders/${selectedOrder.id}`);
+      setAnchorEl(null); // Close menu but keep selectedOrder for other operations
+    }
   };
 
   /**
@@ -161,25 +175,39 @@ export const AdminOrdersList: React.FC = () => {
   };
 
   /**
+   * Filter orders based on search query
+   * @returns Filtered orders array
+   */
+  const getFilteredOrders = (): AdminOrder[] => {
+    if (!searchQuery.trim()) return orders;
+    
+    const query = searchQuery.toLowerCase();
+    return orders.filter(order =>
+      order.orderNumber?.toLowerCase().includes(query) ||
+      order.description?.toLowerCase().includes(query) ||
+      order.organizationName?.toLowerCase().includes(query) ||
+      order.currentStage?.toLowerCase().includes(query)
+    );
+  };
+
+  /**
    * Get stage progress percentage
    */
   const getStageProgress = (stage: string): number => {
     const stages = [
-      'Initial Consultation',
-      'Contract & Payment',
-      'Design Development',
+      'Design Proposal',
+      'Proof Approval', 
       'Measurements',
-      'Fabric Selection',
-      'Pattern Development',
       'Production Planning',
-      'First Fitting',
-      'Production',
-      'Second Fitting',
-      'Final Alterations',
+      'Cutting',
+      'Sewing',
       'Quality Control',
+      'Finishing',
+      'Final Inspection',
       'Packaging',
-      'Shipped',
-      'Delivered',
+      'Shipping Preparation',
+      'Ship Order',
+      'Delivery',
     ];
     
     const currentIndex = stages.findIndex(s => s.toLowerCase() === stage.toLowerCase());
@@ -226,7 +254,7 @@ export const AdminOrdersList: React.FC = () => {
           </Paper>
         ) : (
           <Stack spacing={2}>
-            {orders.map((order) => (
+            {getFilteredOrders().map((order) => (
               <Paper key={order.id} sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
                   <Checkbox
@@ -307,7 +335,7 @@ export const AdminOrdersList: React.FC = () => {
         {/* Pagination for mobile */}
         <TablePagination
           component="div"
-          count={totalCount}
+          count={searchQuery ? getFilteredOrders().length : totalCount}
           page={filters.page ? filters.page - 1 : 0}
           onPageChange={handleChangePage}
           rowsPerPage={filters.pageSize || 50}
@@ -356,7 +384,7 @@ export const AdminOrdersList: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {orders.map((order) => (
+                {getFilteredOrders().map((order) => (
                   <TableRow
                     key={order.id}
                     hover
@@ -480,7 +508,7 @@ export const AdminOrdersList: React.FC = () => {
           
           <TablePagination
             component="div"
-            count={totalCount}
+            count={searchQuery ? getFilteredOrders().length : totalCount}
             page={filters.page ? filters.page - 1 : 0}
             onPageChange={handleChangePage}
             rowsPerPage={filters.pageSize || 50}
@@ -524,7 +552,10 @@ export const AdminOrdersList: React.FC = () => {
       {selectedOrder && (
         <OrderStatusUpdate
           open={statusUpdateOpen}
-          onClose={() => setStatusUpdateOpen(false)}
+          onClose={() => {
+            setStatusUpdateOpen(false);
+            setSelectedOrder(null);
+          }}
           order={selectedOrder}
         />
       )}

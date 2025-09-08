@@ -1,13 +1,52 @@
-Demo 1
+Implement Email Service completely
+Bulk Import Organizations
+Ability for ColorGarb to create new users and send them a "join the app" email (one click from the app), and then have that user set up their account.
+Ability for ColorGarb staff to see inbox of messages from all clients instead of having to go into the order to respond
+For Clients
+	Get rid of filtering on orders page
+	Show active orders only
+	Show past orders in a collapsed but expandable state
+	Inactive/Completed orders are view only when pulling up their details (no new messages, no new attachments, no edits)
 
-Feedback
+New Stage should look like TODOist radio buttons so user check off stages that are completed
 
-For clients 
-  - only show Active, and then below show past orders
-  - need a way to get notifications
-  - Organization doesn't do anything
 
-For staff 
-  - filter by client
-  - Communication summary at end of day?
+Create New Order
+	Drop Down of clients
+	
+	
+Create Organizations
+	Organization name
+	Primary Email Address
+	Shipping and billing address
+	
+	
+Create New Order
+	From Client - https://colorgarb.me/initial-info  (except name and email)
+	    + When will you be able to provide your measurements
+		+ Instead of When is your performance?  Ask when do you need these by
+		+ Do you need a sample prior to production?
+	From Admin 
+		Order name (Fall 2025, Winter 2025, etc)
+		# of performers
+		Special Instructions
+		Total Amount would be "Pending Design Approval"
+		In Admin Portal, Add "Import Invoice" to Actions drop down, and when an invoice is imported, pull the total amount from the PDF and update order total amount accordingly, and change the order name to the name of the invoice.  Save the invoice to the order and it will show up in the documents section. Once an invoice has been uploaded, change "Import Invoice" to "Edit Invoice"
+	
+	
+	
 
+
+Questions For Brad
+
+1.  Todoist is OUT
+2.  
+
+
+
+Bugs
+
+1.  Status filter in admin doesn't work
+2.  Get rid of Delivery Status for messages in client and admin
+3.  Get rid of original ship date and only show Current ship date (anywhere).  Don't show "Delayed" and don't change color of font if delayed
+4.  On Mobile Action three dots don't do anything

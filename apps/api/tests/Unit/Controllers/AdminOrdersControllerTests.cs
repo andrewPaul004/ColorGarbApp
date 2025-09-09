@@ -124,6 +124,111 @@ public class AdminOrdersControllerTests : IDisposable
     }
 
     /// <summary>
+    /// Test that admin can filter orders by Active status
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrdersForAdmin_WithActiveStatusFilter_ReturnsActiveOrders()
+    {
+        // Arrange
+        await SeedTestDataWithMultipleStatuses();
+
+        // Act
+        var result = await _controller.GetAllOrdersForAdmin(null, "Active", null, 1, 50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AdminOrdersResponse>(okResult.Value);
+        
+        Assert.Equal(2, response.Orders.Count); // Only active orders
+        Assert.All(response.Orders, order => Assert.True(order.IsActive));
+    }
+
+    /// <summary>
+    /// Test that admin can filter orders by Completed status
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrdersForAdmin_WithCompletedStatusFilter_ReturnsCompletedOrders()
+    {
+        // Arrange
+        await SeedTestDataWithMultipleStatuses();
+
+        // Act
+        var result = await _controller.GetAllOrdersForAdmin(null, "Completed", null, 1, 50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AdminOrdersResponse>(okResult.Value);
+        
+        Assert.Single(response.Orders); // Only completed orders
+        var completedOrder = response.Orders.First();
+        Assert.False(completedOrder.IsActive);
+        Assert.Equal("Delivery", completedOrder.CurrentStage);
+    }
+
+    /// <summary>
+    /// Test that admin can filter orders by Cancelled status
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrdersForAdmin_WithCancelledStatusFilter_ReturnsCancelledOrders()
+    {
+        // Arrange
+        await SeedTestDataWithMultipleStatuses();
+
+        // Act
+        var result = await _controller.GetAllOrdersForAdmin(null, "Cancelled", null, 1, 50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AdminOrdersResponse>(okResult.Value);
+        
+        Assert.Single(response.Orders); // Only cancelled orders
+        var cancelledOrder = response.Orders.First();
+        Assert.False(cancelledOrder.IsActive);
+        Assert.NotEqual("Delivery", cancelledOrder.CurrentStage);
+        Assert.NotEqual("Ship Order", cancelledOrder.CurrentStage);
+    }
+
+    /// <summary>
+    /// Test that admin can filter orders by legacy Inactive status
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrdersForAdmin_WithInactiveStatusFilter_ReturnsInactiveOrders()
+    {
+        // Arrange
+        await SeedTestDataWithMultipleStatuses();
+
+        // Act
+        var result = await _controller.GetAllOrdersForAdmin(null, "Inactive", null, 1, 50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AdminOrdersResponse>(okResult.Value);
+        
+        Assert.Equal(2, response.Orders.Count); // Both completed and cancelled orders
+        Assert.All(response.Orders, order => Assert.False(order.IsActive));
+    }
+
+    /// <summary>
+    /// Test that no status filter defaults to Active orders only
+    /// </summary>
+    [Fact]
+    public async Task GetAllOrdersForAdmin_WithoutStatusFilter_ReturnsActiveOrdersOnly()
+    {
+        // Arrange
+        await SeedTestDataWithMultipleStatuses();
+
+        // Act
+        var result = await _controller.GetAllOrdersForAdmin(null, null, null, 1, 50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<AdminOrdersResponse>(okResult.Value);
+        
+        Assert.Equal(2, response.Orders.Count); // Only active orders by default
+        Assert.All(response.Orders, order => Assert.True(order.IsActive));
+    }
+
+    /// <summary>
     /// Test that admin can update order stage with proper validation
     /// </summary>
     [Fact]
@@ -415,6 +520,100 @@ public class AdminOrdersControllerTests : IDisposable
     /// Gets a consistent test order ID for testing
     /// </summary>
     private static Guid GetTestOrderId() => Guid.Parse("55555555-5555-5555-5555-555555555555");
+
+    /// <summary>
+    /// Seeds test data with orders in different statuses for status filtering tests
+    /// </summary>
+    private async Task SeedTestDataWithMultipleStatuses()
+    {
+        var orgId = GetTestOrganizationId();
+
+        // Create test organization
+        var organization = new Organization
+        {
+            Id = orgId,
+            Name = "Test Theater Company",
+            Type = "theater",
+            ContactEmail = "test@theater.com",
+            ContactPhone = "(555) 123-4567",
+            Address = "123 Theater St",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Organizations.Add(organization);
+
+        // Create active orders
+        var activeOrder1 = new Order
+        {
+            Id = GetTestOrderId(),
+            OrderNumber = "CG-ACTIVE-001",
+            OrganizationId = orgId,
+            Description = "Active Order 1",
+            CurrentStage = "Production Planning",
+            OriginalShipDate = DateTime.UtcNow.AddDays(60),
+            CurrentShipDate = DateTime.UtcNow.AddDays(60),
+            TotalAmount = 1000.00m,
+            PaymentStatus = "Pending",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        };
+
+        var activeOrder2 = new Order
+        {
+            Id = Guid.NewGuid(),
+            OrderNumber = "CG-ACTIVE-002",
+            OrganizationId = orgId,
+            Description = "Active Order 2",
+            CurrentStage = "Sewing",
+            OriginalShipDate = DateTime.UtcNow.AddDays(90),
+            CurrentShipDate = DateTime.UtcNow.AddDays(90),
+            TotalAmount = 1500.00m,
+            PaymentStatus = "Paid",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        // Create completed order (inactive with final stage)
+        var completedOrder = new Order
+        {
+            Id = Guid.NewGuid(),
+            OrderNumber = "CG-COMPLETED-001",
+            OrganizationId = orgId,
+            Description = "Completed Order",
+            CurrentStage = "Delivery",
+            OriginalShipDate = DateTime.UtcNow.AddDays(-30),
+            CurrentShipDate = DateTime.UtcNow.AddDays(-30),
+            TotalAmount = 2000.00m,
+            PaymentStatus = "Paid",
+            IsActive = false,
+            CreatedAt = DateTime.UtcNow.AddDays(-60),
+            UpdatedAt = DateTime.UtcNow.AddDays(-30)
+        };
+
+        // Create cancelled order (inactive without final stage)
+        var cancelledOrder = new Order
+        {
+            Id = Guid.NewGuid(),
+            OrderNumber = "CG-CANCELLED-001",
+            OrganizationId = orgId,
+            Description = "Cancelled Order",
+            CurrentStage = "Design Proposal",
+            OriginalShipDate = DateTime.UtcNow.AddDays(-15),
+            CurrentShipDate = DateTime.UtcNow.AddDays(-15),
+            TotalAmount = 800.00m,
+            PaymentStatus = "Refunded",
+            IsActive = false,
+            CreatedAt = DateTime.UtcNow.AddDays(-45),
+            UpdatedAt = DateTime.UtcNow.AddDays(-15)
+        };
+
+        _context.Orders.AddRange(activeOrder1, activeOrder2, completedOrder, cancelledOrder);
+        await _context.SaveChangesAsync();
+    }
 
     /// <summary>
     /// Cleanup test database

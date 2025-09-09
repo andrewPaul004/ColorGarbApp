@@ -25,7 +25,7 @@ export interface OrderSummaryProps {
   /** Order data containing product details */
   order: Order;
   /** Total order amount in USD */
-  totalAmount?: number;
+  totalAmount?: number | null;
   /** Current payment status */
   paymentStatus?: string;
   /** Order notes or special instructions */
@@ -41,10 +41,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   /**
    * Formats currency amount to USD display format.
    * 
-   * @param {number} amount - Amount to format
-   * @returns {string} Formatted currency string
+   * @param {number | null} amount - Amount to format
+   * @returns {string} Formatted currency string or "TBD"
    */
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount: number | null): string => {
+    if (amount === null || amount === undefined) {
+      return 'TBD';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'

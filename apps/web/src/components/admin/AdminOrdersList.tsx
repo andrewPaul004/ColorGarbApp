@@ -112,9 +112,10 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
   };
 
   /**
-   * Handle menu open
+   * Handle menu open - supports both mouse and touch events for mobile compatibility
    */
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, order: AdminOrder) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>, order: AdminOrder) => {
+    event.preventDefault();
     setAnchorEl(event.currentTarget);
     setSelectedOrder(order);
   };
@@ -270,7 +271,15 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, order)}
+                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
+                        sx={{
+                          minHeight: 44,
+                          minWidth: 44,
+                          '&:active': {
+                            backgroundColor: 'action.selected',
+                          },
+                        }}
                       >
                         <MoreVert />
                       </IconButton>
@@ -495,7 +504,15 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                     <TableCell align="center">
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, order)}
+                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
+                        sx={{
+                          minHeight: 44,
+                          minWidth: 44,
+                          '&:active': {
+                            backgroundColor: 'action.selected',
+                          },
+                        }}
                       >
                         <MoreVert />
                       </IconButton>
@@ -529,10 +546,21 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
             overflow: 'visible',
             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
             mt: 1.5,
+            minWidth: 160,
+            '& .MuiMenuItem-root': {
+              minHeight: 48,
+              px: 2,
+              py: 1.5,
+              '&:active': {
+                backgroundColor: 'action.selected',
+              },
+            },
           },
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        disableScrollLock={true}
+        disableAutoFocus={true}
       >
         <MenuItem onClick={handleViewOrder}>
           <ListItemIcon>

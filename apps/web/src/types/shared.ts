@@ -65,7 +65,7 @@ export interface Order {
   currentStage: string;
   originalShipDate: Date;
   currentShipDate: Date;
-  totalAmount: number;
+  totalAmount: number | null;
   paymentStatus: string;
   notes?: string;
   isActive: boolean;

@@ -55,10 +55,10 @@ public class Order
     public DateTime CurrentShipDate { get; set; }
 
     /// <summary>
-    /// Total order value in USD
+    /// Total order value in USD. Null indicates "TBD" (To Be Determined)
     /// </summary>
     [Column(TypeName = "decimal(10,2)")]
-    public decimal TotalAmount { get; set; }
+    public decimal? TotalAmount { get; set; }
 
     /// <summary>
     /// Current payment status

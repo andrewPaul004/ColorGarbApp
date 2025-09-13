@@ -115,7 +115,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
   };
 
   const progress = getStageProgress(order.currentStage);
-  const isOverdue = new Date(order.currentShipDate) < new Date() && order.isActive;
 
   return (
     <Card
@@ -201,7 +200,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
               variant="body2"
               sx={{
                 fontWeight: 500,
-                color: isOverdue ? 'error.main' : 'text.primary',
               }}
             >
               {formatDate(order.currentShipDate)}

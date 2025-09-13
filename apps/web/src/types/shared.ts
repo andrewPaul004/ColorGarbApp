@@ -63,7 +63,6 @@ export interface Order {
   orderNumber: string;
   description: string;
   currentStage: string;
-  originalShipDate: Date;
   currentShipDate: Date;
   totalAmount: number | null;
   paymentStatus: string;
@@ -236,7 +235,6 @@ export interface OrderDetail {
   orderNumber: string;
   description: string;
   currentStage: string;
-  originalShipDate: Date;
   currentShipDate: Date;
   totalAmount: number;
   paymentStatus: string;

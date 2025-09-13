@@ -132,12 +132,6 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
     }
   };
 
-  /**
-   * Check if order is overdue
-   */
-  const isOverdue = (): boolean => {
-    return new Date(order.currentShipDate) < new Date() && order.isActive;
-  };
 
   /**
    * Format currency amount
@@ -301,10 +295,7 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
                   </Typography>
                   <Typography 
                     variant="body2" 
-                    sx={{ 
-                      fontWeight: 500,
-                      color: isOverdue() ? 'error.main' : 'text.primary'
-                    }}
+                    sx={{ fontWeight: 500 }}
                   >
                     {formatDate(order.currentShipDate)}
                   </Typography>
@@ -320,13 +311,6 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
                     color={getPaymentColor(order.paymentStatus)}
                     size="small"
                   />
-                  {isOverdue() && (
-                    <Chip 
-                      label="Overdue" 
-                      color="error"
-                      size="small"
-                    />
-                  )}
                 </Stack>
               </Box>
             </Box>

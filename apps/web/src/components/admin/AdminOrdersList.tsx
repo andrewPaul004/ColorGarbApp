@@ -168,12 +168,6 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
     }
   };
 
-  /**
-   * Check if order is overdue
-   */
-  const isOverdue = (order: AdminOrder): boolean => {
-    return new Date(order.currentShipDate) < new Date() && order.isActive;
-  };
 
   /**
    * Filter orders based on search query
@@ -300,14 +294,6 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                         color={getPaymentColor(order.paymentStatus)}
                         size="small"
                       />
-                      {isOverdue(order) && (
-                        <Chip 
-                          label="Overdue" 
-                          color="error"
-                          size="small"
-                          icon={<Warning />}
-                        />
-                      )}
                     </Stack>
                     
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -462,16 +448,6 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                           color={getStatusColor(order.isActive)}
                           size="small"
                         />
-                        {isOverdue(order) && (
-                          <Tooltip title="Order is overdue">
-                            <Chip 
-                              icon={<Warning />}
-                              label="Overdue" 
-                              color="error"
-                              size="small"
-                            />
-                          </Tooltip>
-                        )}
                       </Stack>
                     </TableCell>
                     
@@ -486,10 +462,7 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        <Typography 
-                          variant="body2"
-                          color={isOverdue(order) ? 'error.main' : 'text.primary'}
-                        >
+                        <Typography variant="body2">
                           {formatDate(order.currentShipDate)}
                         </Typography>
                       </Box>

@@ -218,36 +218,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               
               <Grid item xs={6} sm={3}>
                 <Typography variant="body2" color="text.secondary">
-                  Original Ship Date
+                  Ship Date
                 </Typography>
                 <Typography variant="body1">
-                  {order.originalShipDate.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Current Ship Date
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  color={order.currentShipDate > order.originalShipDate ? 'warning.main' : 'inherit'}
-                >
                   {order.currentShipDate.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </Typography>
-                {order.currentShipDate > order.originalShipDate && (
-                  <Typography variant="caption" color="warning.main">
-                    Delayed
-                  </Typography>
-                )}
               </Grid>
             </Grid>
           </Box>

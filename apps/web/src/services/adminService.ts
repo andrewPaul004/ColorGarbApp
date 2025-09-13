@@ -121,7 +121,6 @@ class AdminService {
         ...data,
         orders: data.orders.map((order: any) => ({
           ...order,
-          originalShipDate: new Date(order.originalShipDate),
           currentShipDate: new Date(order.currentShipDate),
           createdAt: new Date(order.createdAt),
           updatedAt: new Date(order.updatedAt),

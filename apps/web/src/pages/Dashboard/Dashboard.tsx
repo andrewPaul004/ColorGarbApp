@@ -11,13 +11,16 @@ import {
   Select,
   MenuItem,
   Paper,
+  Button,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { OrderCard } from '../../components/common/OrderCard';
+import { CreateOrderDialog } from '../../components/orders/CreateOrderDialog';
 import type { Order } from '../../types/shared';
 
 /**
@@ -52,6 +55,7 @@ export const Dashboard: React.FC = () => {
 
   const [statusFilter, setStatusFilter] = useState<string>('Active');
   const [stageFilter, setStageFilter] = useState<string>('All');
+  const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
 
   /**
    * Loads orders on component mount and when filters change
@@ -99,6 +103,43 @@ export const Dashboard: React.FC = () => {
   };
 
   /**
+   * Opens the create order dialog
+   */
+  const handleCreateOrderClick = () => {
+    setCreateOrderDialogOpen(true);
+  };
+
+  /**
+   * Closes the create order dialog
+   */
+  const handleCreateOrderDialogClose = () => {
+    setCreateOrderDialogOpen(false);
+  };
+
+  /**
+   * Handles successful order creation - refresh orders and navigate to new order
+   */
+  const handleOrderCreated = (newOrder: any) => {
+    // Refresh orders to show the new order
+    fetchOrders(
+      statusFilter === 'All' ? undefined : statusFilter,
+      stageFilter === 'All' ? undefined : stageFilter
+    );
+    
+    // Navigate to the new order's detail page
+    setTimeout(() => {
+      navigate(`/orders/${newOrder.id}`);
+    }, 2500);
+  };
+
+  /**
+   * Check if user can create orders (Director or Finance roles)
+   */
+  const canCreateOrders = (): boolean => {
+    return user?.role === 'Director' || user?.role === 'Finance';
+  };
+
+  /**
    * Gets available manufacturing stages for filter dropdown
    * @returns Array of stage names
    */
@@ -142,13 +183,29 @@ export const Dashboard: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
       {/* Page Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
-          Order Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Welcome back, {user?.name}! Here are your organization's orders.
-        </Typography>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
+            Order Dashboard
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Welcome back, {user?.name}! Here are your organization's orders.
+          </Typography>
+        </Box>
+        
+        {canCreateOrders() && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateOrderClick}
+            sx={{ 
+              flexShrink: 0,
+              minWidth: 'auto',
+            }}
+          >
+            {isMobile ? 'Create Order' : 'Create New Order'}
+          </Button>
+        )}
       </Box>
 
       {/* Summary Cards */}
@@ -312,6 +369,13 @@ export const Dashboard: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Create Order Dialog */}
+      <CreateOrderDialog
+        open={createOrderDialogOpen}
+        onClose={handleCreateOrderDialogClose}
+        onOrderCreated={handleOrderCreated}
+      />
     </Container>
   );
 };

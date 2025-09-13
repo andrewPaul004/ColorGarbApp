@@ -16,6 +16,7 @@ import OrdersList from './pages/Orders/OrdersList';
 import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import { AdminMessageInbox } from './components/admin/AdminMessageInbox';
 
 // Placeholder components for new routes
 const OrganizationPage = () => <div style={{padding: '20px'}}><h1>Organization Management</h1><p>Coming soon...</p></div>;
@@ -141,6 +142,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <UserManagement />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/messages" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminMessageInbox />
                 </Layout>
               </ProtectedRoute>
             } 

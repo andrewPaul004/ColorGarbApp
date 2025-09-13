@@ -93,6 +93,23 @@ public interface IMessageService
     /// <param name="orderId">ID of the order to check access for</param>
     /// <returns>True if user has access, false otherwise</returns>
     Task<bool> ValidateUserOrderAccessAsync(Guid userId, Guid orderId);
+
+    /// <summary>
+    /// Retrieves all messages across all orders for admin users with pagination and search support.
+    /// Only accessible by users with ColorGarbStaff role.
+    /// </summary>
+    /// <param name="searchRequest">Search and filter parameters for admin message inbox</param>
+    /// <param name="userId">ID of the admin user making the request</param>
+    /// <returns>Search result containing messages across all orders with organization context</returns>
+    Task<AdminMessageSearchResult> GetAllMessagesForAdminAsync(AdminMessageSearchRequest searchRequest, Guid userId);
+
+    /// <summary>
+    /// Gets the total count of unread messages across all orders for admin users.
+    /// Only accessible by users with ColorGarbStaff role.
+    /// </summary>
+    /// <param name="userId">ID of the admin user to check unread messages for</param>
+    /// <returns>Total number of unread messages across all orders</returns>
+    Task<int> GetAdminUnreadMessageCountAsync(Guid userId);
 }
 
 /// <summary>
@@ -177,4 +194,207 @@ public class AttachmentValidationException : Exception
 {
     public AttachmentValidationException(string message) : base(message) { }
     public AttachmentValidationException(string message, Exception innerException) : base(message, innerException) { }
+}
+
+/// <summary>
+/// Search request for admin message inbox across all orders.
+/// </summary>
+public class AdminMessageSearchRequest
+{
+    /// <summary>
+    /// Search term to match against message content
+    /// </summary>
+    public string? SearchTerm { get; set; }
+
+    /// <summary>
+    /// Filter by specific client name
+    /// </summary>
+    public string? ClientName { get; set; }
+
+    /// <summary>
+    /// Filter by organization ID
+    /// </summary>
+    public Guid? OrganizationId { get; set; }
+
+    /// <summary>
+    /// Filter by order number
+    /// </summary>
+    public string? OrderNumber { get; set; }
+
+    /// <summary>
+    /// Filter by message type
+    /// </summary>
+    public string? MessageType { get; set; }
+
+    /// <summary>
+    /// Filter by sender role
+    /// </summary>
+    public string? SenderRole { get; set; }
+
+    /// <summary>
+    /// Filter messages from this date (inclusive)
+    /// </summary>
+    public DateTime? DateFrom { get; set; }
+
+    /// <summary>
+    /// Filter messages to this date (inclusive)
+    /// </summary>
+    public DateTime? DateTo { get; set; }
+
+    /// <summary>
+    /// Include only messages with attachments
+    /// </summary>
+    public bool? IncludeAttachments { get; set; }
+
+    /// <summary>
+    /// Filter by unread status
+    /// </summary>
+    public bool? UnreadOnly { get; set; }
+
+    /// <summary>
+    /// Page number for pagination (1-based)
+    /// </summary>
+    public int Page { get; set; } = 1;
+
+    /// <summary>
+    /// Number of messages per page
+    /// </summary>
+    public int PageSize { get; set; } = 50;
+}
+
+/// <summary>
+/// Result of admin message search across all orders.
+/// </summary>
+public class AdminMessageSearchResult
+{
+    /// <summary>
+    /// Messages matching the search criteria for current page
+    /// </summary>
+    public IEnumerable<AdminMessage> Messages { get; set; } = Enumerable.Empty<AdminMessage>();
+
+    /// <summary>
+    /// Total number of messages matching search criteria (before pagination)
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Current page number
+    /// </summary>
+    public int Page { get; set; }
+
+    /// <summary>
+    /// Number of messages per page
+    /// </summary>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Whether there are more pages available
+    /// </summary>
+    public bool HasNextPage { get; set; }
+
+    /// <summary>
+    /// Total number of unread messages for the admin user across all orders
+    /// </summary>
+    public int UnreadCount { get; set; }
+}
+
+/// <summary>
+/// Message with additional context for admin message inbox.
+/// </summary>
+public class AdminMessage
+{
+    /// <summary>
+    /// Unique identifier for the message
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Order ID that this message belongs to
+    /// </summary>
+    public Guid OrderId { get; set; }
+
+    /// <summary>
+    /// Order number for display
+    /// </summary>
+    public string OrderNumber { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Order description/title
+    /// </summary>
+    public string OrderDescription { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Organization name
+    /// </summary>
+    public string OrganizationName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// ID of the user who sent this message
+    /// </summary>
+    public Guid SenderId { get; set; }
+
+    /// <summary>
+    /// Display name of the message sender
+    /// </summary>
+    public string SenderName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Role of the message sender
+    /// </summary>
+    public string SenderRole { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Intended recipient role for the message
+    /// </summary>
+    public string RecipientRole { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Content of the message
+    /// </summary>
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Message preview (first 100 characters)
+    /// </summary>
+    public string ContentPreview { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type/category of the message
+    /// </summary>
+    public string MessageType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether the message has been read by the current admin user
+    /// </summary>
+    public bool IsRead { get; set; }
+
+    /// <summary>
+    /// Timestamp when the message was marked as read by the current admin user
+    /// </summary>
+    public DateTime? ReadAt { get; set; }
+
+    /// <summary>
+    /// ID of the message this is a reply to (if applicable)
+    /// </summary>
+    public Guid? ReplyToMessageId { get; set; }
+
+    /// <summary>
+    /// When this message was created
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// When this message was last updated
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Number of attachments on this message
+    /// </summary>
+    public int AttachmentCount { get; set; }
+
+    /// <summary>
+    /// Whether this message is marked as urgent/priority
+    /// </summary>
+    public bool IsUrgent { get; set; }
 }

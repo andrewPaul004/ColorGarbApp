@@ -163,7 +163,10 @@ export const OrdersList: React.FC = () => {
   const getOrdersSummary = () => {
     const filteredOrders = getFilteredOrders();
     const totalOrders = filteredOrders.length;
-    const totalValue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalValue = filteredOrders.reduce((sum, order) => {
+      // Only include orders with actual values, skip null/TBD orders
+      return order.totalAmount !== null ? sum + order.totalAmount : sum;
+    }, 0);
     const activeOrders = filteredOrders.filter(order => order.isActive).length;
     const overdueOrders = filteredOrders.filter(order => 
       new Date(order.currentShipDate) < new Date() && order.isActive
@@ -174,11 +177,15 @@ export const OrdersList: React.FC = () => {
 
   /**
    * Formats currency amount for display
-   * @param amount Numeric amount
-   * @returns Formatted currency string
+   * @param amount Numeric amount or null
+   * @returns Formatted currency string or "TBD"
    */
-  const formatCurrency = (amount: number) => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null || amount === undefined) {
+      return 'TBD';
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  };
 
   /**
    * Formats date for display

@@ -63,8 +63,6 @@ export interface Order {
   description: string;
   /** Current stage in the 13-step manufacturing process */
   currentStage: OrderStage;
-  /** Original promised ship date */
-  originalShipDate: Date;
   /** Current ship date (may be revised) */
   currentShipDate: Date;
   /** When the order was created */

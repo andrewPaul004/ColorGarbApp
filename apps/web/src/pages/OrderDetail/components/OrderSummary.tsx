@@ -25,7 +25,7 @@ export interface OrderSummaryProps {
   /** Order data containing product details */
   order: Order;
   /** Total order amount in USD */
-  totalAmount?: number;
+  totalAmount?: number | null;
   /** Current payment status */
   paymentStatus?: string;
   /** Order notes or special instructions */
@@ -41,10 +41,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   /**
    * Formats currency amount to USD display format.
    * 
-   * @param {number} amount - Amount to format
-   * @returns {string} Formatted currency string
+   * @param {number | null} amount - Amount to format
+   * @returns {string} Formatted currency string or "TBD"
    */
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount: number | null): string => {
+    if (amount === null || amount === undefined) {
+      return 'TBD';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -215,36 +218,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               
               <Grid item xs={6} sm={3}>
                 <Typography variant="body2" color="text.secondary">
-                  Original Ship Date
+                  Ship Date
                 </Typography>
                 <Typography variant="body1">
-                  {order.originalShipDate.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6} sm={3}>
-                <Typography variant="body2" color="text.secondary">
-                  Current Ship Date
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  color={order.currentShipDate > order.originalShipDate ? 'warning.main' : 'inherit'}
-                >
                   {order.currentShipDate.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </Typography>
-                {order.currentShipDate > order.originalShipDate && (
-                  <Typography variant="caption" color="warning.main">
-                    Delayed
-                  </Typography>
-                )}
               </Grid>
             </Grid>
           </Box>

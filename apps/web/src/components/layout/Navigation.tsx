@@ -33,9 +33,11 @@ import {
   Settings as SettingsIcon,
   Business as OrganizationIcon,
   AdminPanelSettings as AdminIcon,
+  Message as MessageIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
+import { useAdminMessageCount } from '../../hooks/useAdminMessageCount';
 
 /**
  * Navigation menu item interface
@@ -71,6 +73,7 @@ export const Navigation: React.FC = () => {
   const location = useLocation();
   
   const { user, logout } = useAppStore();
+  const { unreadCount } = useAdminMessageCount();
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
@@ -104,6 +107,19 @@ export const Navigation: React.FC = () => {
         label: 'Admin Dashboard',
         path: '/admin/dashboard',
         icon: <AdminIcon />,
+        roles: ['ColorGarbStaff'],
+        requiresOrganization: false,
+      },
+      {
+        label: 'Messages',
+        path: '/admin/messages',
+        icon: unreadCount > 0 ? (
+          <Badge badgeContent={unreadCount} color="error" max={99}>
+            <MessageIcon />
+          </Badge>
+        ) : (
+          <MessageIcon />
+        ),
         roles: ['ColorGarbStaff'],
         requiresOrganization: false,
       },

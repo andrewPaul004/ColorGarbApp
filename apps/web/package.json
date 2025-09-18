@@ -44,5 +44,8 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
+  },
+  "overrides": {
+    "date-fns": "^3.6.0"
   }
 }

@@ -68,7 +68,6 @@ class OrderService {
       // Convert date strings to Date objects
       return orders.map((order: any) => ({
         ...order,
-        originalShipDate: new Date(order.originalShipDate),
         currentShipDate: new Date(order.currentShipDate),
         createdAt: new Date(order.createdAt),
         updatedAt: new Date(order.updatedAt),
@@ -135,7 +134,6 @@ class OrderService {
       // Convert date strings to Date objects
       return {
         ...orderDetail,
-        originalShipDate: new Date(orderDetail.originalShipDate),
         currentShipDate: new Date(orderDetail.currentShipDate),
         createdAt: new Date(orderDetail.createdAt),
         updatedAt: new Date(orderDetail.updatedAt),

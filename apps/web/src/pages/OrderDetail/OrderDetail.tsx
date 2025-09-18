@@ -396,15 +396,7 @@ export const OrderDetail: React.FC = () => {
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Original Ship Date
-              </Typography>
-              <Typography variant="body1">
-                {orderDetail.originalShipDate.toLocaleDateString()}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Current Ship Date
+                Ship Date
               </Typography>
               <Typography variant="body1">
                 {orderDetail.currentShipDate.toLocaleDateString()}
@@ -452,7 +444,6 @@ export const OrderDetail: React.FC = () => {
         {/* Ship Date Information Section */}
         <ShipDateDisplay
           orderId={orderDetail.id}
-          originalShipDate={orderDetail.originalShipDate}
           currentShipDate={orderDetail.currentShipDate}
           changeHistory={getShipDateHistory(orderDetail)}
           onHistoryExpand={() => console.log('Ship date history expanded')}

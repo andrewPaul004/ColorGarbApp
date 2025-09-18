@@ -96,6 +96,11 @@ public class ColorGarbDbContext : DbContext
     public DbSet<MessageEdit> MessageEdits => Set<MessageEdit>();
 
     /// <summary>
+    /// Order requests dataset - tracks requests from Director/Finance users for order creation
+    /// </summary>
+    public DbSet<OrderRequest> OrderRequests => Set<OrderRequest>();
+
+    /// <summary>
     /// Configures entity relationships and constraints
     /// </summary>
     /// <param name="modelBuilder">Entity Framework model builder</param>

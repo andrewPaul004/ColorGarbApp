@@ -88,10 +88,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
 
   /**
    * Formats currency amount for display
-   * @param amount Numeric amount
-   * @returns Formatted currency string
+   * @param amount Numeric amount or null
+   * @returns Formatted currency string or "TBD"
    */
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount: number | null): string => {
+    if (amount === null || amount === undefined) {
+      return 'TBD';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -112,7 +115,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
   };
 
   const progress = getStageProgress(order.currentStage);
-  const isOverdue = new Date(order.currentShipDate) < new Date() && order.isActive;
 
   return (
     <Card
@@ -198,7 +200,6 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
               variant="body2"
               sx={{
                 fontWeight: 500,
-                color: isOverdue ? 'error.main' : 'text.primary',
               }}
             >
               {formatDate(order.currentShipDate)}

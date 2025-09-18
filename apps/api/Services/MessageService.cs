@@ -461,4 +461,180 @@ public class MessageService : IMessageService
 
         return await _messageRepository.CreateAttachmentAsync(attachment);
     }
+
+    /// <inheritdoc />
+    public async Task<AdminMessageSearchResult> GetAllMessagesForAdminAsync(AdminMessageSearchRequest searchRequest, Guid userId)
+    {
+        try
+        {
+            // Validate user has ColorGarbStaff role
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || user.Role != UserRole.ColorGarbStaff)
+            {
+                throw new MessageAccessDeniedException("Only ColorGarb staff can access admin message inbox");
+            }
+
+            _logger.LogDebug("Getting all messages for admin user {UserId}", userId);
+
+            // Build query for messages across all orders with joins
+            var query = _context.Messages
+                .Include(m => m.Order)
+                    .ThenInclude(o => o.Organization)
+                .Include(m => m.Sender)
+                .Include(m => m.Attachments)
+                .AsQueryable();
+
+            // Apply search filters
+            if (!string.IsNullOrWhiteSpace(searchRequest.SearchTerm))
+            {
+                var searchTerm = searchRequest.SearchTerm.ToLower();
+                query = query.Where(m => m.Content.ToLower().Contains(searchTerm));
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.ClientName))
+            {
+                var clientName = searchRequest.ClientName.ToLower();
+                query = query.Where(m => m.Sender.Name.ToLower().Contains(clientName));
+            }
+
+            if (searchRequest.OrganizationId.HasValue)
+            {
+                query = query.Where(m => m.Order.OrganizationId == searchRequest.OrganizationId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.OrderNumber))
+            {
+                var orderNumber = searchRequest.OrderNumber.ToLower();
+                query = query.Where(m => m.Order.OrderNumber.ToLower().Contains(orderNumber));
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.MessageType))
+            {
+                query = query.Where(m => m.MessageType == searchRequest.MessageType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchRequest.SenderRole))
+            {
+                query = query.Where(m => m.SenderRole == searchRequest.SenderRole);
+            }
+
+            if (searchRequest.DateFrom.HasValue)
+            {
+                query = query.Where(m => m.CreatedAt >= searchRequest.DateFrom.Value);
+            }
+
+            if (searchRequest.DateTo.HasValue)
+            {
+                query = query.Where(m => m.CreatedAt <= searchRequest.DateTo.Value.AddDays(1)); // Include end of day
+            }
+
+            if (searchRequest.IncludeAttachments.HasValue)
+            {
+                if (searchRequest.IncludeAttachments.Value)
+                {
+                    query = query.Where(m => m.Attachments.Any());
+                }
+                else
+                {
+                    query = query.Where(m => !m.Attachments.Any());
+                }
+            }
+
+            // Note: Unread filtering not implemented yet - would require additional schema for read tracking
+            // if (searchRequest.UnreadOnly.HasValue && searchRequest.UnreadOnly.Value)
+            // {
+            //     // TODO: Implement read tracking for messages
+            // }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination and ordering
+            var messages = await query
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((searchRequest.Page - 1) * searchRequest.PageSize)
+                .Take(searchRequest.PageSize)
+                .Select(m => new AdminMessage
+                {
+                    Id = m.Id,
+                    OrderId = m.OrderId,
+                    OrderNumber = m.Order.OrderNumber,
+                    OrderDescription = m.Order.Description,
+                    OrganizationName = m.Order.Organization.Name,
+                    SenderId = m.SenderId,
+                    SenderName = m.Sender.Name,
+                    SenderRole = m.SenderRole,
+                    RecipientRole = m.RecipientRole,
+                    Content = m.Content,
+                    ContentPreview = m.Content.Length > 100 ? m.Content.Substring(0, 100) + "..." : m.Content,
+                    MessageType = m.MessageType,
+                    IsRead = false, // TODO: Implement read tracking
+                    ReadAt = null, // TODO: Implement read tracking
+                    ReplyToMessageId = m.ReplyToMessageId,
+                    CreatedAt = m.CreatedAt,
+                    UpdatedAt = m.UpdatedAt,
+                    AttachmentCount = m.Attachments.Count(),
+                    IsUrgent = m.MessageType == "Urgent"
+                })
+                .ToListAsync();
+
+            // Get total unread count for admin user
+            var unreadCount = await GetAdminUnreadMessageCountAsync(userId);
+
+            var result = new AdminMessageSearchResult
+            {
+                Messages = messages,
+                TotalCount = totalCount,
+                Page = searchRequest.Page,
+                PageSize = searchRequest.PageSize,
+                HasNextPage = (searchRequest.Page * searchRequest.PageSize) < totalCount,
+                UnreadCount = unreadCount
+            };
+
+            _logger.LogInformation("Retrieved {Count} admin messages for user {UserId} (page {Page}, total {Total})", 
+                messages.Count, userId, searchRequest.Page, totalCount);
+
+            return result;
+        }
+        catch (MessageAccessDeniedException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving admin messages for user {UserId}", userId);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<int> GetAdminUnreadMessageCountAsync(Guid userId)
+    {
+        try
+        {
+            // Validate user has ColorGarbStaff role
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || user.Role != UserRole.ColorGarbStaff)
+            {
+                return 0;
+            }
+
+            // TODO: Implement read tracking - for now return 0
+            // var unreadCount = await _context.Messages.CountAsync();
+            var unreadCount = 0;
+
+            _logger.LogDebug("Admin user {UserId} has {UnreadCount} unread messages", userId, unreadCount);
+
+            return unreadCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting admin unread message count for user {UserId}", userId);
+            return 0;
+        }
+    }
 }

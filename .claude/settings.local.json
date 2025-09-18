@@ -60,7 +60,12 @@
       "Bash(del \"C:\\Users\\apaul\\source\\repos\\ColorGarbApp\\apps\\web\\src\\components\\notifications\\PhoneVerificationDialog.tsx\")",
       "Bash(dir:*)",
       "Bash(/bashes)",
-      "Bash(sqlcmd:*)"
+      "Bash(sqlcmd:*)",
+      "Bash(npm start)",
+      "Bash(find:*)",
+      "Bash(echo:*)",
+      "Bash(echo \".then(r => r.status)\")",
+      "Bash(echo \".then(status => console.log(''Status:'', status))\")"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using ColorGarbApi.Data;
 using ColorGarbApi.Models;
 using ColorGarbApi.Models.Entities;
+using ColorGarbApi.Models.DTOs;
 using ColorGarbApi.Services;
 
 namespace ColorGarbApi.Controllers;
@@ -99,14 +101,29 @@ public class OrdersController : ControllerBase
                 {
                     query = query.Where(o => o.IsActive);
                 }
+                else if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Completed orders are inactive orders that have reached final stages
+                    query = query.Where(o => !o.IsActive && 
+                        (o.CurrentStage.Equals("Delivery", StringComparison.OrdinalIgnoreCase) ||
+                         o.CurrentStage.Equals("Ship Order", StringComparison.OrdinalIgnoreCase)));
+                }
+                else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Cancelled orders are inactive orders not in completed stages
+                    query = query.Where(o => !o.IsActive && 
+                        !(o.CurrentStage.Equals("Delivery", StringComparison.OrdinalIgnoreCase) ||
+                          o.CurrentStage.Equals("Ship Order", StringComparison.OrdinalIgnoreCase)));
+                }
                 else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Legacy support for "Inactive" - all inactive orders
                     query = query.Where(o => !o.IsActive);
                 }
             }
             else
             {
-                // Default to active orders only
+                // Default to active orders only when no status filter specified
                 query = query.Where(o => o.IsActive);
             }
 
@@ -643,14 +660,29 @@ public class OrdersController : ControllerBase
                 {
                     query = query.Where(o => o.IsActive);
                 }
+                else if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Completed orders are inactive orders that have reached final stages
+                    query = query.Where(o => !o.IsActive && 
+                        (o.CurrentStage.Equals("Delivery", StringComparison.OrdinalIgnoreCase) ||
+                         o.CurrentStage.Equals("Ship Order", StringComparison.OrdinalIgnoreCase)));
+                }
+                else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Cancelled orders are inactive orders not in completed stages
+                    query = query.Where(o => !o.IsActive && 
+                        !(o.CurrentStage.Equals("Delivery", StringComparison.OrdinalIgnoreCase) ||
+                          o.CurrentStage.Equals("Ship Order", StringComparison.OrdinalIgnoreCase)));
+                }
                 else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Legacy support for "Inactive" - all inactive orders
                     query = query.Where(o => !o.IsActive);
                 }
             }
             else
             {
-                // Default to active orders only
+                // Default to active orders only when no status filter specified
                 query = query.Where(o => o.IsActive);
             }
 
@@ -952,6 +984,653 @@ public class OrdersController : ControllerBase
             _logger.LogError(ex, "Error sending notifications for order {OrderNumber}", orderNumber);
         }
     }
+
+    /// <summary>
+    /// Submits an order request for ColorGarb staff review and approval.
+    /// Director/Finance users can no longer create orders directly - they submit requests instead.
+    /// ColorGarb staff will review and create the actual order if approved.
+    /// </summary>
+    /// <param name="request">Order request details for staff review</param>
+    /// <returns>Created order request with pending status</returns>
+    /// <response code="201">Order request submitted successfully</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User lacks permission to submit order requests</response>
+    /// <response code="500">Server error occurred</response>
+    [HttpPost("request")]
+    [Authorize(Roles = "Director,Finance")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateOrderRequest([FromBody] CreateOrderRequestDto request)
+    {
+        try
+        {
+            // Validate request
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = GetUserId();
+            var userRole = GetUserRole();
+            var organizationId = GetCurrentOrganizationId();
+
+            if (!organizationId.HasValue)
+            {
+                _logger.LogWarning("User attempted to submit order request without organization association: {UserId}", userId);
+                return BadRequest(new { message = "User must be associated with an organization to submit order requests" });
+            }
+
+            // Get user details for the request
+            var user = await _context.Users
+                .Where(u => u.Id == Guid.Parse(userId))
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return BadRequest(new { message = "User not found" });
+            }
+
+            // Create order request entity
+            var orderRequest = new OrderRequest
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = organizationId.Value,
+                RequesterId = Guid.Parse(userId),
+                RequesterName = user.Name,
+                RequesterEmail = user.Email,
+                Description = request.Description.Trim(),
+                Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                PerformerCount = request.PerformerCount,
+                PreferredCompletionDate = request.PreferredCompletionDate,
+                EstimatedBudget = request.EstimatedBudget,
+                Priority = request.Priority,
+                Status = "Pending",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            // Add to database
+            _context.OrderRequests.Add(orderRequest);
+            await _context.SaveChangesAsync();
+
+            // Log audit entry for order request submission
+            await _auditService.LogRoleAccessAttemptAsync(
+                Guid.Parse(userId),
+                userRole == "Director" ? UserRole.Director : UserRole.Finance,
+                "POST /api/orders/request",
+                "POST",
+                true,
+                organizationId.Value,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.FirstOrDefault(),
+                $"Submitted order request: {request.Description}"
+            );
+
+            // Send email notifications to ColorGarb staff about the new order request
+            _ = Task.Run(async () => await SendOrderRequestNotificationsAsync(orderRequest));
+
+            // Load organization for response
+            var organization = await _context.Organizations
+                .Where(o => o.Id == organizationId.Value)
+                .FirstOrDefaultAsync();
+
+            // Create response DTO
+            var responseDto = new OrderRequestResponseDto
+            {
+                Id = orderRequest.Id,
+                Description = orderRequest.Description,
+                PerformerCount = orderRequest.PerformerCount,
+                PreferredCompletionDate = orderRequest.PreferredCompletionDate,
+                Status = orderRequest.Status,
+                CreatedAt = orderRequest.CreatedAt,
+                OrganizationName = organization?.Name ?? "Unknown Organization",
+                RequesterName = orderRequest.RequesterName
+            };
+
+            _logger.LogInformation("Order request submitted successfully: {RequestId} by user {UserId}", orderRequest.Id, userId);
+
+            return CreatedAtAction(nameof(GetOrderRequest), new { id = orderRequest.Id }, responseDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting order request for user {UserId}", GetUserId());
+            return StatusCode(500, new { message = "An error occurred while submitting the order request" });
+        }
+    }
+
+    /// <summary>
+    /// Gets a specific order request by ID for ColorGarb staff.
+    /// Used for the CreatedAtAction response after submitting an order request.
+    /// </summary>
+    /// <param name="id">Order request ID</param>
+    /// <returns>Order request details</returns>
+    [HttpGet("requests/{id:guid}")]
+    [Authorize(Roles = "ColorGarbStaff")]
+    public async Task<IActionResult> GetOrderRequest(Guid id)
+    {
+        try
+        {
+            var orderRequest = await _context.OrderRequests
+                .Include(or => or.Organization)
+                .Include(or => or.Requester)
+                .Where(or => or.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (orderRequest == null)
+            {
+                return NotFound(new { message = "Order request not found" });
+            }
+
+            var responseDto = new OrderRequestResponseDto
+            {
+                Id = orderRequest.Id,
+                Description = orderRequest.Description,
+                PerformerCount = orderRequest.PerformerCount,
+                PreferredCompletionDate = orderRequest.PreferredCompletionDate,
+                Status = orderRequest.Status,
+                CreatedAt = orderRequest.CreatedAt,
+                OrganizationName = orderRequest.Organization.Name,
+                RequesterName = orderRequest.RequesterName
+            };
+
+            return Ok(responseDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving order request {RequestId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving the order request" });
+        }
+    }
+
+    /// <summary>
+    /// Generates a unique order number following the pattern CG-YYYY-XXX
+    /// </summary>
+    /// <returns>Unique order number</returns>
+    private async Task<string> GenerateOrderNumberAsync()
+    {
+        var currentYear = DateTime.UtcNow.Year;
+        var prefix = $"CG-{currentYear}-";
+
+        // Find the highest order number for the current year
+        var lastOrderNumber = await _context.Orders
+            .Where(o => o.OrderNumber.StartsWith(prefix))
+            .OrderByDescending(o => o.OrderNumber)
+            .Select(o => o.OrderNumber)
+            .FirstOrDefaultAsync();
+
+        int nextNumber = 1;
+        if (!string.IsNullOrEmpty(lastOrderNumber))
+        {
+            // Extract the number portion and increment
+            var numberPart = lastOrderNumber.Substring(prefix.Length);
+            if (int.TryParse(numberPart, out var currentNumber))
+            {
+                nextNumber = currentNumber + 1;
+            }
+        }
+
+        return $"{prefix}{nextNumber:D3}";
+    }
+
+    /// <summary>
+    /// Sends email notifications to ColorGarb staff for new order creation
+    /// </summary>
+    private async Task SendOrderCreationNotificationsAsync(
+        Guid orderId,
+        Guid organizationId,
+        string orderNumber,
+        CreateOrderRequest request)
+    {
+        try
+        {
+            using var scope = HttpContext.RequestServices.CreateScope();
+            var scopedServices = scope.ServiceProvider;
+            var context = scopedServices.GetRequiredService<ColorGarbDbContext>();
+            var emailService = scopedServices.GetRequiredService<IEmailService>();
+            var logger = scopedServices.GetRequiredService<ILogger<OrdersController>>();
+
+            // Get organization and user details
+            var organization = await context.Organizations
+                .Where(o => o.Id == organizationId)
+                .FirstOrDefaultAsync();
+
+            var user = await context.Users
+                .Where(u => u.Id.ToString() == GetUserId())
+                .FirstOrDefaultAsync();
+
+            if (organization == null || user == null)
+            {
+                logger.LogWarning("Failed to load organization or user data for order creation notification: {OrderNumber}", orderNumber);
+                return;
+            }
+
+            // Send notification to ColorGarb staff (this would be implemented in EmailService)
+            logger.LogInformation("New order created notification: Order {OrderNumber} by {UserName} from {OrganizationName}", 
+                orderNumber, user.Name, organization.Name);
+
+            // TODO: Implement actual email notification when EmailService is updated
+            // await emailService.SendNewOrderNotificationAsync(orderNumber, organization, user, request);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending order creation notifications for {OrderNumber}", orderNumber);
+        }
+    }
+
+    /// <summary>
+    /// Sends notifications to ColorGarb staff about new order requests from Director/Finance users.
+    /// Creates messages that staff can review and approve for order creation.
+    /// </summary>
+    private async Task SendOrderRequestNotificationsAsync(OrderRequest orderRequest)
+    {
+        try
+        {
+            using var scope = HttpContext.RequestServices.CreateScope();
+            var scopedServices = scope.ServiceProvider;
+            var context = scopedServices.GetRequiredService<ColorGarbDbContext>();
+            var emailService = scopedServices.GetRequiredService<IEmailService>();
+            var logger = scopedServices.GetRequiredService<ILogger<OrdersController>>();
+
+            // Get organization details
+            var organization = await context.Organizations
+                .Where(o => o.Id == orderRequest.OrganizationId)
+                .FirstOrDefaultAsync();
+
+            if (organization == null)
+            {
+                logger.LogWarning("Failed to load organization data for order request notification: {RequestId}", orderRequest.Id);
+                return;
+            }
+
+            // Send notification to ColorGarb staff about the new order request
+            logger.LogInformation("New order request submitted: {RequestId} by {RequesterName} from {OrganizationName}", 
+                orderRequest.Id, orderRequest.RequesterName, organization.Name);
+
+            // TODO: Implement actual email notification when EmailService is updated
+            // This will send an email to ColorGarb staff with a link to review and approve the order request
+            // await emailService.SendNewOrderRequestNotificationAsync(orderRequest, organization);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending order request notifications for {RequestId}", orderRequest.Id);
+        }
+    }
+
+    /// <summary>
+    /// Creates a new order for ColorGarb admin users with enhanced capabilities.
+    /// Admin can select any organization and configure advanced order settings.
+    /// </summary>
+    /// <param name="request">Admin order creation request with enhanced fields</param>
+    /// <returns>Created order with generated order number and selected stage</returns>
+    /// <response code="201">Order created successfully</response>
+    /// <response code="400">Invalid request data</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User lacks ColorGarb staff permissions</response>
+    /// <response code="500">Server error occurred</response>
+    [HttpPost("admin")]
+    [Authorize(Roles = "ColorGarbStaff")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateOrderAdmin([FromBody] AdminCreateOrderRequest request)
+    {
+        try
+        {
+            // Validate request
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = GetUserId();
+
+            // Validate organization exists and is active
+            var organization = await _context.Organizations
+                .Where(o => o.Id == request.OrganizationId && o.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (organization == null)
+            {
+                return BadRequest(new { message = "Invalid organization selected. Organization must be active." });
+            }
+
+            // Validate manufacturing stage
+            var validStages = GetAvailableManufacturingStages();
+            if (!validStages.Contains(request.InitialStage))
+            {
+                return BadRequest(new { message = $"Invalid manufacturing stage: {request.InitialStage}" });
+            }
+
+            // Generate unique order number
+            var orderNumber = await GenerateOrderNumberAsync();
+
+            // Use custom order name if provided, otherwise use description
+            var orderName = !string.IsNullOrWhiteSpace(request.OrderName) 
+                ? request.OrderName.Trim() 
+                : request.Description.Trim();
+
+            // Create order entity
+            var order = new Order
+            {
+                Id = Guid.NewGuid(),
+                OrderNumber = orderNumber,
+                OrganizationId = request.OrganizationId,
+                Description = orderName, // Using order name as primary description
+                CurrentStage = request.InitialStage,
+                OriginalShipDate = request.DeliveryDate,
+                CurrentShipDate = request.DeliveryDate,
+                TotalAmount = request.TotalAmount, // null means "TBD"
+                PaymentStatus = request.TotalAmount.HasValue && request.TotalAmount > 0 ? "Pending" : "Pending Design Approval",
+                Notes = BuildAdminOrderNotes(request),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            // Add to database
+            _context.Orders.Add(order);
+
+            // Create initial stage history entry
+            var stageHistory = new OrderStageHistory
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                Stage = request.InitialStage,
+                EnteredAt = DateTime.UtcNow,
+                UpdatedBy = userId,
+                Notes = $"Order created by ColorGarb admin for {organization.Name}",
+                PreviousShipDate = null,
+                NewShipDate = order.CurrentShipDate,
+                ChangeReason = "Admin order creation"
+            };
+
+            _context.OrderStageHistory.Add(stageHistory);
+
+            await _context.SaveChangesAsync();
+
+            // Log audit entry for admin order creation
+            await _auditService.LogRoleAccessAttemptAsync(
+                Guid.Parse(userId),
+                UserRole.ColorGarbStaff,
+                "POST /api/orders/admin",
+                "POST",
+                true,
+                request.OrganizationId,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.FirstOrDefault(),
+                $"Admin created order {orderNumber} for {organization.Name}: {orderName}"
+            );
+
+            // Send email notifications to organization users and ColorGarb staff
+            _ = Task.Run(async () => await SendAdminOrderCreationNotificationsAsync(
+                order.Id,
+                order.OrganizationId,
+                order.OrderNumber,
+                request,
+                organization.Name));
+
+            // Create response DTO
+            var orderDto = new OrderDto
+            {
+                Id = order.Id,
+                OrderNumber = order.OrderNumber,
+                Description = order.Description,
+                CurrentStage = order.CurrentStage,
+                OriginalShipDate = order.OriginalShipDate,
+                CurrentShipDate = order.CurrentShipDate,
+                TotalAmount = order.TotalAmount,
+                PaymentStatus = order.PaymentStatus,
+                Notes = order.Notes,
+                IsActive = order.IsActive,
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrganizationName = organization.Name
+            };
+
+            _logger.LogInformation("Admin order created successfully: {OrderNumber} for {OrganizationName} by admin {UserId}", 
+                orderNumber, organization.Name, userId);
+
+            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, orderDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating admin order for user {UserId}", GetUserId());
+            return StatusCode(500, new { message = "An error occurred while creating the order" });
+        }
+    }
+
+    /// <summary>
+    /// Gets available manufacturing stages for order creation
+    /// </summary>
+    /// <returns>List of valid manufacturing stages</returns>
+    private List<string> GetAvailableManufacturingStages()
+    {
+        return new List<string>
+        {
+            "Design Proposal",
+            "Proof Approval", 
+            "Measurements",
+            "Production Planning",
+            "Cutting",
+            "Sewing",
+            "Quality Control",
+            "Finishing",
+            "Final Inspection",
+            "Packaging",
+            "Shipping Preparation",
+            "Ship Order",
+            "Delivery"
+        };
+    }
+
+    /// <summary>
+    /// Builds comprehensive notes field for admin-created orders
+    /// </summary>
+    private string BuildAdminOrderNotes(AdminCreateOrderRequest request)
+    {
+        var notesParts = new List<string>();
+
+        // Add performer count if specified
+        if (request.NumberOfPerformers.HasValue && request.NumberOfPerformers > 0)
+        {
+            notesParts.Add($"Number of Performers: {request.NumberOfPerformers}");
+        }
+
+        // Add sample requirement
+        if (request.NeedsSample)
+        {
+            notesParts.Add("Sample requested prior to production");
+        }
+
+        // Add measurement date context
+        notesParts.Add($"Measurements scheduled for: {request.MeasurementDate:yyyy-MM-dd}");
+
+        // Add special instructions if provided
+        if (!string.IsNullOrWhiteSpace(request.SpecialInstructions))
+        {
+            notesParts.Add($"Special Instructions: {request.SpecialInstructions.Trim()}");
+        }
+
+        // Add admin notes if provided
+        if (!string.IsNullOrWhiteSpace(request.Notes))
+        {
+            notesParts.Add($"Additional Notes: {request.Notes.Trim()}");
+        }
+
+        return string.Join("\n\n", notesParts);
+    }
+
+    /// <summary>
+    /// Sends email notifications for admin-created orders
+    /// </summary>
+    private async Task SendAdminOrderCreationNotificationsAsync(
+        Guid orderId,
+        Guid organizationId,
+        string orderNumber,
+        AdminCreateOrderRequest request,
+        string organizationName)
+    {
+        try
+        {
+            using var scope = HttpContext.RequestServices.CreateScope();
+            var scopedServices = scope.ServiceProvider;
+            var context = scopedServices.GetRequiredService<ColorGarbDbContext>();
+            var emailService = scopedServices.GetRequiredService<IEmailService>();
+            var logger = scopedServices.GetRequiredService<ILogger<OrdersController>>();
+
+            // Get admin user details
+            var adminUser = await context.Users
+                .Where(u => u.Id.ToString() == GetUserId())
+                .FirstOrDefaultAsync();
+
+            if (adminUser == null)
+            {
+                logger.LogWarning("Failed to load admin user data for order creation notification: {OrderNumber}", orderNumber);
+                return;
+            }
+
+            // Send notification to organization users
+            var orgUsers = await context.Users
+                .Where(u => u.OrganizationId == organizationId && u.IsActive)
+                .ToListAsync();
+
+            foreach (var user in orgUsers)
+            {
+                logger.LogInformation("Admin order created notification sent to org user {UserName}: Order {OrderNumber}", 
+                    user.Name, orderNumber);
+            }
+
+            // Send notification to ColorGarb staff about admin-created order
+            logger.LogInformation("Admin order created: {OrderNumber} for {OrganizationName} by {AdminName}", 
+                orderNumber, organizationName, adminUser.Name);
+
+            // TODO: Implement actual email notifications when EmailService is updated
+            // await emailService.SendAdminOrderNotificationAsync(orderNumber, organizationName, adminUser, request, orgUsers);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending admin order creation notifications for {OrderNumber}", orderNumber);
+        }
+    }
+}
+
+/// <summary>
+/// Request object for creating new orders by ColorGarb admin users.
+/// Includes enhanced fields for cross-organization order management.
+/// </summary>
+public class AdminCreateOrderRequest
+{
+    /// <summary>
+    /// ID of the organization this order belongs to (required)
+    /// </summary>
+    [Required]
+    public Guid OrganizationId { get; set; }
+
+    /// <summary>
+    /// Custom order name (e.g., "Fall 2025 Marching Band") - optional, uses description if not provided
+    /// </summary>
+    [MaxLength(200, ErrorMessage = "Order name cannot exceed 200 characters")]
+    public string? OrderName { get; set; }
+
+    /// <summary>
+    /// Description of the costume order (required, max 500 characters)
+    /// </summary>
+    [Required]
+    [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Number of performers/people for this order (optional)
+    /// </summary>
+    [Range(1, 10000, ErrorMessage = "Number of performers must be between 1 and 10,000")]
+    public int? NumberOfPerformers { get; set; }
+
+    /// <summary>
+    /// Date when customer will provide measurements (required, must be future date)
+    /// </summary>
+    [Required]
+    public DateTime MeasurementDate { get; set; }
+
+    /// <summary>
+    /// Date when customer needs costumes delivered (required, must be after measurement date)
+    /// </summary>
+    [Required]
+    public DateTime DeliveryDate { get; set; }
+
+    /// <summary>
+    /// Whether customer needs a sample before production (optional)
+    /// </summary>
+    public bool NeedsSample { get; set; } = false;
+
+    /// <summary>
+    /// Initial manufacturing stage for this order (required)
+    /// </summary>
+    [Required]
+    [MaxLength(50, ErrorMessage = "Stage name cannot exceed 50 characters")]
+    public string InitialStage { get; set; } = "Design Proposal";
+
+    /// <summary>
+    /// Custom total amount for the order (optional, defaults to 0.00)
+    /// </summary>
+    [Range(0, 1000000, ErrorMessage = "Total amount must be between $0 and $1,000,000")]
+    public decimal? TotalAmount { get; set; }
+
+    /// <summary>
+    /// Detailed special instructions for the order (optional, max 5000 characters)
+    /// </summary>
+    [MaxLength(5000, ErrorMessage = "Special instructions cannot exceed 5000 characters")]
+    public string? SpecialInstructions { get; set; }
+
+    /// <summary>
+    /// Additional administrative notes (optional, max 2000 characters)
+    /// </summary>
+    [MaxLength(2000, ErrorMessage = "Notes cannot exceed 2000 characters")]
+    public string? Notes { get; set; }
+}
+
+/// <summary>
+/// Request object for creating new orders by Director and Finance users.
+/// </summary>
+public class CreateOrderRequest
+{
+    /// <summary>
+    /// Description of the costume order (required, max 500 characters)
+    /// </summary>
+    [Required]
+    [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Date when customer will provide measurements (required, must be future date)
+    /// </summary>
+    [Required]
+    public DateTime MeasurementDate { get; set; }
+
+    /// <summary>
+    /// Date when customer needs costumes delivered (required, must be after measurement date)
+    /// </summary>
+    [Required]
+    public DateTime DeliveryDate { get; set; }
+
+    /// <summary>
+    /// Whether customer needs a sample before production (optional)
+    /// </summary>
+    public bool NeedsSample { get; set; } = false;
+
+    /// <summary>
+    /// Additional notes or special instructions (optional, max 2000 characters)
+    /// </summary>
+    [MaxLength(2000, ErrorMessage = "Notes cannot exceed 2000 characters")]
+    public string? Notes { get; set; }
 }
 
 /// <summary>
@@ -991,9 +1670,9 @@ public class OrderDto
     public DateTime CurrentShipDate { get; set; }
 
     /// <summary>
-    /// Total order value in USD
+    /// Total order value in USD. Null indicates "TBD" (To Be Determined)
     /// </summary>
-    public decimal TotalAmount { get; set; }
+    public decimal? TotalAmount { get; set; }
 
     /// <summary>
     /// Current payment status

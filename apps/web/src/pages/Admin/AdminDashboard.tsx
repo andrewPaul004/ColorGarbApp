@@ -29,12 +29,14 @@ import {
   Schedule,
   CheckCircle,
   Search,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { useAdminStore } from '../../stores/adminStore';
 import { useAdminAccess } from '../../hooks/useAdminAccess';
 // RoleBasedNavigation removed - using Layout wrapper in App.tsx instead
 import { AdminOrdersList } from '../../components/admin/AdminOrdersList';
 import { BulkUpdateModal } from '../../components/admin/BulkUpdateModal';
+import { AdminCreateOrderDialog } from '../../components/admin/AdminCreateOrderDialog';
 
 /**
  * Admin Dashboard page for ColorGarb staff to manage orders across all organizations.
@@ -71,6 +73,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Local state
   const [bulkUpdateModalOpen, setBulkUpdateModalOpen] = useState(false);
+  const [adminCreateOrderDialogOpen, setAdminCreateOrderDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   /**
@@ -160,6 +163,28 @@ export const AdminDashboard: React.FC = () => {
   };
 
   /**
+   * Open admin create order dialog
+   */
+  const handleOpenAdminCreateOrder = () => {
+    setAdminCreateOrderDialogOpen(true);
+  };
+
+  /**
+   * Close admin create order dialog
+   */
+  const handleCloseAdminCreateOrder = () => {
+    setAdminCreateOrderDialogOpen(false);
+  };
+
+  /**
+   * Handle successful admin order creation
+   */
+  const handleAdminOrderCreated = (newOrder: any) => {
+    // Refresh orders to show the new order
+    refreshOrders();
+  };
+
+  /**
    * Get available manufacturing stages for filter dropdown
    */
   const getAvailableStages = (): string[] => {
@@ -202,13 +227,27 @@ export const AdminDashboard: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
         {/* Page Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
-            Admin Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage orders across all organizations from a centralized interface
-          </Typography>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
+              Admin Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Manage orders across all organizations from a centralized interface
+            </Typography>
+          </Box>
+          
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAdminCreateOrder}
+            sx={{ 
+              flexShrink: 0,
+              minWidth: 'auto',
+            }}
+          >
+            {isMobile ? 'Create Order' : 'Create New Order'}
+          </Button>
         </Box>
 
         {/* Success/Error Messages */}
@@ -463,6 +502,13 @@ export const AdminDashboard: React.FC = () => {
       <BulkUpdateModal
         open={bulkUpdateModalOpen}
         onClose={handleCloseBulkUpdate}
+      />
+
+      {/* Admin Create Order Dialog */}
+      <AdminCreateOrderDialog
+        open={adminCreateOrderDialogOpen}
+        onClose={handleCloseAdminCreateOrder}
+        onOrderCreated={handleAdminOrderCreated}
       />
     </Container>
   );

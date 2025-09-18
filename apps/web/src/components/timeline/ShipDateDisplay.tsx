@@ -45,9 +45,7 @@ export interface ShipDateChangeHistory extends StageHistory {
 interface ShipDateDisplayProps {
   /** Unique identifier of the order */
   orderId: string;
-  /** Original promised delivery date */
-  originalShipDate: Date;
-  /** Current revised delivery date */
+  /** Current delivery date */
   currentShipDate: Date;
   /** Array of ship date change history entries */
   changeHistory: ShipDateChangeHistory[];
@@ -56,8 +54,8 @@ interface ShipDateDisplayProps {
 }
 
 /**
- * Displays dual ship date information with change history tracking.
- * Shows original and current ship dates with visual indicators for changes.
+ * Displays ship date information with change history tracking.
+ * Shows current ship date without delay indicators.
  * 
  * @component
  * @param {ShipDateDisplayProps} props - Component props
@@ -67,7 +65,6 @@ interface ShipDateDisplayProps {
  * ```tsx
  * <ShipDateDisplay
  *   orderId="12345"
- *   originalShipDate={new Date('2024-03-15')}
  *   currentShipDate={new Date('2024-03-20')}
  *   changeHistory={shipDateChanges}
  *   onHistoryExpand={handleHistoryExpand}
@@ -78,7 +75,6 @@ interface ShipDateDisplayProps {
  */
 export const ShipDateDisplay: React.FC<ShipDateDisplayProps> = ({
   orderId,
-  originalShipDate,
   currentShipDate,
   changeHistory,
   onHistoryExpand
@@ -89,56 +85,6 @@ export const ShipDateDisplay: React.FC<ShipDateDisplayProps> = ({
   const theme = useTheme();
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
-  /**
-   * Determines if the ship date has been changed from the original.
-   * 
-   * @returns {boolean} True if ship date has been modified
-   */
-  const isDateChanged = (): boolean => {
-    return originalShipDate.getTime() !== currentShipDate.getTime();
-  };
-
-  /**
-   * Determines if the current ship date is delayed compared to original.
-   * 
-   * @returns {boolean} True if ship date is delayed
-   */
-  const isDelayed = (): boolean => {
-    return currentShipDate.getTime() > originalShipDate.getTime();
-  };
-
-  /**
-   * Determines if the current ship date is accelerated compared to original.
-   * 
-   * @returns {boolean} True if ship date is accelerated
-   */
-  const isAccelerated = (): boolean => {
-    return currentShipDate.getTime() < originalShipDate.getTime();
-  };
-
-  /**
-   * Gets the appropriate color theme for the current ship date based on change status.
-   * 
-   * @returns {string} MUI theme color
-   */
-  const getCurrentDateColor = (): string => {
-    if (!isDateChanged()) return theme.palette.success.main;
-    if (isDelayed()) return theme.palette.warning.main;
-    if (isAccelerated()) return theme.palette.info.main;
-    return theme.palette.text.primary;
-  };
-
-  /**
-   * Gets the appropriate icon for the ship date change status.
-   * 
-   * @returns {React.ReactElement} MUI icon component
-   */
-  const getChangeIcon = () => {
-    if (!isDateChanged()) return <CheckCircle sx={{ fontSize: 20 }} />;
-    if (isDelayed()) return <Warning sx={{ fontSize: 20 }} />;
-    if (isAccelerated()) return <TrendingUp sx={{ fontSize: 20 }} />;
-    return <Schedule sx={{ fontSize: 20 }} />;
-  };
 
   /**
    * Formats a date using locale-aware formatting.
@@ -154,17 +100,6 @@ export const ShipDateDisplay: React.FC<ShipDateDisplayProps> = ({
     });
   };
 
-  /**
-   * Gets the status text for the ship date change.
-   * 
-   * @returns {string} Status description
-   */
-  const getStatusText = (): string => {
-    if (!isDateChanged()) return 'On Schedule';
-    if (isDelayed()) return 'Delayed';
-    if (isAccelerated()) return 'Accelerated';
-    return 'Modified';
-  };
 
   /**
    * Handles expanding/collapsing the change history.
@@ -211,69 +146,21 @@ export const ShipDateDisplay: React.FC<ShipDateDisplayProps> = ({
           )}
         </Box>
 
-        {/* Dual Ship Date Layout */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: theme.spacing(3),
-            mb: theme.spacing(2)
-          }}
-        >
-          {/* Original Ship Date */}
-          <Box sx={{ flex: 1 }}>
-            <Typography 
-              variant="body2" 
-              sx={{ color: 'text.secondary', mb: theme.spacing(0.5) }}
-            >
-              Original Ship Date
-            </Typography>
-            <Typography 
-              variant="h6" 
-              sx={{ fontWeight: 'medium' }}
-              data-testid="original-ship-date"
-            >
-              {formatDate(originalShipDate)}
-            </Typography>
-          </Box>
-
-          {/* Current Ship Date */}
-          <Box sx={{ flex: 1 }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: isDateChanged() ? getCurrentDateColor() : 'text.secondary',
-                mb: theme.spacing(0.5)
-              }}
-            >
-              Current Ship Date
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: theme.spacing(1) }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 'medium',
-                  color: getCurrentDateColor()
-                }}
-                data-testid="current-ship-date"
-              >
-                {formatDate(currentShipDate)}
-              </Typography>
-              <Box sx={{ color: getCurrentDateColor() }}>
-                {getChangeIcon()}
-              </Box>
-            </Box>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: getCurrentDateColor(),
-                fontWeight: 'medium',
-                mt: theme.spacing(0.5)
-              }}
-            >
-              {getStatusText()}
-            </Typography>
-          </Box>
+        {/* Ship Date Display */}
+        <Box sx={{ mb: theme.spacing(2) }}>
+          <Typography 
+            variant="body2" 
+            sx={{ color: 'text.secondary', mb: theme.spacing(0.5) }}
+          >
+            Ship Date
+          </Typography>
+          <Typography 
+            variant="h6" 
+            sx={{ fontWeight: 'medium' }}
+            data-testid="current-ship-date"
+          >
+            {formatDate(currentShipDate)}
+          </Typography>
         </Box>
 
         {/* Change History Section */}

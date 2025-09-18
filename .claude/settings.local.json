@@ -65,7 +65,12 @@
       "Bash(find:*)",
       "Bash(echo:*)",
       "Bash(echo \".then(r => r.status)\")",
-      "Bash(echo \".then(status => console.log(''Status:'', status))\")"
+      "Bash(echo \".then(status => console.log(''Status:'', status))\")",
+      "Bash(npm view:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(tsc --noEmit --skipLibCheck)"
     ],
     "deny": [],
     "ask": []

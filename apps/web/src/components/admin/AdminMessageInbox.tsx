@@ -40,7 +40,7 @@ import {
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
-import { formatDistanceToNow } from 'date-fns';
+import formatDistanceToNow from 'date-fns/formatDistanceToNow';
 import { MessageCenter } from '../messages/MessageCenter';
 import { useAdminAccess } from '../../hooks/useAdminAccess';
 import adminMessageService, { 

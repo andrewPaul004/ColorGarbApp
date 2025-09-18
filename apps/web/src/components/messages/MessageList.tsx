@@ -440,7 +440,6 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
         ml: { xs: 5, md: 6 }, 
         mt: 1, 
         display: 'flex', 
-        alignItems: 'center', 
         gap: 1,
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'flex-start', sm: 'center' }

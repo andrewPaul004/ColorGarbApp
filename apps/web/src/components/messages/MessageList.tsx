@@ -18,10 +18,7 @@ import {
   MoreVert as MoreVertIcon,
   Circle as UnreadIcon
 } from '@mui/icons-material';
-import format from 'date-fns/format';
-import isToday from 'date-fns/isToday';
-import isYesterday from 'date-fns/isYesterday';
-import formatDistanceToNow from 'date-fns/formatDistanceToNow';
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import type { Message } from '../../types/shared';
 import messageService from '../../services/messageService';
 

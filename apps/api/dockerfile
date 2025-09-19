@@ -1,0 +1,32 @@
+# ---------- build stage ----------
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy just the project file first for better Docker layer caching
+COPY apps/api/ColorGarbApi.csproj apps/api/
+
+# (Optional but helpful) If you use central package mgmt / NuGet config at repo root:
+# COPY Directory.Packages.props .
+# COPY NuGet.Config .
+
+RUN dotnet restore apps/api/ColorGarbApi.csproj
+
+# Now copy the rest of the repo and publish
+COPY . .
+RUN dotnet publish apps/api/ColorGarbApi.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# ---------- runtime stage ----------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Expose a conventional port for container hosting platforms
+EXPOSE 8080
+
+# Environment
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Bring in the published bits
+COPY --from=build /app/publish .
+
+# Bind to whatever PORT the platform injects (default to 8080 for local `docker run`)
+CMD ["sh", "-c", "dotnet ColorGarbApi.dll --urls=http://0.0.0.0:${PORT:-8080}"]

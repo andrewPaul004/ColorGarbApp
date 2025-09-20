@@ -181,6 +181,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/api/health-nodb-check", () => Results.Ok(new { status = "OK" }));
 
 app.Run();
 

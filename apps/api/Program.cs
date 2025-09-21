@@ -146,7 +146,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176") // Vite dev server
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "https://color-garb-app-web.vercel.app") // Vite dev server
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -181,6 +181,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/api/health-nodb-check", () => Results.Ok(new { status = "OK" }));
 
 app.Run();
 

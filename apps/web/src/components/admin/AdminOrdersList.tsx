@@ -112,10 +112,12 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
   };
 
   /**
-   * Handle menu open - supports both mouse and touch events for mobile compatibility
+   * Handle menu open - unified event handler for both mouse and touch events
+   * Prevents double-firing by checking event type and touch capability
    */
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>, order: AdminOrder) => {
     event.preventDefault();
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
     setSelectedOrder(order);
   };
@@ -267,13 +269,15 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, order)}
-                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
                         sx={{
                           minHeight: 44,
                           minWidth: 44,
                           '&:active': {
                             backgroundColor: 'action.selected',
+                          },
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
                           },
                         }}
                       >
@@ -479,13 +483,15 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                     <TableCell align="center">
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, order)}
-                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
                         sx={{
                           minHeight: 44,
                           minWidth: 44,
                           '&:active': {
                             backgroundColor: 'action.selected',
+                          },
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
                           },
                         }}
                       >

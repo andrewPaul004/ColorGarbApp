@@ -170,12 +170,14 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
 
 
   /**
-   * Filter orders based on search query
+   * Filter orders based on search query.
+   * Note: Server-side filters (status, stage, organization) are applied via the admin store.
+   * This function only handles local search filtering on top of server results.
    * @returns Filtered orders array
    */
   const getFilteredOrders = (): AdminOrder[] => {
     if (!searchQuery.trim()) return orders;
-    
+
     const query = searchQuery.toLowerCase();
     return orders.filter(order =>
       order.orderNumber?.toLowerCase().includes(query) ||

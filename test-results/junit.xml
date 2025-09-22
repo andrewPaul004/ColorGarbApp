@@ -1,0 +1,1280 @@
+<testsuites id="" name="" tests="312" failures="0" skipped="312" errors="0" time="0.32347699999999985">
+<testsuite name="auth\authentication.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="chromium" tests="31" failures="0" skipped="31" time="0" errors="0">
+<testcase name="Authentication Flows › Login Page Functionality › should display login form with all required elements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should handle keyboard navigation properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should validate form input properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should show loading state during authentication" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should work correctly on mobile devices" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate director user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate finance user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate staff user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should persist authentication across page refreshes" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should redirect authenticated users away from login page" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should handle role-based redirections correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid passwords" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should show proper validation errors for empty fields" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle malformed email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should clear errors when user starts typing" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement account lockout after failed attempts" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should enforce password requirements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should not expose sensitive information in error messages" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement timing attack protection" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should logout user and redirect to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should redirect unauthenticated users to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should handle session expiration gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should maintain session across browser tabs" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should be accessible to screen readers" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should support high contrast mode" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should work with reduced motion settings" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should handle browser autofill correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle network failures gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle server errors appropriately" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should recover from form submission errors" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="manufacturing\stage-progression.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="chromium" tests="15" failures="0" skipped="15" time="0" errors="0">
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display complete 13-stage timeline for all orders" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should show stage progression chronologically" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display stage timestamps for completed stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to advance stages sequentially" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should not be able to skip stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to update ship dates with stage changes" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should properly categorize stages by business function" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should handle quality control stages appropriately" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should enforce proper fulfillment sequence" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should maintain complete stage history" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should track stage updates by staff member" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see stage progress but not be able to modify" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see appropriate stage descriptions" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage updates efficiently" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage update failures gracefully" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="orders\order-workflow.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="chromium" tests="22" failures="0" skipped="22" time="0" errors="0">
+<testcase name="Order Management Workflow › Order Creation and Display › director should be able to create new orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › finance user should be able to create orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › regular client users should not see create order button" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should display orders in dashboard grid" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should handle order filtering correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate to order details from dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should display complete order information" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate back to dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should display complete stage timeline" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › staff should be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › clients should not be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should handle ship date updates correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should maintain data consistency across views" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should verify data consistency in order detail page" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by status" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by manufacturing stage" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should search orders by description" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should load orders efficiently" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should handle large order lists" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Mobile Order Management › should work correctly on mobile devices" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle order loading errors gracefully" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle individual order load failures" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\multi-tenant-isolation.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="chromium" tests="17" failures="0" skipped="17" time="0" errors="0">
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users should only see orders from their organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users cannot access orders from other organizations via direct URL" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › API requests should respect organization boundaries" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › users should only see messages for their organization orders" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › staff should see messages from all organizations but context should be preserved" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › director and finance users should have different permissions within same organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › users from same organization should see same orders but may have different action permissions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › ColorGarb staff should see orders from all organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should be able to filter by organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should have elevated permissions across organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent unauthorized API access through token manipulation" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent cross-site request forgery" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should validate organization context in all requests" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should handle session hijacking protection" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not expose other organization data in autocomplete or suggestions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not leak organization data in error messages" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should sanitize data in browser console and network logs" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\role-based-access.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="chromium" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Role-Based Access Control › Route Access Control › director should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › finance should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › colorGarbStaff should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › unauthenticated users should be redirected to login" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › director should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › finance should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › colorGarbStaff should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › director and finance should only see their organization data" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › ColorGarb staff should see data from all organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › users should not be able to access other organization data via API" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › director should not be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › ColorGarb staff should be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › users should only send messages in their organization orders" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should enforce proper role hierarchy within organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should handle role-based feature flags correctly" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle token manipulation attempts" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle expired tokens gracefully" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should prevent cross-site request forgery for role changes" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should validate role consistency across session" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth\authentication.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="firefox" tests="31" failures="0" skipped="31" time="0" errors="0">
+<testcase name="Authentication Flows › Login Page Functionality › should display login form with all required elements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should handle keyboard navigation properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should validate form input properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should show loading state during authentication" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should work correctly on mobile devices" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate director user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate finance user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate staff user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should persist authentication across page refreshes" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should redirect authenticated users away from login page" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should handle role-based redirections correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid passwords" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should show proper validation errors for empty fields" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle malformed email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should clear errors when user starts typing" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement account lockout after failed attempts" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should enforce password requirements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should not expose sensitive information in error messages" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement timing attack protection" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should logout user and redirect to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should redirect unauthenticated users to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should handle session expiration gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should maintain session across browser tabs" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should be accessible to screen readers" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should support high contrast mode" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should work with reduced motion settings" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should handle browser autofill correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle network failures gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle server errors appropriately" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should recover from form submission errors" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="manufacturing\stage-progression.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="firefox" tests="15" failures="0" skipped="15" time="0" errors="0">
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display complete 13-stage timeline for all orders" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should show stage progression chronologically" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display stage timestamps for completed stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to advance stages sequentially" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should not be able to skip stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to update ship dates with stage changes" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should properly categorize stages by business function" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should handle quality control stages appropriately" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should enforce proper fulfillment sequence" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should maintain complete stage history" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should track stage updates by staff member" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see stage progress but not be able to modify" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see appropriate stage descriptions" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage updates efficiently" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage update failures gracefully" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="orders\order-workflow.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="firefox" tests="22" failures="0" skipped="22" time="0" errors="0">
+<testcase name="Order Management Workflow › Order Creation and Display › director should be able to create new orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › finance user should be able to create orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › regular client users should not see create order button" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should display orders in dashboard grid" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should handle order filtering correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate to order details from dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should display complete order information" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate back to dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should display complete stage timeline" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › staff should be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › clients should not be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should handle ship date updates correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should maintain data consistency across views" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should verify data consistency in order detail page" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by status" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by manufacturing stage" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should search orders by description" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should load orders efficiently" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should handle large order lists" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Mobile Order Management › should work correctly on mobile devices" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle order loading errors gracefully" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle individual order load failures" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\multi-tenant-isolation.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="firefox" tests="17" failures="0" skipped="17" time="0" errors="0">
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users should only see orders from their organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users cannot access orders from other organizations via direct URL" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › API requests should respect organization boundaries" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › users should only see messages for their organization orders" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › staff should see messages from all organizations but context should be preserved" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › director and finance users should have different permissions within same organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › users from same organization should see same orders but may have different action permissions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › ColorGarb staff should see orders from all organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should be able to filter by organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should have elevated permissions across organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent unauthorized API access through token manipulation" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent cross-site request forgery" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should validate organization context in all requests" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should handle session hijacking protection" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not expose other organization data in autocomplete or suggestions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not leak organization data in error messages" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should sanitize data in browser console and network logs" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\role-based-access.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="firefox" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Role-Based Access Control › Route Access Control › director should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › finance should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › colorGarbStaff should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › unauthenticated users should be redirected to login" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › director should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › finance should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › colorGarbStaff should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › director and finance should only see their organization data" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › ColorGarb staff should see data from all organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › users should not be able to access other organization data via API" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › director should not be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › ColorGarb staff should be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › users should only send messages in their organization orders" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should enforce proper role hierarchy within organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should handle role-based feature flags correctly" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle token manipulation attempts" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle expired tokens gracefully" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should prevent cross-site request forgery for role changes" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should validate role consistency across session" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth\authentication.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="webkit" tests="31" failures="0" skipped="31" time="0" errors="0">
+<testcase name="Authentication Flows › Login Page Functionality › should display login form with all required elements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should handle keyboard navigation properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should validate form input properly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should show loading state during authentication" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Login Page Functionality › should work correctly on mobile devices" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate director user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate finance user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should successfully authenticate staff user" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should persist authentication across page refreshes" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should redirect authenticated users away from login page" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Successful Authentication › should handle role-based redirections correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle invalid passwords" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should show proper validation errors for empty fields" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should handle malformed email addresses" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Failed Authentication › should clear errors when user starts typing" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement account lockout after failed attempts" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should enforce password requirements" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should not expose sensitive information in error messages" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Account Security › should implement timing attack protection" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should logout user and redirect to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should redirect unauthenticated users to login" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should handle session expiration gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Session Management › should maintain session across browser tabs" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should be accessible to screen readers" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should support high contrast mode" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should work with reduced motion settings" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Accessibility and UX › should handle browser autofill correctly" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle network failures gracefully" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should handle server errors appropriately" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication Flows › Error Handling and Recovery › should recover from form submission errors" classname="auth\authentication.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="manufacturing\stage-progression.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="webkit" tests="15" failures="0" skipped="15" time="0" errors="0">
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display complete 13-stage timeline for all orders" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should show stage progression chronologically" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Timeline Display › should display stage timestamps for completed stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to advance stages sequentially" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should not be able to skip stages" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Progression by Staff › staff should be able to update ship dates with stage changes" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should properly categorize stages by business function" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should handle quality control stages appropriately" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Categories and Business Logic › should enforce proper fulfillment sequence" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should maintain complete stage history" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage History and Audit Trail › should track stage updates by staff member" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see stage progress but not be able to modify" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Client Stage Visibility › clients should see appropriate stage descriptions" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage updates efficiently" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="13-Stage Manufacturing Process › Stage Performance and Error Handling › should handle stage update failures gracefully" classname="manufacturing\stage-progression.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="orders\order-workflow.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="webkit" tests="22" failures="0" skipped="22" time="0" errors="0">
+<testcase name="Order Management Workflow › Order Creation and Display › director should be able to create new orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › finance user should be able to create orders" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › regular client users should not see create order button" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should display orders in dashboard grid" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Creation and Display › should handle order filtering correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate to order details from dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should display complete order information" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Detail Navigation › should navigate back to dashboard" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should display complete stage timeline" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › staff should be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › clients should not be able to update order stages" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › 13-Stage Manufacturing Process › should handle ship date updates correctly" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should maintain data consistency across views" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Data Consistency › should verify data consistency in order detail page" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by status" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should filter orders by manufacturing stage" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Search and Filtering › should search orders by description" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should load orders efficiently" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Performance and Scalability › should handle large order lists" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Mobile Order Management › should work correctly on mobile devices" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle order loading errors gracefully" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Order Management Workflow › Order Error Handling › should handle individual order load failures" classname="orders\order-workflow.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\multi-tenant-isolation.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="webkit" tests="17" failures="0" skipped="17" time="0" errors="0">
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users should only see orders from their organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › users cannot access orders from other organizations via direct URL" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Isolation Between Organizations › API requests should respect organization boundaries" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › users should only see messages for their organization orders" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Message Isolation › staff should see messages from all organizations but context should be preserved" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › director and finance users should have different permissions within same organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Role-Based Access Within Organizations › users from same organization should see same orders but may have different action permissions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › ColorGarb staff should see orders from all organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should be able to filter by organization" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Staff Cross-Organization Access › staff should have elevated permissions across organizations" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent unauthorized API access through token manipulation" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should prevent cross-site request forgery" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should validate organization context in all requests" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Security Boundaries › should handle session hijacking protection" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not expose other organization data in autocomplete or suggestions" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should not leak organization data in error messages" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Multi-Tenant Organization Isolation › Data Leakage Prevention › should sanitize data in browser console and network logs" classname="security\multi-tenant-isolation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="security\role-based-access.spec.ts" timestamp="2025-09-22T22:20:33.948Z" hostname="webkit" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Role-Based Access Control › Route Access Control › director should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › finance should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › colorGarbStaff should access appropriate routes and be blocked from restricted ones" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Route Access Control › unauthenticated users should be redirected to login" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › director should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › finance should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › UI Element Permissions › colorGarbStaff should see appropriate UI elements based on permissions" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › director and finance should only see their organization data" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › ColorGarb staff should see data from all organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Data Access Permissions › users should not be able to access other organization data via API" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › director should not be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › ColorGarb staff should be able to update order stages" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Permission Boundaries › users should only send messages in their organization orders" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should enforce proper role hierarchy within organizations" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Role Hierarchy and Inheritance › should handle role-based feature flags correctly" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle token manipulation attempts" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should handle expired tokens gracefully" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should prevent cross-site request forgery for role changes" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Role-Based Access Control › Security Edge Cases › should validate role consistency across session" classname="security\role-based-access.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

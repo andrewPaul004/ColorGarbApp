@@ -73,7 +73,9 @@
       "Bash(tsc --noEmit --skipLibCheck)",
       "Bash(netstat:*)",
       "Bash(cat:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npx playwright:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

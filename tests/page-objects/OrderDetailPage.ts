@@ -10,76 +10,59 @@ import { BasePage } from './BasePage';
  * @since 3.0.0
  */
 export class OrderDetailPage extends BasePage {
-  // Page-specific selectors
+  // Page-specific selectors - using actual Material-UI components
   private selectors = {
     // Page structure
-    pageTitle: '[data-testid="order-detail-title"]',
-    orderNumber: '[data-testid="order-number"]',
-    backToDashboard: '[data-testid="back-to-dashboard"]',
+    pageTitle: 'h1:has-text("Order")', // Typography h1 with Order text
+    orderNumber: 'h1:has-text("Order")', // Same as title - contains order number
+    backToDashboard: '.MuiBreadcrumbs-root a:has-text("Dashboard")', // Breadcrumb link
 
-    // Order information sections
-    orderSummary: '[data-testid="order-summary"]',
-    contactInfo: '[data-testid="contact-info"]',
-    orderStage: '[data-testid="order-stage"]',
-    shipDate: '[data-testid="ship-date"]',
-    totalAmount: '[data-testid="total-amount"]',
-    paymentStatus: '[data-testid="payment-status"]',
+    // Order information sections - Paper components
+    orderHeaderSection: '.MuiPaper-root:has(h1)',
+    orderSummarySection: '.MuiPaper-root', // OrderSummary component in Paper
+    contactInfoSection: '.MuiPaper-root', // ContactInfo component in Paper
 
-    // Stage timeline
-    stageTimeline: '[data-testid="stage-timeline"]',
-    stageTimelineItem: '[data-testid="stage-timeline-item"]',
-    currentStageIndicator: '[data-testid="current-stage-indicator"]',
-    completedStageIndicator: '[data-testid="completed-stage-indicator"]',
-    pendingStageIndicator: '[data-testid="pending-stage-indicator"]',
+    // Order details from header section
+    orderDescription: 'h6:has-text("")', // h6 Typography with description
+    currentStageText: 'text=Current Stage >> .. >> .MuiTypography-body1',
+    shipDateText: 'text=Ship Date >> .. >> .MuiTypography-body1',
 
-    // Stage management (for staff)
-    stageUpdateSection: '[data-testid="stage-update-section"]',
-    stageUpdateButton: '[data-testid="stage-update-button"]',
-    stageSelectDropdown: '[data-testid="stage-select-dropdown"]',
-    shipDatePicker: '[data-testid="ship-date-picker"]',
-    updateNotesField: '[data-testid="update-notes-field"]',
-    saveStageUpdate: '[data-testid="save-stage-update"]',
-    cancelStageUpdate: '[data-testid="cancel-stage-update"]',
+    // Stage timeline section
+    stageTimelineSection: '.MuiPaper-root:has-text("Manufacturing Progress")',
+    stageTimelineTitle: 'h2:has-text("Manufacturing Progress")',
+    orderTimeline: '[class*="OrderTimeline"]', // OrderTimeline component
 
-    // Messaging section
-    messageCenter: '[data-testid="message-center"]',
-    messageList: '[data-testid="message-list"]',
-    messageItem: '[data-testid="message-item"]',
-    messageComposer: '[data-testid="message-composer"]',
-    messageInput: '[data-testid="message-input"]',
-    messageTypeSelect: '[data-testid="message-type-select"]',
-    recipientRoleSelect: '[data-testid="recipient-role-select"]',
-    attachmentInput: '[data-testid="attachment-input"]',
-    sendMessageButton: '[data-testid="send-message-button"]',
+    // Quick Actions section
+    quickActionsSection: '[class*="QuickActions"]',
+    submitMeasurementsButton: 'button:has-text("measurements")',
+    viewMessagesButton: 'button:has-text("messages")',
+    uploadDocumentsButton: 'button:has-text("documents")',
 
-    // Message search and filtering
-    messageSearchInput: '[data-testid="message-search-input"]',
-    messageSearchButton: '[data-testid="message-search-button"]',
-    messageFilters: '[data-testid="message-filters"]',
-    unreadMessagesFilter: '[data-testid="unread-messages-filter"]',
+    // Message Center (Modal)
+    messageCenterModal: '.MuiDialog-root',
+    messageCenter: '[class*="MessageCenter"]',
 
-    // File attachments
-    attachmentsList: '[data-testid="attachments-list"]',
-    attachmentItem: '[data-testid="attachment-item"]',
-    downloadAttachment: '[data-testid="download-attachment"]',
-    attachmentPreview: '[data-testid="attachment-preview"]',
+    // Ship Date Display section
+    shipDateDisplay: '[class*="ShipDateDisplay"]',
 
-    // Organization information
-    organizationName: '[data-testid="organization-name"]',
-    organizationType: '[data-testid="organization-type"]',
-    contactEmail: '[data-testid="contact-email"]',
-    contactPhone: '[data-testid="contact-phone"]',
-    shippingAddress: '[data-testid="shipping-address"]',
+    // Stage Detail Modal
+    stageDetailModal: '.MuiDialog-root',
 
-    // Loading states
-    orderLoading: '[data-testid="order-loading"]',
-    messagesLoading: '[data-testid="messages-loading"]',
-    stageUpdateLoading: '[data-testid="stage-update-loading"]',
+    // Loading and error states
+    loadingSpinner: '.MuiCircularProgress-root',
+    errorAlert: '.MuiAlert-root',
 
-    // Error states
-    orderLoadError: '[data-testid="order-load-error"]',
-    messageError: '[data-testid="message-error"]',
-    stageUpdateError: '[data-testid="stage-update-error"]',
+    // General UI elements
+    breadcrumbNavigation: '.MuiBreadcrumbs-root',
+
+    // Message-related selectors (from MessageCenter component)
+    messageInput: '.MuiTextField-root input', // TextField input for messages
+    sendMessageButton: 'button:has-text("Send")',
+
+    // Organization information (from ContactInfo component)
+    organizationName: 'text=/organization/i >> .. >> .MuiTypography-body1',
+    contactEmail: 'text=/email/i >> .. >> .MuiTypography-body1',
+    contactPhone: 'text=/phone/i >> .. >> .MuiTypography-body1',
   };
 
   // Locators

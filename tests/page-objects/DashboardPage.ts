@@ -12,39 +12,36 @@ import { BasePage } from './BasePage';
 export class DashboardPage extends BasePage {
   // Page-specific selectors
   private selectors = {
-    // Page structure
-    pageTitle: 'h1',
-    welcomeMessage: '[data-testid="welcome-message"]',
+    // Page structure - actual Material-UI components
+    pageTitle: 'h1:has-text("Order Dashboard")',
+    welcomeMessage: 'text=/Welcome back.*Here are your organization\'s orders/',
 
-    // Summary cards
-    summaryCards: '[data-testid="summary-cards"]',
-    totalOrdersCard: '[data-testid="total-orders-card"]',
-    activeOrdersCard: '[data-testid="active-orders-card"]',
-    overdueOrdersCard: '[data-testid="overdue-orders-card"]',
-    totalValueCard: '[data-testid="total-value-card"]',
+    // Summary cards - Paper components in Grid
+    summaryCardsContainer: '.MuiGrid-container >> .MuiPaper-root',
+    totalOrdersCard: 'text=Total Orders >> .. >> .MuiTypography-h5',
+    activeOrdersCard: 'text=Active >> .. >> .MuiTypography-h5',
+    overdueOrdersCard: 'text=Overdue >> .. >> .MuiTypography-h5',
+    totalValueCard: 'text=Total Value >> .. >> .MuiTypography-h6',
 
-    // Filters
-    filtersContainer: '[data-testid="filters-container"]',
-    statusFilter: '[data-testid="status-filter"]',
-    stageFilter: '[data-testid="stage-filter"]',
+    // Filters - FormControl selectors
+    filtersContainer: '.MuiPaper-root:has(.MuiFormControl-root)',
+    statusFilter: '#status-filter-label + .MuiInputBase-root',
+    stageFilter: '#stage-filter-label + .MuiInputBase-root',
+    statusFilterDropdown: '[aria-labelledby="status-filter-label"]',
+    stageFilterDropdown: '[aria-labelledby="stage-filter-label"]',
 
     // Orders grid
-    ordersGrid: '[data-testid="orders-grid"]',
-    orderCard: '[data-testid="order-card"]',
-    orderCards: '[data-testid="order-card"]',
-    emptyState: '[data-testid="empty-state"]',
+    ordersGrid: '.MuiGrid-container:has(.MuiCard-root)',
+    orderCards: '.MuiCard-root',
+    emptyState: 'text=No Orders Found',
 
     // Create order functionality
-    createOrderButton: '[data-testid="create-order-button"]',
-    createOrderDialog: '[data-testid="create-order-dialog"]',
+    createOrderButton: 'button:has-text("Create"):has-text("Order")',
+    createOrderDialog: '.MuiDialog-root',
 
-    // User information
-    userName: '[data-testid="user-name"]',
-    organizationName: '[data-testid="organization-name"]',
-
-    // Loading states
-    ordersLoading: '[data-testid="orders-loading"]',
-    summaryLoading: '[data-testid="summary-loading"]',
+    // Error and loading states
+    errorAlert: '.MuiAlert-root',
+    loadingSpinner: '.MuiCircularProgress-root',
   };
 
   // Locators
@@ -75,7 +72,7 @@ export class DashboardPage extends BasePage {
     await this.waitForPageLoad();
 
     // Wait for summary cards to load
-    await this.page.locator(this.selectors.summaryCards).waitFor({ state: 'visible' });
+    await this.page.locator(this.selectors.summaryCardsContainer).waitFor({ state: 'visible' });
 
     // Wait for orders to load (or empty state)
     await Promise.race([

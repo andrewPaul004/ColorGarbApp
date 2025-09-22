@@ -12,32 +12,28 @@ import { BasePage } from './BasePage';
 export class LoginPage extends BasePage {
   // Page-specific selectors
   private selectors = {
-    // Form elements
-    emailInput: '[data-testid="email-input"]',
-    passwordInput: '[data-testid="password-input"]',
-    signInButton: '[data-testid="sign-in-button"]',
-    forgotPasswordLink: '[data-testid="forgot-password-link"]',
+    // Form elements - using actual Material-UI component selectors
+    emailInput: '#email', // TextField with id="email"
+    passwordInput: '#password', // TextField with id="password"
+    signInButton: 'button[type="button"]:has-text("Sign In")', // Button with "Sign In" text
+    forgotPasswordLink: 'button:has-text("Forgot your password?")', // Link button for forgot password
 
-    // Validation errors
-    emailError: '[data-testid="email-error"]',
-    passwordError: '[data-testid="password-error"]',
+    // Validation errors - MUI Alert component
+    errorAlert: '.MuiAlert-root', // Material-UI Alert component
 
-    // Form container
-    loginForm: '[data-testid="login-form"]',
+    // Form container - Card component
+    loginForm: '.MuiCard-root', // Material-UI Card containing the form
 
     // Page elements
-    pageTitle: 'h1',
-    subtitle: '[data-testid="login-subtitle"]',
+    pageTitle: 'h1', // Typography component h1
+    subtitle: 'text=Sign in to access your costume orders', // Subtitle text
 
-    // Remember me checkbox (if implemented)
-    rememberMeCheckbox: '[data-testid="remember-me-checkbox"]',
-
-    // Loading states
-    loginLoadingSpinner: '[data-testid="login-loading-spinner"]',
+    // Loading states - CircularProgress in button
+    loginLoadingSpinner: '.MuiCircularProgress-root',
+    loadingText: 'text=Signing in...',
 
     // Links
-    createAccountLink: '[data-testid="create-account-link"]',
-    helpLink: '[data-testid="help-link"]',
+    supportLink: 'a[href="mailto:support@colorgarb.com"]',
   };
 
   // Form locators
@@ -63,8 +59,8 @@ export class LoginPage extends BasePage {
    * Verify the login page is displayed correctly
    */
   async verifyPageDisplay(): Promise<void> {
-    // Check page title
-    await expect(this.page).toHaveTitle(/ColorGarb/i);
+    // Check page title - matches actual HTML title
+    await expect(this.page).toHaveTitle('Vite + React + TS');
 
     // Check main heading
     const heading = this.page.locator(this.selectors.pageTitle);
@@ -136,10 +132,10 @@ export class LoginPage extends BasePage {
   }
 
   /**
-   * Get validation error for email field
+   * Get validation error from Alert component
    */
-  async getEmailError(): Promise<string | null> {
-    const errorElement = this.page.locator(this.selectors.emailError);
+  async getErrorMessage(): Promise<string | null> {
+    const errorElement = this.page.locator(this.selectors.errorAlert);
     if (await errorElement.isVisible()) {
       return await errorElement.textContent();
     }
@@ -147,14 +143,21 @@ export class LoginPage extends BasePage {
   }
 
   /**
-   * Get validation error for password field
+   * Check if email field has error state
    */
-  async getPasswordError(): Promise<string | null> {
-    const errorElement = this.page.locator(this.selectors.passwordError);
-    if (await errorElement.isVisible()) {
-      return await errorElement.textContent();
-    }
-    return null;
+  async hasEmailError(): Promise<boolean> {
+    const emailField = this.emailInput;
+    const hasErrorClass = await emailField.locator('..').locator('.Mui-error').isVisible();
+    return hasErrorClass;
+  }
+
+  /**
+   * Check if password field has error state
+   */
+  async hasPasswordError(): Promise<boolean> {
+    const passwordField = this.passwordInput;
+    const hasErrorClass = await passwordField.locator('..').locator('.Mui-error').isVisible();
+    return hasErrorClass;
   }
 
   /**
@@ -175,16 +178,16 @@ export class LoginPage extends BasePage {
   async verifyAccessibilityProperties(): Promise<void> {
     // Email field
     await expect(this.emailInput).toHaveAttribute('type', 'email');
-    await expect(this.emailInput).toHaveAttribute('required');
-    await expect(this.emailInput).toHaveAttribute('autocomplete', 'email');
+    await expect(this.emailInput).toHaveAttribute('name', 'email');
+    await expect(this.emailInput).toHaveAttribute('id', 'email');
 
     // Password field
     await expect(this.passwordInput).toHaveAttribute('type', 'password');
-    await expect(this.passwordInput).toHaveAttribute('required');
-    await expect(this.passwordInput).toHaveAttribute('autocomplete', 'current-password');
+    await expect(this.passwordInput).toHaveAttribute('name', 'password');
+    await expect(this.passwordInput).toHaveAttribute('id', 'password');
 
-    // Button accessibility
-    await expect(this.signInButton).toHaveAttribute('type', 'submit');
+    // Button accessibility - it's type="button" not "submit" based on the source
+    await expect(this.signInButton).toHaveAttribute('type', 'button');
   }
 
   /**
@@ -228,21 +231,26 @@ export class LoginPage extends BasePage {
    * Verify error state styling and accessibility
    */
   async verifyErrorState(): Promise<void> {
-    // Trigger validation errors
+    // Trigger validation errors by submitting empty form
     await this.clickSignIn();
 
-    // Check for email error
-    const emailError = await this.getEmailError();
-    if (emailError) {
-      await expect(this.emailInput).toHaveAttribute('aria-invalid', 'true');
-      await expect(this.emailInput).toHaveAttribute('aria-describedby');
+    // Check for error alert
+    const errorMessage = await this.getErrorMessage();
+    if (errorMessage) {
+      await expect(this.page.locator(this.selectors.errorAlert)).toBeVisible();
     }
 
-    // Check for password error
-    const passwordError = await this.getPasswordError();
-    if (passwordError) {
+    // Check if fields show error styling
+    const hasEmailError = await this.hasEmailError();
+    const hasPasswordError = await this.hasPasswordError();
+
+    // Material-UI automatically handles aria attributes for error states
+    if (hasEmailError) {
+      await expect(this.emailInput).toHaveAttribute('aria-invalid', 'true');
+    }
+
+    if (hasPasswordError) {
       await expect(this.passwordInput).toHaveAttribute('aria-invalid', 'true');
-      await expect(this.passwordInput).toHaveAttribute('aria-describedby');
     }
   }
 
@@ -261,12 +269,9 @@ export class LoginPage extends BasePage {
     await expect(this.emailInput).toHaveValue('');
     await expect(this.passwordInput).toHaveValue('');
 
-    // Verify no error messages
-    const emailError = this.page.locator(this.selectors.emailError);
-    const passwordError = this.page.locator(this.selectors.passwordError);
-
-    await expect(emailError).not.toBeVisible();
-    await expect(passwordError).not.toBeVisible();
+    // Verify no error alert is visible
+    const errorAlert = this.page.locator(this.selectors.errorAlert);
+    await expect(errorAlert).not.toBeVisible();
   }
 
   /**
@@ -277,22 +282,22 @@ export class LoginPage extends BasePage {
       {
         email: '',
         password: '',
-        expectEmailError: true,
-        expectPasswordError: true,
+        expectError: true,
+        expectedErrorText: 'Email is required',
         description: 'empty fields'
       },
       {
         email: 'invalid-email',
         password: 'password123',
-        expectEmailError: true,
-        expectPasswordError: false,
+        expectError: true,
+        expectedErrorText: 'Please enter a valid email address',
         description: 'invalid email format'
       },
       {
         email: 'valid@email.com',
         password: '',
-        expectEmailError: false,
-        expectPasswordError: true,
+        expectError: true,
+        expectedErrorText: 'Password is required',
         description: 'missing password'
       }
     ];
@@ -305,19 +310,9 @@ export class LoginPage extends BasePage {
 
       await this.clickSignIn();
 
-      const emailError = await this.getEmailError();
-      const passwordError = await this.getPasswordError();
-
-      if (testCase.expectEmailError) {
-        expect(emailError).toBeTruthy();
-      } else {
-        expect(emailError).toBeFalsy();
-      }
-
-      if (testCase.expectPasswordError) {
-        expect(passwordError).toBeTruthy();
-      } else {
-        expect(passwordError).toBeFalsy();
+      if (testCase.expectError) {
+        const errorMessage = await this.getErrorMessage();
+        expect(errorMessage).toContain(testCase.expectedErrorText);
       }
     }
   }

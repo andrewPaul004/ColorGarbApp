@@ -162,8 +162,8 @@ export default defineConfig({
   ],
 
   // Global setup for database seeding and test data
-  globalSetup: require.resolve('./tests/global-setup.ts'),
-  globalTeardown: require.resolve('./tests/global-teardown.ts'),
+  // globalSetup: require.resolve('./tests/global-setup.ts'),
+  // globalTeardown: require.resolve('./tests/global-teardown.ts'),
 
   // Web server configuration for local development
   webServer: [
@@ -172,14 +172,12 @@ export default defineConfig({
       url: BASE_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
-      cwd: './apps/web',
     },
     {
       command: 'npm run dev:api',
       url: `${API_URL}/api/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
-      cwd: './apps/api',
     },
   ],
 

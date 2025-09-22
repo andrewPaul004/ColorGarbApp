@@ -11,53 +11,54 @@ export abstract class BasePage {
   protected page: Page;
   protected baseURL: string;
 
-  // Common selectors used across all pages
+  // Common selectors used across all pages - actual Material-UI components
   protected commonSelectors = {
-    // Navigation
-    navigationBar: '[data-testid="navigation-bar"]',
-    userMenu: '[data-testid="user-menu"]',
-    userMenuButton: '[data-testid="user-menu-button"]',
-    logoutButton: '[data-testid="logout-button"]',
-    logoLink: '[data-testid="logo-link"]',
+    // Navigation - Material-UI AppBar and Navigation components
+    navigationBar: '.MuiAppBar-root',
+    userMenu: '.MuiMenu-root',
+    userMenuButton: 'button[aria-haspopup="menu"]',
+    logoutButton: 'button:has-text("Logout")',
+    logoLink: 'a[href="/"]',
 
-    // Loading states
-    loadingSpinner: '[data-testid="loading-spinner"]',
-    pageLoading: '[data-testid="page-loading"]',
-    skeletonLoader: '[data-testid="skeleton-loader"]',
+    // Loading states - Material-UI CircularProgress and Skeleton
+    loadingSpinner: '.MuiCircularProgress-root',
+    pageLoading: '.MuiCircularProgress-root',
+    skeletonLoader: '.MuiSkeleton-root',
 
-    // Error handling
-    errorAlert: '[data-testid="error-alert"]',
-    errorMessage: '[data-testid="error-message"]',
-    successAlert: '[data-testid="success-alert"]',
-    warningAlert: '[data-testid="warning-alert"]',
-    infoAlert: '[data-testid="info-alert"]',
+    // Error handling - Material-UI Alert components
+    errorAlert: '.MuiAlert-root[class*="error"]',
+    errorMessage: '.MuiAlert-message',
+    successAlert: '.MuiAlert-root[class*="success"]',
+    warningAlert: '.MuiAlert-root[class*="warning"]',
+    infoAlert: '.MuiAlert-root[class*="info"]',
+    generalAlert: '.MuiAlert-root',
 
-    // Common buttons
-    saveButton: '[data-testid="save-button"]',
-    cancelButton: '[data-testid="cancel-button"]',
-    submitButton: '[data-testid="submit-button"]',
-    resetButton: '[data-testid="reset-button"]',
-    deleteButton: '[data-testid="delete-button"]',
-    editButton: '[data-testid="edit-button"]',
-    viewButton: '[data-testid="view-button"]',
+    // Common buttons - Material-UI Button component variants
+    saveButton: 'button:has-text("Save")',
+    cancelButton: 'button:has-text("Cancel")',
+    submitButton: 'button:has-text("Submit")',
+    resetButton: 'button:has-text("Reset")',
+    deleteButton: 'button:has-text("Delete")',
+    editButton: 'button:has-text("Edit")',
+    viewButton: 'button:has-text("View")',
 
-    // Common dialogs
-    confirmDialog: '[data-testid="confirm-dialog"]',
-    confirmDialogTitle: '[data-testid="confirm-dialog-title"]',
-    confirmDialogMessage: '[data-testid="confirm-dialog-message"]',
-    confirmDialogConfirm: '[data-testid="confirm-dialog-confirm"]',
-    confirmDialogCancel: '[data-testid="confirm-dialog-cancel"]',
+    // Common dialogs - Material-UI Dialog components
+    confirmDialog: '.MuiDialog-root',
+    confirmDialogTitle: '.MuiDialogTitle-root',
+    confirmDialogMessage: '.MuiDialogContent-root',
+    confirmDialogConfirm: '.MuiDialog-root button:has-text("Confirm")',
+    confirmDialogCancel: '.MuiDialog-root button:has-text("Cancel")',
 
-    // Form elements
-    searchInput: '[data-testid="search-input"]',
-    filterButton: '[data-testid="filter-button"]',
-    clearFiltersButton: '[data-testid="clear-filters-button"]',
-    paginationContainer: '[data-testid="pagination-container"]',
-    paginationInfo: '[data-testid="pagination-info"]',
+    // Form elements - Material-UI TextField and related components
+    searchInput: 'input[placeholder*="search" i]',
+    filterButton: 'button:has-text("Filter")',
+    clearFiltersButton: 'button:has-text("Clear")',
+    paginationContainer: '.MuiPagination-root',
+    paginationInfo: '.MuiTablePagination-displayedRows',
 
-    // Breadcrumb navigation
-    breadcrumbContainer: '[data-testid="breadcrumb-container"]',
-    breadcrumbLink: '[data-testid="breadcrumb-link"]',
+    // Breadcrumb navigation - Material-UI Breadcrumbs
+    breadcrumbContainer: '.MuiBreadcrumbs-root',
+    breadcrumbLink: '.MuiBreadcrumbs-root a',
   };
 
   constructor(page: Page) {

@@ -18,6 +18,11 @@
     "test": "npm run test --workspaces",
     "test:web": "npm run test --workspace=apps/web",
     "test:api": "dotnet test apps/api",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
     "lint": "npm run lint --workspaces",
     "lint:web": "npm run lint --workspace=apps/web",
     "clean": "npm run clean --workspaces && dotnet clean apps/api"

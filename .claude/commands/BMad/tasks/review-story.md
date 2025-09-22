@@ -35,8 +35,52 @@ required:
 - Diff > 500 lines
 - Previous gate was FAIL/CONCERNS
 - Story has > 5 acceptance criteria
+- UI changes detected (auto-trigger playwright-test-maintainer)
 
-### 2. Comprehensive Analysis
+### 2. UI Change Detection & Playwright Integration
+
+**Detect UI changes by analyzing:**
+- File patterns: `*.tsx`, `*.jsx`, `*.vue`, `*.css`, `*.scss`, `*.less` files in File List
+- Component changes: React/Vue/Angular component modifications
+- Style changes: CSS, styling library, or theme modifications
+- Acceptance criteria mentioning: UI, interface, visual, responsive, browser, user interaction
+
+**When UI changes detected, immediately invoke playwright-test-maintainer agent:**
+
+```typescript
+// Pseudo-code for agent invocation
+const playwrightResults = await Task.invoke('playwright-test-maintainer', {
+  description: 'UI testing for story changes',
+  prompt: `
+    Story: ${story_id} - ${story_title}
+
+    UI changes detected in: ${uiChangedFiles}
+
+    Please:
+    1. Analyze the code diff to understand UI workflow changes
+    2. Update existing Playwright test plan based on the changes
+    3. Run relevant Playwright specs across all browsers (Chromium, Firefox, WebKit)
+    4. Generate comprehensive HTML report with artifacts
+    5. Return summary including:
+       - HTML report path and artifacts locations
+       - Cross-browser test results summary
+       - Any critical UI regressions or failures
+       - Specific action items for failing tests
+       - Recommendations for additional test coverage
+
+    Focus on testing the workflows affected by these changes: ${affectedWorkflows}
+  `,
+  subagent_type: 'playwright-test-maintainer'
+});
+```
+
+**Integration requirements:**
+- Wait for playwright-test-maintainer completion before proceeding
+- Include Playwright results in QA Results section
+- Factor UI test results into gate decision (FAIL if critical UI regressions)
+- Add Playwright artifacts to evidence section of gate file
+
+### 3. Comprehensive Analysis
 
 **A. Requirements Traceability**
 
@@ -63,6 +107,20 @@ required:
 - Edge case and error scenario coverage
 - Test execution time and reliability
 
+**UI Change Detection & Playwright Integration**
+
+When story involves UI changes (detected by file patterns or acceptance criteria):
+1. **Automatically invoke playwright-test-maintainer agent** to:
+   - Update test plan based on code diff analysis
+   - Run relevant Playwright specs across browsers
+   - Generate HTML report with artifacts (videos, screenshots)
+   - Return comprehensive test execution summary
+2. **Integrate Playwright results** into QA assessment:
+   - Include HTML report path in QA Results
+   - Summarize cross-browser test results
+   - Document any UI regression findings
+   - Add action items for test failures or gaps
+
 **D. Non-Functional Requirements (NFRs)**
 
 - Security: Authentication, authorization, data protection
@@ -83,7 +141,7 @@ required:
 - Outdated dependencies
 - Architecture violations
 
-### 3. Active Refactoring
+### 4. Active Refactoring
 
 - Refactor code where safe and appropriate
 - Run tests to ensure changes don't break functionality
@@ -91,20 +149,20 @@ required:
 - Do NOT alter story content beyond QA Results section
 - Do NOT change story Status or File List; recommend next status only
 
-### 4. Standards Compliance Check
+### 5. Standards Compliance Check
 
 - Verify adherence to `docs/coding-standards.md`
 - Check compliance with `docs/unified-project-structure.md`
 - Validate testing approach against `docs/testing-strategy.md`
 - Ensure all guidelines mentioned in the story are followed
 
-### 5. Acceptance Criteria Validation
+### 6. Acceptance Criteria Validation
 
 - Verify each AC is fully implemented
 - Check for any missing functionality
 - Validate edge cases are handled
 
-### 6. Documentation and Comments
+### 7. Documentation and Comments
 
 - Verify code is self-documenting where possible
 - Add comments for complex logic if missing
@@ -158,6 +216,25 @@ After review and any refactoring, append your results to the story file in the Q
 - [ ] Consider extracting validation logic to separate validator class
 - [ ] Add integration test for error scenarios
 - [ ] Update API documentation for new error codes
+
+### UI Testing Results (Playwright)
+
+[Include if UI changes detected - automatically populated by playwright-test-maintainer agent]
+
+**Test Execution Summary:**
+- Cross-browser test results (Chromium/Firefox/WebKit)
+- HTML Report: [path to generated HTML report]
+- Test Artifacts: [paths to videos, screenshots, network logs]
+
+**Critical Findings:**
+- [Any failing UI tests or regressions]
+- [Cross-browser compatibility issues]
+- [Performance degradation in UI workflows]
+
+**Action Items:**
+- [Specific test failures requiring developer attention]
+- [Recommended test coverage improvements]
+- [UI-specific technical debt identified]
 
 ### Security Review
 
@@ -217,6 +294,16 @@ evidence:
   trace:
     ac_covered: [1, 2, 3] # AC numbers with test coverage
     ac_gaps: [4] # AC numbers lacking coverage
+  playwright_testing:
+    ui_changes_detected: true|false
+    html_report_path: 'path/to/playwright-report/index.html'
+    artifacts_path: 'path/to/test-results'
+    browsers_tested: ['chromium', 'firefox', 'webkit']
+    test_results:
+      total_tests: { count }
+      passed: { count }
+      failed: { count }
+      critical_failures: [{ test: 'test name', reason: 'failure reason' }]
 
 nfr_validation:
   security:
@@ -255,11 +342,15 @@ If risk_summary exists, apply its thresholds first (≥9 → FAIL, ≥6 → CONC
    - If any P0 test from test-design is missing → Gate = CONCERNS
    - If security/data-loss P0 test missing → Gate = FAIL
 
-3. **Issue severity:**
+3. **Playwright UI test results (if UI changes detected):**
+   - If any critical UI regression or cross-browser failure → Gate = FAIL
+   - If minor UI issues or test gaps identified → Gate = CONCERNS
+
+4. **Issue severity:**
    - If any `top_issues.severity == high` → Gate = FAIL (unless waived)
    - Else if any `severity == medium` → Gate = CONCERNS
 
-4. **NFR statuses:**
+5. **NFR statuses:**
    - If any NFR status is FAIL → Gate = FAIL
    - Else if any NFR status is CONCERNS → Gate = CONCERNS
    - Else → Gate = PASS

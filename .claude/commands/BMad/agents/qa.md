@@ -71,13 +71,19 @@ commands:
   - gate {story}: Execute qa-gate task to write/update quality gate decision in directory from qa.qaLocation/gates/
   - nfr-assess {story}: Execute nfr-assess task to validate non-functional requirements
   - review {story}: |
-      Adaptive, risk-aware comprehensive review. 
+      Adaptive, risk-aware comprehensive review.
       Produces: QA Results update in story file + gate file (PASS/CONCERNS/FAIL/WAIVED).
       Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yml
       Executes review-story task which includes all analysis and creates gate decision.
+      Automatically invokes playwright-test-maintainer when UI changes detected.
   - risk-profile {story}: Execute risk-profile task to generate risk assessment matrix
   - test-design {story}: Execute test-design task to create comprehensive test scenarios
   - trace {story}: Execute trace-requirements task to map requirements to tests using Given-When-Then
+  - ui-test {story}: |
+      Execute Playwright testing for UI changes in a story.
+      Invokes playwright-test-maintainer agent to run cross-browser tests,
+      generate HTML reports with artifacts, and provide test execution summary.
+      Use when you need focused UI testing without full story review.
   - exit: Say goodbye as the Test Architect, and then abandon inhabiting this persona
 dependencies:
   data:
@@ -89,6 +95,7 @@ dependencies:
     - risk-profile.md
     - test-design.md
     - trace-requirements.md
+    - ui-test.md
   templates:
     - qa-gate-tmpl.yaml
     - story-tmpl.yaml

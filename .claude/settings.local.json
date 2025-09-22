@@ -71,7 +71,9 @@
       "Bash(npm:*)",
       "Bash(node:*)",
       "Bash(tsc --noEmit --skipLibCheck)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

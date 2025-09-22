@@ -45,27 +45,26 @@ interface CreateOrderDialogProps {
 }
 
 /**
- * Request interface matching the backend CreateOrderRequestDto DTO
+ * Request interface matching the backend CreateOrderRequest DTO for Story 9A.3
  */
-interface CreateOrderRequestDto {
+interface CreateOrderRequest {
   description: string;
-  performerCount: number;
-  preferredCompletionDate: string;
-  estimatedBudget?: number;
-  priority: string;
+  measurementDate: string;
+  deliveryDate: string;
+  needsSample: boolean;
   notes?: string;
 }
 
 /**
- * Create Order Request Dialog component for Director and Finance users.
- * Allows submission of order requests that ColorGarb staff will review and approve.
- * No longer creates orders directly - instead sends requests for staff approval.
+ * Create Order Dialog component for Director and Finance users.
+ * Creates orders directly in the system with streamlined form matching Story 9A.3.
+ * Orders are created immediately with auto-generated order numbers and default settings.
  * Features responsive design and follows Material-UI patterns.
- * 
+ *
  * @component
  * @param {CreateOrderDialogProps} props - Component props
- * @returns {JSX.Element} Create order request dialog
- * 
+ * @returns {JSX.Element} Create order dialog
+ *
  * @since 2.5.0
  */
 export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
@@ -77,10 +76,9 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
 
   // Form state
   const [description, setDescription] = useState('');
-  const [performerCount, setPerformerCount] = useState<number>(1);
-  const [preferredCompletionDate, setPreferredCompletionDate] = useState<Date | null>(null);
-  const [estimatedBudget, setEstimatedBudget] = useState<number | null>(null);
-  const [priority, setPriority] = useState('Normal');
+  const [measurementDate, setMeasurementDate] = useState<Date | null>(null);
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
+  const [needsSample, setNeedsSample] = useState(false);
   const [notes, setNotes] = useState('');
 
   // UI state
@@ -96,10 +94,9 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
     if (open) {
       // Reset form state
       setDescription('');
-      setPerformerCount(1);
-      setPreferredCompletionDate(null);
-      setEstimatedBudget(null);
-      setPriority('Normal');
+      setMeasurementDate(null);
+      setDeliveryDate(null);
+      setNeedsSample(false);
       setNotes('');
       setError(null);
       setSuccess(null);
@@ -122,37 +119,38 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
       errors.description = 'Description cannot exceed 500 characters';
     }
 
-    // Performer count validation
-    if (!performerCount || performerCount < 1) {
-      errors.performerCount = 'Performer count must be at least 1';
-    } else if (performerCount > 10000) {
-      errors.performerCount = 'Performer count cannot exceed 10,000';
-    }
-
-    // Preferred completion date validation
-    if (!preferredCompletionDate) {
-      errors.preferredCompletionDate = 'Preferred completion date is required';
+    // Measurement date validation
+    if (!measurementDate) {
+      errors.measurementDate = 'Measurement date is required';
     } else {
-      const completionDateOnly = new Date(preferredCompletionDate);
-      completionDateOnly.setHours(0, 0, 0, 0);
-      
-      if (completionDateOnly <= today) {
-        errors.preferredCompletionDate = 'Completion date must be in the future';
+      const measurementDateOnly = new Date(measurementDate);
+      measurementDateOnly.setHours(0, 0, 0, 0);
+
+      if (measurementDateOnly <= today) {
+        errors.measurementDate = 'Measurement date must be in the future';
       }
     }
 
-    // Budget validation
-    if (estimatedBudget !== null && estimatedBudget !== undefined) {
-      if (estimatedBudget < 0.01) {
-        errors.estimatedBudget = 'Budget must be at least $0.01';
-      } else if (estimatedBudget > 999999.99) {
-        errors.estimatedBudget = 'Budget cannot exceed $999,999.99';
-      }
-    }
+    // Delivery date validation
+    if (!deliveryDate) {
+      errors.deliveryDate = 'Delivery date is required';
+    } else {
+      const deliveryDateOnly = new Date(deliveryDate);
+      deliveryDateOnly.setHours(0, 0, 0, 0);
 
-    // Priority validation
-    if (!['Low', 'Normal', 'High', 'Urgent'].includes(priority)) {
-      errors.priority = 'Please select a valid priority level';
+      if (deliveryDateOnly <= today) {
+        errors.deliveryDate = 'Delivery date must be in the future';
+      }
+
+      // Check that delivery date is after measurement date
+      if (measurementDate) {
+        const measurementDateOnly = new Date(measurementDate);
+        measurementDateOnly.setHours(0, 0, 0, 0);
+
+        if (deliveryDateOnly <= measurementDateOnly) {
+          errors.deliveryDate = 'Delivery date must be after measurement date';
+        }
+      }
     }
 
     // Notes validation
@@ -188,17 +186,16 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
       }
 
       // Prepare request data
-      const requestData: CreateOrderRequestDto = {
+      const requestData: CreateOrderRequest = {
         description: description.trim(),
-        performerCount: performerCount,
-        preferredCompletionDate: preferredCompletionDate!.toISOString(),
-        estimatedBudget: estimatedBudget || undefined,
-        priority: priority,
+        measurementDate: measurementDate!.toISOString(),
+        deliveryDate: deliveryDate!.toISOString(),
+        needsSample: needsSample,
         notes: notes.trim() || undefined,
       };
 
       // Submit to API
-      const response = await fetch(`${API_BASE_URL}/api/orders/request`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,15 +215,17 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
           const errorData = await response.json().catch(() => ({ message: 'Invalid request data' }));
           throw new Error(`Invalid request: ${errorData.message || 'Please check your input'}`);
         }
-        throw new Error(`Failed to submit order request: ${response.statusText}`);
+        throw new Error(`Failed to create order: ${response.statusText}`);
       }
 
-      const orderRequest = await response.json();
-      
-      setSuccess(`Order request submitted successfully! ColorGarb staff will review and contact you soon.`);
-      
-      // Note: Dialog remains open so user can see success message and close manually
-      // No automatic redirect or callback to avoid navigating away from dashboard
+      const order = await response.json();
+
+      setSuccess(`Order ${order.orderNumber} created successfully! You will be redirected to the order details.`);
+
+      // Call the callback to refresh orders and navigate to new order
+      if (onOrderCreated) {
+        onOrderCreated(order);
+      }
 
     } catch (error) {
       console.error('Error creating order:', error);
@@ -274,7 +273,7 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
             <Assignment color="primary" />
             <Box>
               <Typography variant="h6" component="div">
-                Submit Order Request
+                Create New Order
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {organization?.name || 'Unknown Organization'}
@@ -317,53 +316,12 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
               />
             </Grid>
 
-            {/* Performer Count */}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Performer Count"
-                type="number"
-                placeholder="Number of performers/costumes needed"
-                value={performerCount}
-                onChange={(e) => setPerformerCount(parseInt(e.target.value) || 1)}
-                error={!!validationErrors.performerCount}
-                helperText={validationErrors.performerCount || 'How many costumes do you need?'}
-                required
-                fullWidth
-                disabled={isSubmitting || !!success}
-                inputProps={{ min: 1, max: 10000 }}
-              />
-            </Grid>
-
-            {/* Priority */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required error={!!validationErrors.priority}>
-                <InputLabel id="priority-select-label">Priority</InputLabel>
-                <Select
-                  labelId="priority-select-label"
-                  label="Priority"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  disabled={isSubmitting || !!success}
-                >
-                  <MenuItem value="Low">Low</MenuItem>
-                  <MenuItem value="Normal">Normal</MenuItem>
-                  <MenuItem value="High">High</MenuItem>
-                  <MenuItem value="Urgent">Urgent</MenuItem>
-                </Select>
-                {validationErrors.priority && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
-                    {validationErrors.priority}
-                  </Typography>
-                )}
-              </FormControl>
-            </Grid>
-
-            {/* Preferred Completion Date */}
+            {/* When will you provide measurements? */}
             <Grid item xs={12} sm={6}>
               <DatePicker
-                label="Preferred Completion Date"
-                value={preferredCompletionDate}
-                onChange={(date) => setPreferredCompletionDate(date)}
+                label="When will you provide measurements?"
+                value={measurementDate}
+                onChange={(date) => setMeasurementDate(date)}
                 minDate={getMinDate()}
                 disabled={isSubmitting || !!success}
                 slots={{
@@ -372,31 +330,61 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
                       {...params}
                       required
                       fullWidth
-                      error={!!validationErrors.preferredCompletionDate}
-                      helperText={validationErrors.preferredCompletionDate || 'When would you like this completed?'}
+                      error={!!validationErrors.measurementDate}
+                      helperText={validationErrors.measurementDate || 'Date when measurements will be provided'}
                     />
                   ),
                 }}
               />
             </Grid>
 
-            {/* Estimated Budget */}
+            {/* When do you need these by? */}
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="Estimated Budget"
-                type="number"
-                placeholder="Your estimated budget (optional)"
-                value={estimatedBudget || ''}
-                onChange={(e) => setEstimatedBudget(e.target.value ? parseFloat(e.target.value) : null)}
-                error={!!validationErrors.estimatedBudget}
-                helperText={validationErrors.estimatedBudget || 'Optional - helps with planning'}
-                fullWidth
+              <DatePicker
+                label="When do you need these by?"
+                value={deliveryDate}
+                onChange={(date) => setDeliveryDate(date)}
+                minDate={measurementDate ? new Date(measurementDate.getTime() + 24 * 60 * 60 * 1000) : getMinDate()}
                 disabled={isSubmitting || !!success}
-                inputProps={{ min: 0.01, max: 999999.99, step: 0.01 }}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
+                slots={{
+                  textField: (params) => (
+                    <TextField
+                      {...params}
+                      required
+                      fullWidth
+                      error={!!validationErrors.deliveryDate}
+                      helperText={validationErrors.deliveryDate || 'Final delivery date needed'}
+                    />
+                  ),
                 }}
               />
+            </Grid>
+
+            {/* Do you need a sample prior to production? */}
+            <Grid item xs={12}>
+              <FormControl component="fieldset">
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  Do you need a sample prior to production?
+                </Typography>
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    variant={needsSample ? "contained" : "outlined"}
+                    onClick={() => setNeedsSample(true)}
+                    disabled={isSubmitting || !!success}
+                    sx={{ minWidth: 100 }}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    variant={!needsSample ? "contained" : "outlined"}
+                    onClick={() => setNeedsSample(false)}
+                    disabled={isSubmitting || !!success}
+                    sx={{ minWidth: 100 }}
+                  >
+                    No
+                  </Button>
+                </Stack>
+              </FormControl>
             </Grid>
 
             {/* Additional Notes */}
@@ -434,7 +422,7 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
             disabled={isSubmitting || !!success}
             startIcon={isSubmitting ? <CircularProgress size={16} /> : <Save />}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isSubmitting ? 'Creating...' : 'Create Order'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -70,7 +70,8 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(npm:*)",
       "Bash(node:*)",
-      "Bash(tsc --noEmit --skipLibCheck)"
+      "Bash(tsc --noEmit --skipLibCheck)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

@@ -368,10 +368,349 @@ public class OrdersControllerTests : IDisposable
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
         var orders = Assert.IsAssignableFrom<List<OrderDto>>(okResult.Value);
-        
+
         // Should only return active orders by default
         Assert.All(orders, order => Assert.True(order.IsActive));
     }
+
+    #region CreateOrder Tests - Story 9A.3
+
+    [Fact]
+    public async Task CreateOrder_WithValidRequest_CreatesOrderSuccessfully()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order for Director",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = true,
+            Notes = "Test notes for the order"
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        Assert.Equal(request.Description, order.Description);
+        Assert.Equal("Design Proposal", order.CurrentStage);
+        Assert.Equal("Pending Design Approval", order.PaymentStatus);
+        Assert.True(order.IsActive);
+        Assert.Null(order.TotalAmount);
+        Assert.StartsWith("CG-", order.OrderNumber);
+
+        // Verify order was created in database
+        var dbOrder = await _context.Orders.FirstOrDefaultAsync(o => o.Id == order.Id);
+        Assert.NotNull(dbOrder);
+        Assert.Equal(request.Description, dbOrder.Description);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithFinanceRole_CreatesOrderSuccessfully()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Finance");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order for Finance",
+            MeasurementDate = DateTime.UtcNow.AddDays(5),
+            DeliveryDate = DateTime.UtcNow.AddDays(25),
+            NeedsSample = false,
+            Notes = null
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        Assert.Equal(request.Description, order.Description);
+        Assert.Equal("Design Proposal", order.CurrentStage);
+        Assert.Equal("Pending Design Approval", order.PaymentStatus);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithInvalidDeliveryDate_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(15),
+            DeliveryDate = DateTime.UtcNow.AddDays(10), // Before measurement date
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = badRequestResult.Value;
+        Assert.NotNull(response);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithPastMeasurementDate_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(-1), // Past date
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = badRequestResult.Value;
+        Assert.NotNull(response);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithPastDeliveryDate_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(-1), // Past date
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = badRequestResult.Value;
+        Assert.NotNull(response);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithoutOrganization_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupUserClaims(null, "Director"); // No organization
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = badRequestResult.Value;
+        Assert.NotNull(response);
+    }
+
+    [Fact]
+    public async Task CreateOrder_GeneratesUniqueOrderNumbers()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request1 = new CreateOrderRequest
+        {
+            Description = "First Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        var request2 = new CreateOrderRequest
+        {
+            Description = "Second Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(15),
+            DeliveryDate = DateTime.UtcNow.AddDays(35),
+            NeedsSample = true
+        };
+
+        // Act
+        var result1 = await _controller.CreateOrder(request1);
+        var result2 = await _controller.CreateOrder(request2);
+
+        // Assert
+        var order1 = Assert.IsType<OrderDto>(((CreatedAtActionResult)result1).Value);
+        var order2 = Assert.IsType<OrderDto>(((CreatedAtActionResult)result2).Value);
+
+        Assert.NotEqual(order1.OrderNumber, order2.OrderNumber);
+        Assert.StartsWith("CG-", order1.OrderNumber);
+        Assert.StartsWith("CG-", order2.OrderNumber);
+    }
+
+    [Fact]
+    public async Task CreateOrder_CreatesStageHistoryEntry()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order with History",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        // Verify stage history entry was created
+        var stageHistory = await _context.OrderStageHistory
+            .FirstOrDefaultAsync(sh => sh.OrderId == order.Id);
+
+        Assert.NotNull(stageHistory);
+        Assert.Equal("Design Proposal", stageHistory.Stage);
+        Assert.Equal("Initial order creation", stageHistory.ChangeReason);
+    }
+
+    [Fact]
+    public async Task CreateOrder_BuildsNotesCorrectly()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var measurementDate = DateTime.UtcNow.AddDays(10);
+        var deliveryDate = DateTime.UtcNow.AddDays(30);
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = measurementDate,
+            DeliveryDate = deliveryDate,
+            NeedsSample = true,
+            Notes = "Custom notes for this order"
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        Assert.Contains($"Measurements scheduled for: {measurementDate:yyyy-MM-dd}", order.Notes);
+        Assert.Contains($"Delivery needed by: {deliveryDate:yyyy-MM-dd}", order.Notes);
+        Assert.Contains("Sample requested prior to production", order.Notes);
+        Assert.Contains("Additional Notes: Custom notes for this order", order.Notes);
+    }
+
+    [Fact]
+    public async Task CreateOrder_CallsAuditService()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var request = new CreateOrderRequest
+        {
+            Description = "Audit Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+
+        // Verify audit service was called
+        _mockAuditService.Verify(x => x.LogRoleAccessAttemptAsync(
+            It.IsAny<Guid>(),
+            It.IsAny<UserRole>(),
+            "POST /api/orders",
+            "POST",
+            true,
+            It.IsAny<Guid>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>()
+        ), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithMaxLengthDescription_CreatesSuccessfully()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var maxDescription = new string('A', 500); // Max 500 characters
+        var request = new CreateOrderRequest
+        {
+            Description = maxDescription,
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        Assert.Equal(maxDescription, order.Description);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithMaxLengthNotes_CreatesSuccessfully()
+    {
+        // Arrange
+        SetupUserClaims("11111111-1111-1111-1111-111111111111", "Director");
+
+        var maxNotes = new string('B', 2000); // Max 2000 characters
+        var request = new CreateOrderRequest
+        {
+            Description = "Test Order",
+            MeasurementDate = DateTime.UtcNow.AddDays(10),
+            DeliveryDate = DateTime.UtcNow.AddDays(30),
+            NeedsSample = false,
+            Notes = maxNotes
+        };
+
+        // Act
+        var result = await _controller.CreateOrder(request);
+
+        // Assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result);
+        var order = Assert.IsType<OrderDto>(createdResult.Value);
+
+        Assert.Contains(maxNotes, order.Notes);
+    }
+
+    #endregion
 
     public void Dispose()
     {

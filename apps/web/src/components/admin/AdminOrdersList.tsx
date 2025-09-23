@@ -14,7 +14,6 @@ import {
   Typography,
   Chip,
   IconButton,
-  Tooltip,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -28,7 +27,6 @@ import {
   MoreVert,
   Edit,
   Visibility,
-  Warning,
   Business,
   Assignment,
   AccessTime,
@@ -73,6 +71,7 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
     isOrderSelected,
   } = useAdminStore();
 
+
   // Local state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
@@ -112,10 +111,11 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
   };
 
   /**
-   * Handle menu open - supports both mouse and touch events for mobile compatibility
+   * Handle menu open - optimized for mobile touch events
+   * Material-UI IconButton handles touch events internally
    */
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>, order: AdminOrder) => {
-    event.preventDefault();
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, order: AdminOrder) => {
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
     setSelectedOrder(order);
   };
@@ -132,9 +132,11 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
    * Handle update status action
    */
   const handleUpdateStatus = () => {
+    console.log('🔄 Update Status clicked!', { selectedOrder: selectedOrder?.orderNumber, statusUpdateOpen });
     if (selectedOrder) {
       setStatusUpdateOpen(true);
       setAnchorEl(null); // Close menu but keep selectedOrder for modal
+      console.log('✅ Status update dialog should open now');
     }
   };
 
@@ -170,12 +172,14 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
 
 
   /**
-   * Filter orders based on search query
+   * Filter orders based on search query.
+   * Note: Server-side filters (status, stage, organization) are applied via the admin store.
+   * This function only handles local search filtering on top of server results.
    * @returns Filtered orders array
    */
   const getFilteredOrders = (): AdminOrder[] => {
     if (!searchQuery.trim()) return orders;
-    
+
     const query = searchQuery.toLowerCase();
     return orders.filter(order =>
       order.orderNumber?.toLowerCase().includes(query) ||
@@ -265,14 +269,25 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, order)}
-                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
+                        disableRipple={false}
+                        touchRipple={true}
                         sx={{
                           minHeight: 44,
                           minWidth: 44,
+                          position: 'relative',
+                          zIndex: 1,
                           '&:active': {
                             backgroundColor: 'action.selected',
                           },
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                          // Ensure touch events are handled properly
+                          touchAction: 'manipulation',
+                          WebkitTouchCallout: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none',
                         }}
                       >
                         <MoreVert />
@@ -337,6 +352,59 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={[25, 50, 100]}
         />
+
+        {/* Actions Menu - Mobile */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            elevation: 1,
+            sx: {
+              overflow: 'visible',
+              filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+              mt: 1.5,
+              minWidth: 160,
+              '& .MuiMenuItem-root': {
+                minHeight: 48,
+                px: 2,
+                py: 1.5,
+                '&:active': {
+                  backgroundColor: 'action.selected',
+                },
+              },
+            },
+          }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          disableScrollLock={true}
+          disableAutoFocus={true}
+        >
+          <MenuItem onClick={handleViewOrder}>
+            <ListItemIcon>
+              <Visibility fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>View Details</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={handleUpdateStatus}>
+            <ListItemIcon>
+              <Edit fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Update Status</ListItemText>
+          </MenuItem>
+        </Menu>
+
+        {/* Order Status Update Dialog - Mobile */}
+        {selectedOrder && (
+          <OrderStatusUpdate
+            open={statusUpdateOpen}
+            onClose={() => {
+              setStatusUpdateOpen(false);
+              setSelectedOrder(null);
+            }}
+            order={selectedOrder}
+          />
+        )}
       </Box>
     );
   }
@@ -477,14 +545,25 @@ export const AdminOrdersList: React.FC<AdminOrdersListProps> = ({ searchQuery = 
                     <TableCell align="center">
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, order)}
-                        onTouchEnd={(e) => handleMenuOpen(e, order)}
                         aria-label="order actions"
+                        disableRipple={false}
+                        touchRipple={true}
                         sx={{
                           minHeight: 44,
                           minWidth: 44,
+                          position: 'relative',
+                          zIndex: 1,
                           '&:active': {
                             backgroundColor: 'action.selected',
                           },
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                          // Ensure touch events are handled properly
+                          touchAction: 'manipulation',
+                          WebkitTouchCallout: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none',
                         }}
                       >
                         <MoreVert />

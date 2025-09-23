@@ -382,7 +382,7 @@ export const AdminDashboard: React.FC = () => {
               <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
-                  value={filters.status || 'all'}
+                  value={filters.status || 'Active'}
                   label="Status"
                   onChange={handleStatusChange}
                 >

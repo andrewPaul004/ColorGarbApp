@@ -986,6 +986,162 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// Creates a new order directly for Director and Finance users.
+    /// Orders are created immediately with auto-generated order numbers and default settings.
+    /// Triggers email notifications to ColorGarb staff and confirmation to user.
+    /// </summary>
+    /// <param name="request">Order creation details matching Story 9A.3 requirements</param>
+    /// <returns>Created order with generated order number and assigned stage</returns>
+    /// <response code="201">Order created successfully</response>
+    /// <response code="400">Invalid request data or validation errors</response>
+    /// <response code="401">User not authenticated</response>
+    /// <response code="403">User lacks permission to create orders</response>
+    /// <response code="500">Server error occurred</response>
+    [HttpPost]
+    [Authorize(Roles = "Director,Finance")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+    {
+        try
+        {
+            // Validate request
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = GetUserId();
+            var userRole = GetUserRole();
+            var organizationId = GetCurrentOrganizationId();
+
+            if (!organizationId.HasValue)
+            {
+                _logger.LogWarning("User attempted to create order without organization association: {UserId}", userId);
+                return BadRequest(new { message = "User must be associated with an organization to create orders" });
+            }
+
+            // Validate date logic: measurement date < delivery date
+            if (request.MeasurementDate >= request.DeliveryDate)
+            {
+                return BadRequest(new { message = "Delivery date must be after measurement date" });
+            }
+
+            // Validate dates are in the future
+            var today = DateTime.UtcNow.Date;
+            if (request.MeasurementDate.Date <= today)
+            {
+                return BadRequest(new { message = "Measurement date must be in the future" });
+            }
+
+            if (request.DeliveryDate.Date <= today)
+            {
+                return BadRequest(new { message = "Delivery date must be in the future" });
+            }
+
+            // Generate unique order number
+            var orderNumber = await GenerateOrderNumberAsync();
+
+            // Create order entity
+            var order = new Order
+            {
+                Id = Guid.NewGuid(),
+                OrderNumber = orderNumber,
+                OrganizationId = organizationId.Value,
+                Description = request.Description.Trim(),
+                CurrentStage = "Design Proposal", // Default stage as per story requirements
+                OriginalShipDate = request.DeliveryDate,
+                CurrentShipDate = request.DeliveryDate,
+                TotalAmount = null, // $0.00 with "Pending Design Approval" as per story
+                PaymentStatus = "Pending Design Approval", // As per story requirements
+                Notes = BuildDirectorFinanceOrderNotes(request),
+                IsActive = true, // Active by default as per story
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            // Add to database
+            _context.Orders.Add(order);
+
+            // Create initial stage history entry
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId));
+            var userName = user?.Name ?? "Unknown User";
+
+            var stageHistory = new OrderStageHistory
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                Stage = "Design Proposal",
+                EnteredAt = DateTime.UtcNow,
+                UpdatedBy = userName,
+                Notes = $"Order created by {userRole} user for design proposal stage",
+                PreviousShipDate = null,
+                NewShipDate = order.CurrentShipDate,
+                ChangeReason = "Initial order creation"
+            };
+
+            _context.OrderStageHistory.Add(stageHistory);
+            await _context.SaveChangesAsync();
+
+            // Log audit entry for order creation
+            await _auditService.LogRoleAccessAttemptAsync(
+                Guid.Parse(userId),
+                userRole == "Director" ? UserRole.Director : UserRole.Finance,
+                "POST /api/orders",
+                "POST",
+                true,
+                organizationId.Value,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.FirstOrDefault(),
+                $"Created order {orderNumber}: {request.Description}"
+            );
+
+            // Send email notifications (don't block on failure)
+            _ = Task.Run(async () => await SendOrderCreationNotificationsAsync(
+                order.Id,
+                order.OrganizationId,
+                order.OrderNumber,
+                request));
+
+            // Load organization for response
+            var organization = await _context.Organizations
+                .Where(o => o.Id == organizationId.Value)
+                .FirstOrDefaultAsync();
+
+            // Create response DTO
+            var orderDto = new OrderDto
+            {
+                Id = order.Id,
+                OrderNumber = order.OrderNumber,
+                Description = order.Description,
+                CurrentStage = order.CurrentStage,
+                OriginalShipDate = order.OriginalShipDate,
+                CurrentShipDate = order.CurrentShipDate,
+                TotalAmount = order.TotalAmount,
+                PaymentStatus = order.PaymentStatus,
+                Notes = order.Notes,
+                IsActive = order.IsActive,
+                CreatedAt = order.CreatedAt,
+                UpdatedAt = order.UpdatedAt,
+                OrganizationName = organization?.Name ?? "Unknown Organization"
+            };
+
+            _logger.LogInformation("Order created successfully: {OrderNumber} by {UserRole} user {UserId}",
+                orderNumber, userRole, userId);
+
+            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, orderDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating order for user {UserId}", GetUserId());
+            return StatusCode(500, new { message = "An error occurred while creating the order" });
+        }
+    }
+
+    /// <summary>
     /// Submits an order request for ColorGarb staff review and approval.
     /// Director/Finance users can no longer create orders directly - they submit requests instead.
     /// ColorGarb staff will review and create the actual order if approved.
@@ -1429,6 +1585,34 @@ public class OrdersController : ControllerBase
             "Ship Order",
             "Delivery"
         };
+    }
+
+    /// <summary>
+    /// Builds notes field for Director/Finance created orders
+    /// </summary>
+    private string BuildDirectorFinanceOrderNotes(CreateOrderRequest request)
+    {
+        var notesParts = new List<string>();
+
+        // Add measurement date context
+        notesParts.Add($"Measurements scheduled for: {request.MeasurementDate:yyyy-MM-dd}");
+
+        // Add delivery date context
+        notesParts.Add($"Delivery needed by: {request.DeliveryDate:yyyy-MM-dd}");
+
+        // Add sample requirement
+        if (request.NeedsSample)
+        {
+            notesParts.Add("Sample requested prior to production");
+        }
+
+        // Add user notes if provided
+        if (!string.IsNullOrWhiteSpace(request.Notes))
+        {
+            notesParts.Add($"Additional Notes: {request.Notes.Trim()}");
+        }
+
+        return string.Join("\n\n", notesParts);
     }
 
     /// <summary>

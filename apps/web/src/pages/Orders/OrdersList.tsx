@@ -24,9 +24,22 @@ import {
   TableBody,
   IconButton,
   Tooltip,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import { Search, Visibility, Assignment } from '@mui/icons-material';
+import {
+  Search,
+  Visibility,
+  Assignment,
+  MoreVert,
+  Edit,
+  Message,
+  AttachFile,
+  Delete
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { OrderCard } from '../../components/common/OrderCard';
@@ -65,6 +78,11 @@ export const OrdersList: React.FC = () => {
   const [stageFilter, setStageFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+
+  // Menu state for three-dot actions
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const menuOpen = Boolean(anchorEl);
 
   /**
    * Loads orders on component mount and when filters change
@@ -116,6 +134,66 @@ export const OrdersList: React.FC = () => {
    */
   const handleOrderClick = (order: Order) => {
     navigate(`/orders/${order.id}`);
+  };
+
+  /**
+   * Handles opening the action menu
+   */
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, order: Order) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setSelectedOrder(order);
+  };
+
+  /**
+   * Handles closing the action menu
+   */
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedOrder(null);
+  };
+
+  /**
+   * Handles viewing order details from menu
+   */
+  const handleViewDetails = () => {
+    if (selectedOrder) {
+      navigate(`/orders/${selectedOrder.id}`);
+    }
+    handleMenuClose();
+  };
+
+  /**
+   * Handles editing order from menu
+   */
+  const handleEditOrder = () => {
+    if (selectedOrder) {
+      // TODO: Implement edit functionality
+      console.log('Edit order:', selectedOrder.id);
+    }
+    handleMenuClose();
+  };
+
+  /**
+   * Handles messaging about order from menu
+   */
+  const handleMessageOrder = () => {
+    if (selectedOrder) {
+      navigate(`/orders/${selectedOrder.id}/messages`);
+    }
+    handleMenuClose();
+  };
+
+  /**
+   * Handles attaching documents to order from menu
+   */
+  const handleAttachDocuments = () => {
+    if (selectedOrder) {
+      // TODO: Implement document attachment functionality
+      console.log('Attach documents to order:', selectedOrder.id);
+    }
+    handleMenuClose();
   };
 
   /**
@@ -448,15 +526,23 @@ export const OrdersList: React.FC = () => {
                           </TableCell>
                           <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                           <TableCell align="center">
-                            <Tooltip title="View Details">
-                              <IconButton 
-                                size="small" 
-                                onClick={() => handleOrderClick(order)}
-                                color="primary"
-                              >
-                                <Visibility />
-                              </IconButton>
-                            </Tooltip>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleMenuOpen(e, order)}
+                              aria-label="order actions"
+                              sx={{
+                                minHeight: 44,
+                                minWidth: 44,
+                                '&:hover': {
+                                  backgroundColor: 'action.hover',
+                                },
+                                '&:active': {
+                                  backgroundColor: 'action.selected',
+                                },
+                              }}
+                            >
+                              <MoreVert />
+                            </IconButton>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -468,6 +554,52 @@ export const OrdersList: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        sx={{
+          '& .MuiPaper-root': {
+            minWidth: 180,
+            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
+          },
+        }}
+      >
+        <MenuItem onClick={handleViewDetails}>
+          <ListItemIcon>
+            <Visibility fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>View Details</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleEditOrder}>
+          <ListItemIcon>
+            <Edit fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit Order</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleMessageOrder}>
+          <ListItemIcon>
+            <Message fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Messages</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleAttachDocuments}>
+          <ListItemIcon>
+            <AttachFile fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Attach Documents</ListItemText>
+        </MenuItem>
+      </Menu>
     </Container>
   );
 };

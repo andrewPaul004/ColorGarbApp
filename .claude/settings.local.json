@@ -76,7 +76,8 @@
       "Bash(tree:*)",
       "Bash(npx playwright:*)",
       "Bash(curl:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Read(//c/Users/apaul/Downloads/**)"
     ],
     "deny": [],
     "ask": []

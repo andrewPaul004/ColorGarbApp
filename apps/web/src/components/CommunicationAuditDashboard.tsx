@@ -30,8 +30,7 @@ import {
   Search as SearchIcon,
   Download as DownloadIcon,
   Visibility as ViewIcon,
-  FilterList as FilterIcon,
-  DateRange as DateRangeIcon
+  FilterList as FilterIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -128,7 +127,7 @@ export const CommunicationAuditDashboard: React.FC = () => {
   /**
    * Handles filter changes
    */
-  const handleFilterChange = (field: string, value: any) => {
+  const handleFilterChange = (field: string, value: string | Date | null) => {
     setSearchRequest(prev => ({
       ...prev,
       [field]: value,
@@ -148,13 +147,6 @@ export const CommunicationAuditDashboard: React.FC = () => {
       thirtyDaysAgo.toISOString(),
       new Date().toISOString()
     );
-  };
-
-  /**
-   * Handles export functionality
-   */
-  const handleExport = (format: 'csv' | 'excel') => {
-    exportCommunications(searchRequest, format);
   };
 
   /**
@@ -323,6 +315,7 @@ export const CommunicationAuditDashboard: React.FC = () => {
                     label="From Date"
                     value={searchRequest.dateFrom ? new Date(searchRequest.dateFrom) : null}
                     onChange={(date) => handleFilterChange('dateFrom', date?.toISOString())}
+                    enableAccessibleFieldDOMStructure={false}
                     slotProps={{ textField: { fullWidth: true } }}
                   />
                 </Grid>
@@ -331,6 +324,7 @@ export const CommunicationAuditDashboard: React.FC = () => {
                     label="To Date"
                     value={searchRequest.dateTo ? new Date(searchRequest.dateTo) : null}
                     onChange={(date) => handleFilterChange('dateTo', date?.toISOString())}
+                    enableAccessibleFieldDOMStructure={false}
                     slotProps={{ textField: { fullWidth: true } }}
                   />
                 </Grid>

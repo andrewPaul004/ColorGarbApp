@@ -176,7 +176,7 @@ export class OrganizationService {
 
 // Create and export default organization service instance
 const organizationService = new OrganizationService({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:7001',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5133',
   tokenStorageKey: 'colorgarb_auth_token'
 });
 

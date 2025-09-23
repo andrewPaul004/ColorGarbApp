@@ -324,6 +324,7 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
                 onChange={(date) => setMeasurementDate(date)}
                 minDate={getMinDate()}
                 disabled={isSubmitting || !!success}
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <TextField
@@ -346,6 +347,7 @@ export const CreateOrderDialog: React.FC<CreateOrderDialogProps> = ({
                 onChange={(date) => setDeliveryDate(date)}
                 minDate={measurementDate ? new Date(measurementDate.getTime() + 24 * 60 * 60 * 1000) : getMinDate()}
                 disabled={isSubmitting || !!success}
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <TextField

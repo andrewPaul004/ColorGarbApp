@@ -517,6 +517,7 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
                 label="From Date"
                 value={dateFrom}
                 onChange={(newValue) => setDateFrom(newValue)}
+                enableAccessibleFieldDOMStructure={false}
                 slotProps={{
                   textField: {
                     size: 'small',
@@ -530,6 +531,7 @@ export const MessageSearch: React.FC<MessageSearchProps> = ({
                 value={dateTo}
                 onChange={(newValue) => setDateTo(newValue)}
                 minDate={dateFrom || undefined}
+                enableAccessibleFieldDOMStructure={false}
                 slotProps={{
                   textField: {
                     size: 'small',

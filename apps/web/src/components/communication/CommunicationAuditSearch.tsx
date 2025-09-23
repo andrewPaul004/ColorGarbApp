@@ -287,8 +287,9 @@ export const CommunicationAuditSearch: React.FC<CommunicationAuditSearchProps> =
                 label="From Date"
                 value={searchCriteria.dateFrom || null}
                 onChange={handleDateFromChange}
-                slotProps={{ 
-                  textField: { 
+                enableAccessibleFieldDOMStructure={false}
+                slotProps={{
+                  textField: {
                     size: 'small',
                     fullWidth: true,
                     InputProps: {
@@ -306,8 +307,9 @@ export const CommunicationAuditSearch: React.FC<CommunicationAuditSearchProps> =
                 value={searchCriteria.dateTo || null}
                 onChange={handleDateToChange}
                 minDate={searchCriteria.dateFrom || undefined}
-                slotProps={{ 
-                  textField: { 
+                enableAccessibleFieldDOMStructure={false}
+                slotProps={{
+                  textField: {
                     size: 'small',
                     fullWidth: true,
                     InputProps: {

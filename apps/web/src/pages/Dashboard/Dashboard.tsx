@@ -198,7 +198,8 @@ export const Dashboard: React.FC = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreateOrderClick}
-            sx={{ 
+            data-testid="create-order-button"
+            sx={{
               flexShrink: 0,
               minWidth: 'auto',
             }}
@@ -211,7 +212,7 @@ export const Dashboard: React.FC = () => {
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={6} sm={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center' }} data-testid="total-orders-card">
             <Typography variant="h5" sx={{ fontWeight: 600, color: 'primary.main' }}>
               {summary.totalOrders}
             </Typography>
@@ -221,7 +222,7 @@ export const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center' }} data-testid="active-orders-card">
             <Typography variant="h5" sx={{ fontWeight: 600, color: 'success.main' }}>
               {summary.activeOrders}
             </Typography>
@@ -231,7 +232,7 @@ export const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center' }} data-testid="overdue-orders-card">
             <Typography variant="h5" sx={{ fontWeight: 600, color: 'error.main' }}>
               {summary.overdueOrders}
             </Typography>
@@ -241,7 +242,7 @@ export const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Paper sx={{ p: 2, textAlign: 'center' }}>
+          <Paper sx={{ p: 2, textAlign: 'center' }} data-testid="total-value-card">
             <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
               {formatCurrency(summary.totalValue)}
             </Typography>
@@ -263,6 +264,7 @@ export const Dashboard: React.FC = () => {
                 value={statusFilter}
                 label="Status Filter"
                 onChange={handleStatusChange}
+                data-testid="status-filter-select"
               >
                 <MenuItem value="All">All Orders</MenuItem>
                 <MenuItem value="Active">Active Only</MenuItem>
@@ -278,6 +280,7 @@ export const Dashboard: React.FC = () => {
                 value={stageFilter}
                 label="Stage Filter"
                 onChange={handleStageChange}
+                data-testid="stage-filter-select"
                 sx={{
                   '& .MuiSelect-select': {
                     paddingLeft: '14px',

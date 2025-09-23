@@ -70,7 +70,14 @@
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(npm:*)",
       "Bash(node:*)",
-      "Bash(tsc --noEmit --skipLibCheck)"
+      "Bash(tsc --noEmit --skipLibCheck)",
+      "Bash(netstat:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(npx playwright:*)",
+      "Bash(curl:*)",
+      "Bash(cmd /c:*)",
+      "Read(//c/Users/apaul/Downloads/**)"
     ],
     "deny": [],
     "ask": []

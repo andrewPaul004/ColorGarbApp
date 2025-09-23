@@ -161,9 +161,10 @@ export const LoginPage: React.FC = () => {
             <Box className="space-y-6">
                 {/* Error Alert */}
                 {displayError && (
-                  <Alert 
-                    severity="error" 
+                  <Alert
+                    severity="error"
                     className="w-full"
+                    data-testid="login-error-alert"
                     onClose={() => {
                       setError(null);
                       clearError();
@@ -188,6 +189,9 @@ export const LoginPage: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                   error={!!displayError && displayError.toLowerCase().includes('email')}
+                  inputProps={{
+                    'data-testid': 'email-input'
+                  }}
                   InputProps={{
                     startAdornment: <EmailIcon className="mr-2 text-gray-400" />
                   }}
@@ -209,6 +213,9 @@ export const LoginPage: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                   error={!!displayError && displayError.toLowerCase().includes('password')}
+                  inputProps={{
+                    'data-testid': 'password-input'
+                  }}
                   InputProps={{
                     startAdornment: <LockIcon className="mr-2 text-gray-400" />
                   }}
@@ -223,6 +230,7 @@ export const LoginPage: React.FC = () => {
                   variant="contained"
                   disabled={isLoading}
                   onClick={handleSubmit}
+                  data-testid="login-submit-button"
                   className="relative mt-6 w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   {isLoading ? (
@@ -246,6 +254,7 @@ export const LoginPage: React.FC = () => {
                     variant="body2"
                     onClick={handleForgotPassword}
                     disabled={isLoading}
+                    data-testid="forgot-password-link"
                     className="text-primary hover:text-primary-dark"
                   >
                     Forgot your password?

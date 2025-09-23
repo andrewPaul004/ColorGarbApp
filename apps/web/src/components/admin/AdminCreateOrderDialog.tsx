@@ -24,7 +24,6 @@ import {
 } from '@mui/material';
 import {
   Assignment,
-  CalendarMonth,
   Save,
   Cancel,
   CheckCircle,
@@ -48,7 +47,7 @@ interface AdminCreateOrderDialogProps {
   /** Dialog close handler */
   onClose: () => void;
   /** Callback when order is successfully created */
-  onOrderCreated?: (order: any) => void;
+  onOrderCreated?: (order: { orderNumber: string; id: string }) => void;
 }
 
 /**

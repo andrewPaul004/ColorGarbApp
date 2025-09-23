@@ -9,14 +9,21 @@ import {
   Button,
   Divider,
   useTheme,
-  alpha
+  alpha,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Reply as ReplyIcon,
   AttachFile as AttachFileIcon,
   Download as DownloadIcon,
   MoreVert as MoreVertIcon,
-  Circle as UnreadIcon
+  Circle as UnreadIcon,
+  Delete as DeleteIcon,
+  Archive as ArchiveIcon,
+  Flag as FlagIcon
 } from '@mui/icons-material';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import type { Message } from '../../types/shared';
@@ -111,6 +118,10 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   
+  // Menu state for three-dot actions
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
+
   // Swipe gesture state
   const [swipeState, setSwipeState] = useState({
     startX: 0,
@@ -163,6 +174,58 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
   };
 
   /**
+   * Handles opening the action menu
+   */
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+
+  /**
+   * Handles closing the action menu
+   */
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  /**
+   * Handles reply action
+   */
+  const handleReply = () => {
+    // TODO: Implement reply functionality
+    console.log('Reply to message:', message.id);
+    handleMenuClose();
+  };
+
+  /**
+   * Handles archive action
+   */
+  const handleArchive = () => {
+    // TODO: Implement archive functionality
+    console.log('Archive message:', message.id);
+    handleMenuClose();
+  };
+
+  /**
+   * Handles flag action
+   */
+  const handleFlag = () => {
+    // TODO: Implement flag functionality
+    console.log('Flag message:', message.id);
+    handleMenuClose();
+  };
+
+  /**
+   * Handles delete action
+   */
+  const handleDelete = () => {
+    // TODO: Implement delete functionality
+    console.log('Delete message:', message.id);
+    handleMenuClose();
+  };
+
+  /**
    * Handles touch start for swipe gestures (mobile)
    */
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -212,13 +275,13 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
   }, [isMobile, swipeState.isDragging, swipeState.currentX, swipeState.startX, swipeThreshold]);
 
   /**
-   * Handles reply action (mobile swipe or desktop button)
+   * Handles reply action from swipe gesture (mobile)
    */
-  const handleReply = useCallback((e: React.MouseEvent) => {
+  const handleSwipeReply = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     // TODO: Implement reply functionality
     console.log('Reply to message:', message.id);
-    
+
     // Hide swipe actions after action
     if (isMobile) {
       setSwipeState(prev => ({ ...prev, showActions: false }));
@@ -266,7 +329,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
         >
           <IconButton
             size="small"
-            onClick={handleReply}
+            onClick={handleSwipeReply}
             sx={{ 
               color: 'white',
               minWidth: 44,
@@ -360,7 +423,23 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
           {message.attachmentCount > 0 && (
             <AttachFileIcon color="action" sx={{ fontSize: 16 }} />
           )}
-          <IconButton size="small" sx={{ opacity: 0.7 }}>
+          <IconButton
+            size="small"
+            onClick={handleMenuOpen}
+            aria-label="message actions"
+            sx={{
+              opacity: 0.7,
+              minHeight: 44,
+              minWidth: 44,
+              '&:hover': {
+                opacity: 1,
+                backgroundColor: 'action.hover',
+              },
+              '&:active': {
+                backgroundColor: 'action.selected',
+              },
+            }}
+          >
             <MoreVertIcon fontSize="small" />
           </IconButton>
         </Box>
@@ -450,7 +529,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
             size="small"
             startIcon={<ReplyIcon />}
             sx={{ textTransform: 'none', fontSize: '0.75rem' }}
-            onClick={handleReply}
+            onClick={handleSwipeReply}
           >
             Reply
           </Button>
@@ -477,6 +556,53 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, orderId, onMessageRe
           </Typography>
         )}
       </Box>
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        sx={{
+          '& .MuiPaper-root': {
+            minWidth: 160,
+            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
+          },
+        }}
+      >
+        <MenuItem onClick={handleReply}>
+          <ListItemIcon>
+            <ReplyIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Reply</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleArchive}>
+          <ListItemIcon>
+            <ArchiveIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Archive</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleFlag}>
+          <ListItemIcon>
+            <FlagIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Flag</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
       </Box>
     </Box>
   );

@@ -59,4 +59,27 @@ Create documentation for:
 - Improved test reliability and maintenance
 
 ## Story Status
-**TODO**
+**COMPLETED**
+
+## Dev Agent Record
+
+### Agent Model Used
+Claude Sonnet 4
+
+### File List
+- `apps/web/src/pages/Auth/LoginPage.tsx` - Added data-testid attributes to email input, password input, submit button, error alert, and forgot password link
+- `apps/web/src/pages/Dashboard/Dashboard.tsx` - Added data-testid attributes to create order button, summary cards (total-orders, active-orders, overdue-orders, total-value), and filter selects
+- `tests/page-objects/LoginPage.ts` - Updated selectors to use data-testid attributes for reliable element targeting
+- `tests/page-objects/DashboardPage.ts` - Updated selectors to use data-testid attributes for summary cards, filters, and create order button
+
+### Completion Notes
+- Successfully added data-testid attributes to all major interactive elements in LoginPage and Dashboard components
+- Updated Page Object Models to use data-testid selectors instead of CSS class selectors for improved test reliability
+- All form inputs, buttons, alerts, and key UI elements now have unique data-testid attributes
+- Test selectors are now independent of implementation details like CSS classes or Material-UI component structure
+
+### Change Log
+- 2025-09-22: Added data-testid attributes to LoginPage form elements (email-input, password-input, login-submit-button, login-error-alert, forgot-password-link)
+- 2025-09-22: Added data-testid attributes to Dashboard summary cards and controls (total-orders-card, active-orders-card, overdue-orders-card, total-value-card, status-filter-select, stage-filter-select, create-order-button)
+- 2025-09-22: Updated LoginPage Page Object Model to use data-testid selectors
+- 2025-09-22: Updated DashboardPage Page Object Model to use data-testid selectors

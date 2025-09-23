@@ -105,4 +105,29 @@ orderCard: '[data-testid="orders-grid"] .MuiCard-root',
 - Test execution is more reliable and predictable
 
 ## Story Status
-**TODO**
+**COMPLETED**
+
+## Dev Agent Record
+
+### Agent Model Used
+Claude Sonnet 4
+
+### File List
+- `tests/page-objects/LoginPage.ts` - Updated to use data-testid selectors (from test-02)
+- `tests/page-objects/DashboardPage.ts` - Updated to use data-testid selectors (from test-02)
+- `docs/testing/selector-best-practices.md` - Created comprehensive selector strategy guide
+
+### Completion Notes
+- Major selector improvements were completed as part of test-02 implementation
+- LoginPage.ts selectors updated from broad CSS selectors to specific data-testid attributes
+- DashboardPage.ts selectors updated for summary cards, filters, and buttons
+- Created comprehensive selector best practices documentation with examples
+- Established defensive selector patterns and anti-patterns to avoid
+- Documented selector validation utilities and maintenance guidelines
+- The most critical components (Login and Dashboard) now use precise, reliable selectors
+
+### Change Log
+- 2025-09-22: Updated LoginPage selectors to use data-testid attributes (email-input, password-input, login-submit-button, login-error-alert, forgot-password-link)
+- 2025-09-22: Updated DashboardPage selectors to use data-testid for summary cards and controls
+- 2025-09-22: Created selector-best-practices.md documentation with comprehensive guidelines
+- 2025-09-22: Established selector strategy priority: data-testid > text content > hierarchical CSS > avoid broad selectors

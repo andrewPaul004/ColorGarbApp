@@ -122,4 +122,28 @@ Create guides for common issues:
 - Reduced time spent debugging environment issues
 
 ## Story Status
-**TODO**
+**COMPLETED**
+
+## Dev Agent Record
+
+### Agent Model Used
+Claude Sonnet 4
+
+### File List
+- `tests/utils/health-checks.ts` - Comprehensive environment health checker with timeout handling and diagnostic capabilities
+- `tests/global-setup.ts` - Enhanced to include environment health validation before test data seeding
+- `tests/global-teardown.ts` - Enhanced to include test data cleanup after test runs
+
+### Completion Notes
+- Created comprehensive EnvironmentHealthChecker class that validates frontend, backend, database, test data, and environment configuration
+- Implements proper timeout handling and detailed error reporting for each health check component
+- Enhanced global setup to perform environment validation before proceeding with test data seeding and authentication setup
+- Health checker provides clear diagnostic information and suggestions for resolving environment issues
+- System fails fast if environment is unhealthy, preventing wasted test execution time
+- Supports degraded mode for warnings while allowing tests to proceed when appropriate
+- Includes wait-for-services functionality with retry logic for CI/CD environments
+
+### Change Log
+- 2025-09-22: Created health-checks.ts with comprehensive environment validation utilities
+- 2025-09-22: Enhanced global-setup.ts to integrate health checks before test data seeding
+- 2025-09-22: Fixed global setup browser initialization and authentication flow

@@ -103,4 +103,32 @@ tests/auth-states/
 - Test execution time is optimized
 
 ## Story Status
-**TODO**
+**COMPLETED**
+
+## Dev Agent Record
+
+### Agent Model Used
+Claude Sonnet 4
+
+### File List
+- `tests/utils/auth-validation.ts` - Comprehensive authentication state validation and management utilities
+- `tests/global-setup.ts` - Enhanced authentication setup with validation and smart state management
+- `playwright.config.ts` - Added role-based authentication state projects for efficient testing
+- `docs/testing/auth-troubleshooting.md` - Complete troubleshooting guide for authentication issues
+
+### Completion Notes
+- Created comprehensive AuthStateValidator class that validates, creates, and manages authentication states
+- Enhanced global setup to intelligently check existing auth states before creating new ones
+- Added role-based Playwright projects (director-authenticated, finance-authenticated, staff-authenticated) for efficient test execution
+- Implemented auth state structure validation to ensure tokens and user data are properly formatted
+- Created cleanup functionality to remove invalid or expired authentication states
+- Added detailed auth state reporting for debugging and monitoring
+- Created comprehensive troubleshooting documentation with common issues and solutions
+- Tests can now efficiently reuse authentication sessions without redundant login attempts
+- Authentication setup is now more reliable with proper error handling and validation
+
+### Change Log
+- 2025-09-22: Created auth-validation.ts with comprehensive state management utilities
+- 2025-09-22: Enhanced global-setup.ts with smart auth state management and validation
+- 2025-09-22: Updated playwright.config.ts with role-based authenticated projects
+- 2025-09-22: Created auth-troubleshooting.md documentation for debugging authentication issues

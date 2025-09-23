@@ -1,5 +1,8 @@
 import { chromium, FullConfig } from '@playwright/test';
 import path from 'path';
+import { DatabaseSeeder } from './test-data/database-seeder';
+import { EnvironmentHealthChecker } from './utils/health-checks';
+import { AuthStateValidator } from './utils/auth-validation';
 
 /**
  * Global setup for Playwright tests
@@ -11,48 +14,49 @@ async function globalSetup(config: FullConfig) {
   console.log('🚀 Starting global setup for ColorGarb E2E tests...');
 
   const { baseURL } = config.projects[0].use;
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const apiUrl = process.env.API_URL || 'http://localhost:5132';
 
   try {
-    // Check if backend is running
-    console.log('🔍 Checking backend health...');
-    const apiUrl = process.env.API_URL || 'http://localhost:5132';
+    // Comprehensive environment health check
+    const healthChecker = new EnvironmentHealthChecker(baseURL!, apiUrl);
+    const healthStatus = await healthChecker.checkEnvironment();
 
-    try {
-      const response = await page.goto(`${apiUrl}/api/health`);
-      if (!response?.ok()) {
-        throw new Error(`Backend health check failed: ${response?.status()}`);
-      }
-      console.log('✅ Backend is healthy');
-    } catch (error) {
-      console.error('❌ Backend health check failed:', error);
-      throw new Error('Backend is not running or not healthy. Please start the API server.');
+    if (healthStatus.overall === 'unhealthy') {
+      console.error('❌ Environment health check failed. Cannot proceed with tests.');
+      const diagnostics = await healthChecker.getDiagnosticInfo();
+      console.log('🔍 Diagnostic Information:', JSON.stringify(diagnostics, null, 2));
+      throw new Error('Environment is unhealthy. Please resolve the issues above before running tests.');
     }
 
-    // Check if frontend is running
-    console.log('🔍 Checking frontend...');
-    try {
-      const response = await page.goto(baseURL!);
-      if (!response?.ok()) {
-        throw new Error(`Frontend check failed: ${response?.status()}`);
-      }
-      console.log('✅ Frontend is accessible');
-    } catch (error) {
-      console.error('❌ Frontend check failed:', error);
-      throw new Error('Frontend is not running. Please start the web server.');
+    if (healthStatus.overall === 'degraded') {
+      console.warn('⚠️ Environment has warnings but tests can proceed.');
+    }
+
+    // Seed test data
+    const seeder = new DatabaseSeeder(apiUrl);
+    await seeder.seedAllTestData();
+    await seeder.resetAuthStates();
+
+    // Verify test data exists
+    const dataExists = await seeder.verifyTestData();
+    if (!dataExists) {
+      console.warn('⚠️ Test data verification failed, but continuing with setup');
     }
 
     // Setup authentication state for different user roles
-    await setupAuthentication(page, baseURL!);
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    try {
+      await setupAuthentication(page, baseURL!, apiUrl);
+    } finally {
+      await browser.close();
+    }
 
     console.log('✅ Global setup completed successfully');
 
   } catch (error) {
     console.error('❌ Global setup failed:', error);
     throw error;
-  } finally {
-    await browser.close();
   }
 }
 
@@ -60,73 +64,73 @@ async function globalSetup(config: FullConfig) {
  * Setup authentication states for different user roles
  * Creates stored authentication states for reuse in tests
  */
-async function setupAuthentication(page: any, baseURL: string) {
+async function setupAuthentication(page: any, baseURL: string, apiUrl: string) {
   console.log('🔐 Setting up authentication states...');
+
+  const authValidator = new AuthStateValidator();
+  authValidator.ensureAuthStatesDirectory();
+
+  // Check existing auth states first
+  const existingStates = await authValidator.validateAllAuthStates();
+  const validStates = existingStates.filter(state => state.isValid);
+
+  console.log(`📊 Found ${validStates.length} valid auth states, ${existingStates.length - validStates.length} invalid`);
+
+  // Clean up invalid states
+  await authValidator.cleanupInvalidAuthStates();
 
   const authStates = [
     {
       role: 'director',
-      email: 'director@lincolnhigh.edu',
-      password: 'password123',
-      name: 'Jane Smith',
-      statePath: 'tests/auth-states/director.json'
+      email: 'director@lincolnhigh.edu'
     },
     {
       role: 'finance',
-      email: 'finance@lincolnhigh.edu',
-      password: 'password123',
-      name: 'John Finance',
-      statePath: 'tests/auth-states/finance.json'
+      email: 'finance@lincolnhigh.edu'
     },
     {
       role: 'staff',
-      email: 'staff@colorgarb.com',
-      password: 'password123',
-      name: 'ColorGarb Staff',
-      statePath: 'tests/auth-states/staff.json'
+      email: 'staff@colorgarb.com'
     }
   ];
 
-  // Ensure auth-states directory exists
-  const fs = require('fs');
-  const authStatesDir = path.dirname(authStates[0].statePath);
-  if (!fs.existsSync(authStatesDir)) {
-    fs.mkdirSync(authStatesDir, { recursive: true });
-  }
-
+  // Create auth states for users that don't have valid ones
   for (const user of authStates) {
-    try {
-      console.log(`🔑 Setting up authentication for ${user.role}...`);
+    const existingState = validStates.find(state =>
+      state.role === user.role || state.email === user.email
+    );
 
-      // Navigate to login page
-      await page.goto(`${baseURL}/auth/login`);
-
-      // Fill in credentials
-      await page.fill('[data-testid="email-input"]', user.email);
-      await page.fill('[data-testid="password-input"]', user.password);
-
-      // Submit login form
-      await page.click('[data-testid="sign-in-button"]');
-
-      // Wait for successful login (redirect to dashboard or admin dashboard)
-      await page.waitForURL(/\/(dashboard|admin\/dashboard)/, { timeout: 10000 });
-
-      // Save the authentication state
-      await page.context().storageState({ path: user.statePath });
-
-      console.log(`✅ Authentication state saved for ${user.role}`);
-
-      // Logout to prepare for next user
-      await page.evaluate(() => {
-        localStorage.clear();
-        sessionStorage.clear();
-      });
-
-    } catch (error) {
-      console.warn(`⚠️ Could not setup authentication for ${user.role}:`, error.message);
-      // Continue with other users even if one fails
+    if (existingState) {
+      console.log(`✅ Valid auth state already exists for ${user.role}`);
+      continue;
     }
+
+    const success = await authValidator.createTestAuthState(
+      page,
+      user.role,
+      user.email,
+      baseURL
+    );
+
+    if (success) {
+      console.log(`✅ Authentication state created for ${user.role}`);
+    } else {
+      console.warn(`⚠️ Failed to create authentication state for ${user.role}`);
+    }
+
+    // Clear session to prepare for next user
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+
+    // Small delay between auth setups
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
+
+  // Generate final auth state report
+  const report = await authValidator.generateAuthStateReport();
+  console.log(report);
 }
 
 export default globalSetup;

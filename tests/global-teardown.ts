@@ -1,6 +1,7 @@
 import { FullConfig } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { DatabaseSeeder } from './test-data/database-seeder';
 
 /**
  * Global teardown for Playwright tests
@@ -12,6 +13,11 @@ async function globalTeardown(config: FullConfig) {
   console.log('🧹 Starting global teardown for ColorGarb E2E tests...');
 
   try {
+    // Clean up test data from database
+    const apiUrl = process.env.API_URL || 'http://localhost:5132';
+    const seeder = new DatabaseSeeder(apiUrl);
+    await seeder.cleanupTestData();
+
     // Clean up authentication state files
     const authStatesDir = 'tests/auth-states';
     if (fs.existsSync(authStatesDir)) {

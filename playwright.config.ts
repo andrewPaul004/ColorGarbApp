@@ -49,7 +49,44 @@ export default defineConfig({
       testMatch: /.*\.setup\.ts/,
     },
 
-    // Desktop Chrome - Primary testing environment
+    // Authenticated user projects for role-based testing
+    {
+      name: 'director-authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+        permissions: ['clipboard-read', 'clipboard-write'],
+        storageState: 'tests/auth-states/director.json',
+      },
+      dependencies: ['setup'],
+      testMatch: ['**/authenticated/**', '**/director/**'],
+    },
+
+    {
+      name: 'finance-authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+        permissions: ['clipboard-read', 'clipboard-write'],
+        storageState: 'tests/auth-states/finance.json',
+      },
+      dependencies: ['setup'],
+      testMatch: ['**/authenticated/**', '**/finance/**'],
+    },
+
+    {
+      name: 'staff-authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+        permissions: ['clipboard-read', 'clipboard-write'],
+        storageState: 'tests/auth-states/staff.json',
+      },
+      dependencies: ['setup'],
+      testMatch: ['**/authenticated/**', '**/staff/**'],
+    },
+
+    // Desktop Chrome - Primary testing environment (unauthenticated)
     {
       name: 'chromium',
       use: {
@@ -58,7 +95,7 @@ export default defineConfig({
         permissions: ['clipboard-read', 'clipboard-write'],
       },
       dependencies: ['setup'],
-      testIgnore: ['**/mobile/**', '**/setup/**'],
+      testIgnore: ['**/mobile/**', '**/setup/**', '**/authenticated/**'],
     },
 
     // Desktop Firefox - Cross-browser compatibility
@@ -88,6 +125,7 @@ export default defineConfig({
       name: 'mobile-chrome',
       use: {
         ...devices['Pixel 5'],
+        hasTouch: true,
         permissions: ['camera', 'microphone'],
       },
       dependencies: ['setup'],
@@ -99,6 +137,7 @@ export default defineConfig({
       name: 'mobile-safari',
       use: {
         ...devices['iPhone 13'],
+        hasTouch: true,
         permissions: ['camera', 'microphone'],
       },
       dependencies: ['setup'],
@@ -110,6 +149,7 @@ export default defineConfig({
       name: 'tablet',
       use: {
         ...devices['iPad Pro'],
+        hasTouch: true,
         permissions: ['camera', 'microphone'],
       },
       dependencies: ['setup'],
@@ -162,8 +202,8 @@ export default defineConfig({
   ],
 
   // Global setup for database seeding and test data
-  // globalSetup: require.resolve('./tests/global-setup.ts'),
-  // globalTeardown: require.resolve('./tests/global-teardown.ts'),
+  globalSetup: require.resolve('./tests/global-setup.ts'),
+  globalTeardown: require.resolve('./tests/global-teardown.ts'),
 
   // Web server configuration for local development
   webServer: [

@@ -16,17 +16,17 @@ export class DashboardPage extends BasePage {
     pageTitle: 'h1:has-text("Order Dashboard")',
     welcomeMessage: 'text=/Welcome back.*Here are your organization\'s orders/',
 
-    // Summary cards - Paper components in Grid
+    // Summary cards - Updated to use data-testid selectors
     summaryCardsContainer: '.MuiGrid-container >> .MuiPaper-root',
-    totalOrdersCard: 'text=Total Orders >> .. >> .MuiTypography-h5',
-    activeOrdersCard: 'text=Active >> .. >> .MuiTypography-h5',
-    overdueOrdersCard: 'text=Overdue >> .. >> .MuiTypography-h5',
-    totalValueCard: 'text=Total Value >> .. >> .MuiTypography-h6',
+    totalOrdersCard: '[data-testid="total-orders-card"]',
+    activeOrdersCard: '[data-testid="active-orders-card"]',
+    overdueOrdersCard: '[data-testid="overdue-orders-card"]',
+    totalValueCard: '[data-testid="total-value-card"]',
 
-    // Filters - FormControl selectors
+    // Filters - Updated to use data-testid selectors
     filtersContainer: '.MuiPaper-root:has(.MuiFormControl-root)',
-    statusFilter: '#status-filter-label + .MuiInputBase-root',
-    stageFilter: '#stage-filter-label + .MuiInputBase-root',
+    statusFilter: '[data-testid="status-filter-select"]',
+    stageFilter: '[data-testid="stage-filter-select"]',
     statusFilterDropdown: '[aria-labelledby="status-filter-label"]',
     stageFilterDropdown: '[aria-labelledby="stage-filter-label"]',
 
@@ -36,7 +36,7 @@ export class DashboardPage extends BasePage {
     emptyState: 'text=No Orders Found',
 
     // Create order functionality
-    createOrderButton: 'button:has-text("Create"):has-text("Order")',
+    createOrderButton: '[data-testid="create-order-button"]',
     createOrderDialog: '.MuiDialog-root',
 
     // Error and loading states
@@ -130,10 +130,10 @@ export class DashboardPage extends BasePage {
     overdueOrders: number;
     totalValue: string;
   }> {
-    const totalOrdersText = await this.page.locator(this.selectors.totalOrdersCard + ' h5').textContent();
-    const activeOrdersText = await this.page.locator(this.selectors.activeOrdersCard + ' h5').textContent();
-    const overdueOrdersText = await this.page.locator(this.selectors.overdueOrdersCard + ' h5').textContent();
-    const totalValueText = await this.page.locator(this.selectors.totalValueCard + ' h6').textContent();
+    const totalOrdersText = await this.page.locator(this.selectors.totalOrdersCard + ' .MuiTypography-h5').textContent();
+    const activeOrdersText = await this.page.locator(this.selectors.activeOrdersCard + ' .MuiTypography-h5').textContent();
+    const overdueOrdersText = await this.page.locator(this.selectors.overdueOrdersCard + ' .MuiTypography-h5').textContent();
+    const totalValueText = await this.page.locator(this.selectors.totalValueCard + ' .MuiTypography-h6').textContent();
 
     return {
       totalOrders: parseInt(totalOrdersText || '0'),

@@ -10,16 +10,16 @@ import { BasePage } from './BasePage';
  * @since 3.0.0
  */
 export class LoginPage extends BasePage {
-  // Page-specific selectors
+  // Page-specific selectors - Updated to use data-testid attributes
   private selectors = {
-    // Form elements - using actual Material-UI component selectors
-    emailInput: '#email', // TextField with id="email"
-    passwordInput: '#password', // TextField with id="password"
-    signInButton: 'button[type="button"]:has-text("Sign In")', // Button with "Sign In" text
-    forgotPasswordLink: 'button:has-text("Forgot your password?")', // Link button for forgot password
+    // Form elements - using data-testid for reliable element targeting
+    emailInput: '[data-testid="email-input"]', // Email input field
+    passwordInput: '[data-testid="password-input"]', // Password input field
+    signInButton: '[data-testid="login-submit-button"]', // Sign in button
+    forgotPasswordLink: '[data-testid="forgot-password-link"]', // Forgot password link
 
-    // Validation errors - MUI Alert component
-    errorAlert: '.MuiAlert-root', // Material-UI Alert component
+    // Validation errors - Alert component with data-testid
+    errorAlert: '[data-testid="login-error-alert"]', // Error alert component
 
     // Form container - Card component
     loginForm: '.MuiCard-root', // Material-UI Card containing the form

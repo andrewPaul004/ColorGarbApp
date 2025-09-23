@@ -75,7 +75,8 @@
       "Bash(cat:*)",
       "Bash(tree:*)",
       "Bash(npx playwright:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(cmd /c:*)"
     ],
     "deny": [],
     "ask": []

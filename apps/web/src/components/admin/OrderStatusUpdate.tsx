@@ -6,10 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   Typography,
   Alert,
@@ -19,6 +15,7 @@ import {
   CircularProgress,
   Avatar,
   Stack,
+  Checkbox,
 } from '@mui/material';
 // Grid component replaced with Box for layout
 import {
@@ -32,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { useAdminOperations } from '../../hooks/useAdminOperations';
 import type { AdminOrder } from '../../services/adminService';
+import type { OrderStage } from '@colorgarb/shared';
 
 /**
  * Props for the OrderStatusUpdate component
@@ -75,6 +73,9 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
   const [shipDate, setShipDate] = useState<Date | null>(order.currentShipDate);
   const [reason, setReason] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [stageChangePending, setStageChangePending] = useState(false);
+  // Track current stage locally for immediate UI updates
+  const [localCurrentStage, setLocalCurrentStage] = useState(order.currentStage);
 
   /**
    * Reset form when order changes or dialog opens
@@ -85,29 +86,57 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
       setShipDate(order.currentShipDate);
       setReason('');
       setFormError(null);
+      setLocalCurrentStage(order.currentStage);
       clearMessages();
     }
   }, [open, order, clearMessages]);
 
   /**
-   * Get available manufacturing stages
+   * Get available manufacturing stages with OrderStage types
    */
-  const getAvailableStages = (): string[] => {
+  const getAvailableStages = (): OrderStage[] => {
     return [
-      'Design Proposal',
-      'Proof Approval', 
-      'Measurements',
-      'Production Planning',
-      'Cutting',
-      'Sewing',
-      'Quality Control',
-      'Finishing',
-      'Final Inspection',
-      'Packaging',
-      'Shipping Preparation',
-      'Ship Order',
-      'Delivery',
+      'DesignProposal', 'ProofApproval', 'Measurements', 'ProductionPlanning',
+      'Cutting', 'Sewing', 'QualityControl', 'Finishing',
+      'FinalInspection', 'Packaging', 'ShippingPreparation', 'ShipOrder', 'Delivery'
     ];
+  };
+
+  /**
+   * Create stage display names mapping
+   */
+  const stageDisplayNames: Record<OrderStage, string> = {
+    'DesignProposal': 'Design Proposal',
+    'ProofApproval': 'Proof Approval',
+    'Measurements': 'Measurements',
+    'ProductionPlanning': 'Production Planning',
+    'Cutting': 'Cutting',
+    'Sewing': 'Sewing',
+    'QualityControl': 'Quality Control',
+    'Finishing': 'Finishing',
+    'FinalInspection': 'Final Inspection',
+    'Packaging': 'Packaging',
+    'ShippingPreparation': 'Shipping Preparation',
+    'ShipOrder': 'Ship Order',
+    'Delivery': 'Delivery'
+  };
+
+  /**
+   * Convert display name back to OrderStage
+   */
+  const displayNameToStage = (displayName: string): OrderStage => {
+    const entry = Object.entries(stageDisplayNames).find(([, display]) => display === displayName);
+    return (entry?.[0] as OrderStage) || 'DesignProposal';
+  };
+
+  /**
+   * Get the status of a stage (completed, current, or pending)
+   */
+  const getStageStatus = (stage: OrderStage, index: number): 'completed' | 'current' | 'pending' => {
+    const currentIndex = getAvailableStages().indexOf(displayNameToStage(localCurrentStage));
+    if (index < currentIndex) return 'completed';
+    if (index === currentIndex) return 'current';
+    return 'pending';
   };
 
   /**
@@ -115,7 +144,7 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
    */
   const getStageProgress = (stageName: string): number => {
     const stages = getAvailableStages();
-    const currentIndex = stages.findIndex(s => s.toLowerCase() === stageName.toLowerCase());
+    const currentIndex = stages.findIndex(s => stageDisplayNames[s]?.toLowerCase() === stageName.toLowerCase());
     return currentIndex >= 0 ? Math.round(((currentIndex + 1) / stages.length) * 100) : 0;
   };
 
@@ -161,7 +190,7 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
   const validateForm = (): boolean => {
     setFormError(null);
 
-    if (!stage.trim()) {
+    if (!stage || !stage.trim()) {
       setFormError('Stage is required');
       return false;
     }
@@ -221,17 +250,94 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
   };
 
   /**
-   * Check if form has changes
+   * Handle stage checkbox changes - automatically progress to next stage
    */
-  const hasChanges = (): boolean => {
-    return (
-      stage !== order.currentStage ||
-      shipDate?.getTime() !== order.currentShipDate.getTime() ||
-      reason.trim() !== ''
-    );
+  const handleStageToggle = (selectedStage: OrderStage, checked: boolean) => {
+    const stages = getAvailableStages();
+    const stageIndex = stages.indexOf(selectedStage);
+    const currentStageIndex = stages.indexOf(displayNameToStage(localCurrentStage));
+
+    if (checked && stageIndex >= currentStageIndex) {
+      // When checking a stage, progress to the NEXT stage (Todoist behavior)
+      const nextStageIndex = stageIndex + 1;
+      const nextStage = nextStageIndex < stages.length ? stages[nextStageIndex] : selectedStage;
+      const newStageDisplayName = stageDisplayNames[nextStage];
+
+      setStage(newStageDisplayName);
+      setStageChangePending(true);
+
+      // Auto-save stage change immediately
+      handleStageUpdate(newStageDisplayName);
+    } else if (!checked && stageIndex < currentStageIndex) {
+      // When unchecking a completed stage, move back to that stage
+      const newStage = stageDisplayNames[selectedStage];
+      setStage(newStage);
+      setStageChangePending(true);
+
+      // Auto-save stage change immediately
+      handleStageUpdate(newStage);
+    }
   };
 
-  const currentProgress = getStageProgress(order.currentStage);
+  /**
+   * Handle automatic stage update
+   */
+  const handleStageUpdate = async (newStage: string) => {
+    try {
+      const result = await updateOrder(
+        order.id,
+        newStage,
+        shipDate?.toISOString().split('T')[0],
+        reason || 'Stage progression update'
+      );
+
+      if (result.success) {
+        // Reset pending state
+        setStageChangePending(false);
+        // Update both the order object and local state to reflect the change
+        order.currentStage = newStage;
+        setLocalCurrentStage(newStage);
+      } else {
+        // Revert stage change on failure
+        setStage(order.currentStage);
+        setLocalCurrentStage(order.currentStage);
+        setStageChangePending(false);
+      }
+    } catch (err) {
+      // Revert stage change on error
+      setStage(order.currentStage);
+      setLocalCurrentStage(order.currentStage);
+      setStageChangePending(false);
+      console.error('Stage update failed:', err);
+    }
+  };
+
+  /**
+   * Check if ship date has been changed
+   */
+  const isShipDateChanged = (): boolean => {
+    return shipDate?.getTime() !== order.currentShipDate.getTime();
+  };
+
+  /**
+   * Get the appropriate button text based on form state
+   */
+  const getButtonText = (): string => {
+    if (isUpdating) return 'Updating...';
+    if (isShipDateChanged() && !reason.trim()) return 'Reason Required';
+    return 'Save';
+  };
+
+  /**
+   * Determine if the save button should be disabled
+   */
+  const isSaveButtonDisabled = (): boolean => {
+    if (isUpdating) return true;
+    // Only disable if ship date changed but no reason provided
+    return isShipDateChanged() && !reason.trim();
+  };
+
+  const currentProgress = getStageProgress(localCurrentStage);
   const newProgress = getStageProgress(stage);
 
   return (
@@ -335,7 +441,7 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
               <TrendingUp sx={{ color: 'primary.main' }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {order.currentStage}
+                {localCurrentStage}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 ({currentProgress}% complete)
@@ -370,26 +476,92 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
 
           {/* Update Form */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <FormControl fullWidth>
-              <InputLabel>New Stage</InputLabel>
-              <Select
-                value={stage}
-                label="New Stage"
-                onChange={(e) => setStage(e.target.value)}
-                disabled={isUpdating}
-              >
-                {getAvailableStages().map((stageName) => (
-                  <MenuItem key={stageName} value={stageName}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography>{stageName}</Typography>
-                      {stageName === order.currentStage && (
+            {/* Todoist-style Stage Checklist */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                Manufacturing Stages
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {getAvailableStages().map((stageKey, index) => {
+                  const status = getStageStatus(stageKey, index);
+                  const isChecked = status === 'completed';
+                  const isCurrent = status === 'current';
+                  const currentStageIndex = getAvailableStages().indexOf(displayNameToStage(localCurrentStage));
+                  const canToggle = index >= currentStageIndex || isChecked;
+
+                  // Hide completed stages (Todoist behavior)
+                  if (isChecked) {
+                    return null;
+                  }
+
+                  return (
+                    <Box
+                      key={stageKey}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        minHeight: '44px',
+                        padding: 1,
+                        borderRadius: 1,
+                        cursor: canToggle ? 'pointer' : 'default',
+                        backgroundColor:
+                          isChecked ? 'success.light' + '1A' :
+                          isCurrent ? 'primary.light' + '26' :
+                          'grey.50',
+                        border: isCurrent ? '2px solid' : 'none',
+                        borderColor: isCurrent ? 'primary.main' : 'transparent',
+                        '&:hover': canToggle ? {
+                          backgroundColor:
+                            isChecked ? 'success.light' + '33' :
+                            isCurrent ? 'primary.light' + '4D' :
+                            'grey.100'
+                        } : {}
+                      }}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onChange={(e) => handleStageToggle(stageKey, e.target.checked)}
+                        disabled={!canToggle || isUpdating || stageChangePending}
+                        data-testid={`stage-checkbox-${stageKey}`}
+                        sx={{
+                          minWidth: '44px',
+                          minHeight: '44px',
+                          color: isChecked ? 'success.main' :
+                                 isCurrent ? 'primary.main' :
+                                 'grey.400',
+                          '&.Mui-checked': {
+                            color: 'success.main',
+                          }
+                        }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight: isCurrent ? 600 : 'medium',
+                            color: isChecked ? 'success.dark' :
+                                   isCurrent ? 'primary.main' :
+                                   'text.primary'
+                          }}
+                        >
+                          {stageDisplayNames[stageKey]}
+                        </Typography>
+                      </Box>
+                      {isCurrent && (
                         <Chip label="Current" size="small" color="primary" />
                       )}
+                      {isChecked && !isCurrent && (
+                        <Chip label="Complete" size="small" color="success" />
+                      )}
+                      {stageChangePending && isCurrent && (
+                        <CircularProgress size={16} />
+                      )}
                     </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  );
+                })}
+              </Box>
+            </Box>
 
             <TextField
               label="Ship Date"
@@ -422,7 +594,7 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
             />
 
             {/* New Progress Preview */}
-            {stage !== order.currentStage && (
+            {stage !== localCurrentStage && (
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
                   New Progress Preview
@@ -471,10 +643,10 @@ export const OrderStatusUpdate: React.FC<OrderStatusUpdateProps> = ({
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={isUpdating || !hasChanges() || (shipDate?.getTime() !== order.currentShipDate.getTime() && !reason.trim())}
+            disabled={isSaveButtonDisabled()}
             startIcon={isUpdating ? <CircularProgress size={20} /> : <Save />}
           >
-            {isUpdating ? 'Updating...' : 'Update Order'}
+            {getButtonText()}
           </Button>
         </DialogActions>
       </Dialog>

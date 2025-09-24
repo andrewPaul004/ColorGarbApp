@@ -351,7 +351,7 @@ export class AuthService {
 
 // Create and export default auth service instance
 const authService = new AuthService({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5133',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5132',
   tokenStorageKey: 'colorgarb_auth_token'
 });
 

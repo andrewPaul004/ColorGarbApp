@@ -5,8 +5,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Chip,
   Badge,
@@ -25,16 +23,11 @@ import {
   useMediaQuery,
   Divider,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material';
 import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
-  FilterList as FilterIcon,
   Message as MessageIcon,
-  Assignment as AssignmentIcon,
   MarkEmailRead as MarkEmailReadIcon,
-  Visibility as VisibilityIcon,
-  AccessTime as AccessTimeIcon,
   AttachFile as AttachFileIcon,
   PriorityHigh as PriorityHighIcon,
   ExpandLess,
@@ -43,10 +36,9 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { MessageCenter } from '../messages/MessageCenter';
 import { useAdminAccess } from '../../hooks/useAdminAccess';
-import adminMessageService, { 
+import adminMessageService, {
   type AdminMessage,
-  type AdminMessageSearchRequest,
-  type AdminMessageSearchResponse
+  type AdminMessageSearchRequest
 } from '../../services/adminMessageService';
 
 /**
@@ -68,7 +60,7 @@ export const AdminMessageInbox: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
-  
+
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [clientName, setClientName] = useState('');
@@ -77,23 +69,12 @@ export const AdminMessageInbox: React.FC = () => {
   const [senderRole, setSenderRole] = useState('all');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  
+
   // Message center state
   const [messageCenterOpen, setMessageCenterOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string | null>(null);
   const [selectedOrderDescription, setSelectedOrderDescription] = useState<string | null>(null);
-
-  // Access control check
-  if (!hasAccess) {
-    return (
-      <Paper sx={{ p: 3, mt: 2 }}>
-        <Alert severity="error">
-          {reason || 'You do not have permission to access the admin message inbox.'}
-        </Alert>
-      </Paper>
-    );
-  }
 
   /**
    * Loads admin messages with current filters and pagination
@@ -247,6 +228,17 @@ export const AdminMessageInbox: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [loadMessages]);
+
+  // Access control check - must be after all hooks
+  if (!hasAccess) {
+    return (
+      <Paper sx={{ p: 3, mt: 2 }}>
+        <Alert severity="error">
+          {reason || 'You do not have permission to access the admin message inbox.'}
+        </Alert>
+      </Paper>
+    );
+  }
 
   return (
     <Box>

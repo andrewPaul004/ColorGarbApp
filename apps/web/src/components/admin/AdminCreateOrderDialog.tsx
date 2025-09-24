@@ -525,6 +525,7 @@ export const AdminCreateOrderDialog: React.FC<AdminCreateOrderDialogProps> = ({
                 onChange={(date) => setMeasurementDate(date)}
                 minDate={getMinDate()}
                 disabled={isSubmitting}
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <TextField
@@ -547,6 +548,7 @@ export const AdminCreateOrderDialog: React.FC<AdminCreateOrderDialogProps> = ({
                 onChange={(date) => setDeliveryDate(date)}
                 minDate={getMinDeliveryDate()}
                 disabled={isSubmitting}
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <TextField

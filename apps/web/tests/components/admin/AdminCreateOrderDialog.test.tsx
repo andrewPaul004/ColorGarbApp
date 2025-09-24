@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminCreateOrderDialog } from '../../../src/components/admin/AdminCreateOrderDialog';
 import { useAdminStore } from '../../../src/stores/adminStore';

@@ -363,15 +363,17 @@ export const ComplianceReportingDashboard: React.FC<ComplianceReportingDashboard
                   label="From"
                   value={dateFrom}
                   onChange={(date) => setDateFrom(date || new Date())}
+                  enableAccessibleFieldDOMStructure={false}
                   slotProps={{ textField: { size: 'small' } }}
                 />
                 <DatePicker
                   label="To"
                   value={dateTo}
                   onChange={(date) => setDateTo(date || new Date())}
+                  enableAccessibleFieldDOMStructure={false}
                   slotProps={{ textField: { size: 'small' } }}
                 />
-              </>
+              <>
             )}
 
             <Typography variant="body2" color="text.secondary">

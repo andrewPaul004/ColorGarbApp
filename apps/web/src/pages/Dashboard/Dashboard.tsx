@@ -6,17 +6,13 @@ import {
   Alert,
   CircularProgress,
   Container,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Paper,
   Button,
   useTheme,
   useMediaQuery,
+  Collapse,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../stores/appStore';
 import { OrderCard } from '../../components/common/OrderCard';
@@ -24,19 +20,19 @@ import { CreateOrderDialog } from '../../components/orders/CreateOrderDialog';
 import type { Order } from '../../types/shared';
 
 /**
- * Main dashboard page displaying organization's active orders.
- * Features responsive grid layout, filtering options, and mobile optimization.
+ * Main dashboard page displaying organization's orders with active orders prominently featured.
+ * Features responsive grid layout, collapsible completed orders section, and mobile optimization.
  * Only shows orders that belong to the authenticated user's organization.
- * 
+ *
  * @component
  * @returns {JSX.Element} Dashboard page component
- * 
+ *
  * @example
  * ```tsx
  * // Used in routing configuration
  * <Route path="/dashboard" element={<Dashboard />} />
  * ```
- * 
+ *
  * @since 1.0.0
  */
 export const Dashboard: React.FC = () => {
@@ -53,20 +49,16 @@ export const Dashboard: React.FC = () => {
     clearOrdersError,
   } = useAppStore();
 
-  const [statusFilter, setStatusFilter] = useState<string>('Active');
-  const [stageFilter, setStageFilter] = useState<string>('All');
   const [createOrderDialogOpen, setCreateOrderDialogOpen] = useState(false);
+  const [completedOrdersExpanded, setCompletedOrdersExpanded] = useState<boolean>(false);
 
   /**
-   * Loads orders on component mount and when filters change
+   * Loads orders on component mount
    */
   useEffect(() => {
     const loadOrders = async () => {
       try {
-        await fetchOrders(
-          statusFilter === 'All' ? undefined : statusFilter,
-          stageFilter === 'All' ? undefined : stageFilter
-        );
+        await fetchOrders();
       } catch (error) {
         // Error is handled by the store
         console.error('Failed to load orders:', error);
@@ -74,24 +66,13 @@ export const Dashboard: React.FC = () => {
     };
 
     loadOrders();
-  }, [statusFilter, stageFilter]); // fetchOrders removed to prevent double calls due to function reference changes
+  }, [fetchOrders]);
 
   /**
-   * Handles status filter change
-   * @param event Select change event
+   * Handles toggle of completed orders section
    */
-  const handleStatusChange = (event: SelectChangeEvent) => {
-    setStatusFilter(event.target.value);
-    clearOrdersError();
-  };
-
-  /**
-   * Handles stage filter change
-   * @param event Select change event
-   */
-  const handleStageChange = (event: SelectChangeEvent) => {
-    setStageFilter(event.target.value);
-    clearOrdersError();
+  const handleToggleCompletedOrders = () => {
+    setCompletedOrdersExpanded(!completedOrdersExpanded);
   };
 
   /**
@@ -121,11 +102,8 @@ export const Dashboard: React.FC = () => {
    */
   const handleOrderCreated = (newOrder: any) => {
     // Refresh orders to show the new order
-    fetchOrders(
-      statusFilter === 'All' ? undefined : statusFilter,
-      stageFilter === 'All' ? undefined : stageFilter
-    );
-    
+    fetchOrders();
+
     // Navigate to the new order's detail page
     setTimeout(() => {
       navigate(`/orders/${newOrder.id}`);
@@ -140,25 +118,28 @@ export const Dashboard: React.FC = () => {
   };
 
   /**
-   * Gets available manufacturing stages for filter dropdown
-   * @returns Array of stage names
+   * Determines if an order is completed based on its current stage
+   * @param order Order to check
+   * @returns True if order has reached the final stage (Delivery)
    */
-  const getAvailableStages = (): string[] => {
-    return [
-      'Initial Consultation',
-      'Contract & Payment',
-      'Design Development',
-      'Measurements',
-      'Fabric Selection',
-      'Pattern Development',
-      'First Fitting',
-      'Production',
-      'Second Fitting',
-      'Final Alterations',
-      'Quality Control',
-      'Packaging',
-      'Shipped'
-    ];
+  const isOrderCompleted = (order: Order): boolean => {
+    return order.currentStage?.toLowerCase() === 'delivery';
+  };
+
+  /**
+   * Gets active orders
+   * @returns Active orders array
+   */
+  const getActiveOrders = (): Order[] => {
+    return orders.filter(order => !isOrderCompleted(order));
+  };
+
+  /**
+   * Gets completed orders
+   * @returns Completed orders array
+   */
+  const getCompletedOrders = (): Order[] => {
+    return orders.filter(order => isOrderCompleted(order));
   };
 
   /**
@@ -168,16 +149,18 @@ export const Dashboard: React.FC = () => {
   const getOrdersSummary = () => {
     const totalOrders = orders.length;
     const totalValue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const activeOrders = orders.filter(order => order.isActive).length;
-    const overdueOrders = orders.filter(order => 
-      new Date(order.currentShipDate) < new Date() && order.isActive
+    const activeOrders = orders.filter(order => !isOrderCompleted(order)).length;
+    const overdueOrders = orders.filter(order =>
+      new Date(order.currentShipDate) < new Date() && !isOrderCompleted(order)
     ).length;
 
     return { totalOrders, totalValue, activeOrders, overdueOrders };
   };
 
+  const activeOrders = getActiveOrders();
+  const completedOrders = getCompletedOrders();
   const summary = getOrdersSummary();
-  const formatCurrency = (amount: number) => 
+  const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
   return (
@@ -253,81 +236,6 @@ export const Dashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="status-filter-label">Status Filter</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                value={statusFilter}
-                label="Status Filter"
-                onChange={handleStatusChange}
-                data-testid="status-filter-select"
-              >
-                <MenuItem value="All">All Orders</MenuItem>
-                <MenuItem value="Active">Active Only</MenuItem>
-                <MenuItem value="Inactive">Completed/Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="stage-filter-label">Stage Filter</InputLabel>
-              <Select
-                labelId="stage-filter-label"
-                value={stageFilter}
-                label="Stage Filter"
-                onChange={handleStageChange}
-                data-testid="stage-filter-select"
-                sx={{
-                  '& .MuiSelect-select': {
-                    paddingLeft: '14px',
-                    paddingRight: '32px !important',
-                  }
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    style: {
-                      maxWidth: 'none',
-                      minWidth: '300px',
-                    },
-                  },
-                }}
-              >
-                <MenuItem 
-                  value="All"
-                  sx={{ 
-                    whiteSpace: 'normal',
-                    wordWrap: 'break-word',
-                    minHeight: '48px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}
-                >
-                  All Stages
-                </MenuItem>
-                {getAvailableStages().map((stage) => (
-                  <MenuItem 
-                    key={stage} 
-                    value={stage}
-                    sx={{ 
-                      whiteSpace: 'normal',
-                      wordWrap: 'break-word',
-                      minHeight: '48px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    {stage}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
 
       {/* Error Display */}
       {ordersError && (
@@ -343,32 +251,73 @@ export const Dashboard: React.FC = () => {
         </Box>
       )}
 
-      {/* Orders Grid */}
+      {/* Orders Display */}
       {!ordersLoading && !ordersError && (
         <>
-          {orders.length === 0 ? (
+          {activeOrders.length === 0 && completedOrders.length === 0 ? (
             <Paper sx={{ p: 6, textAlign: 'center' }}>
               <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                 No Orders Found
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {statusFilter === 'All' && !stageFilter 
-                  ? "Your organization doesn't have any orders yet."
-                  : "No orders match the current filters. Try adjusting your search criteria."
-                }
+                Your organization doesn't have any orders yet.
               </Typography>
             </Paper>
           ) : (
-            <Grid container spacing={isMobile ? 2 : 3}>
-              {orders.map((order) => (
-                <Grid item xs={12} sm={6} md={4} key={order.id}>
-                  <OrderCard
-                    order={order}
-                    onClick={handleOrderClick}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            <>
+              {/* Active Orders Section */}
+              {activeOrders.length > 0 && (
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
+                    Active Orders ({activeOrders.length})
+                  </Typography>
+                  <Grid container spacing={isMobile ? 2 : 3}>
+                    {activeOrders.map((order) => (
+                      <Grid item xs={12} sm={6} md={4} key={order.id}>
+                        <OrderCard
+                          order={order}
+                          onClick={handleOrderClick}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+
+              {/* Completed Orders Section */}
+              {completedOrders.length > 0 && (
+                <Box>
+                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleToggleCompletedOrders}
+                      startIcon={completedOrdersExpanded ? <ExpandLess /> : <ExpandMore />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {completedOrdersExpanded ? 'Hide' : 'Show'} Completed Orders ({completedOrders.length})
+                    </Button>
+                  </Box>
+
+                  <Collapse in={completedOrdersExpanded}>
+                    <Grid container spacing={isMobile ? 2 : 3}>
+                      {completedOrders.map((order) => (
+                        <Grid item xs={12} sm={6} md={4} key={order.id}>
+                          <Box sx={{ opacity: 0.7 }}>
+                            <OrderCard
+                              order={order}
+                              onClick={handleOrderClick}
+                            />
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Collapse>
+                </Box>
+              )}
+            </>
           )}
         </>
       )}

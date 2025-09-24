@@ -59,7 +59,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
       'Final Alterations',
       'Quality Control',
       'Packaging',
-      'Shipped'
+      'Delivery'
     ];
     
     const currentIndex = stages.findIndex(s => s.toLowerCase() === stage.toLowerCase());

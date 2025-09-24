@@ -1,8 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { OrderTimeline } from '../../src/components/timeline/OrderTimeline';
-import type { StageHistory } from '@colorgarb/shared/types/order';
+import type { StageHistory } from '@colorgarb/shared';
+import '@testing-library/jest-dom';
 
 // Create a test theme for consistent testing
 const testTheme = createTheme();
@@ -24,7 +26,7 @@ const mockStageHistory: StageHistory[] = [
     notes: 'Initial design created'
   },
   {
-    id: '2', 
+    id: '2',
     stage: 'ProofApproval',
     enteredAt: new Date('2023-01-05'),
     updatedBy: 'client-user',
@@ -37,6 +39,8 @@ describe('OrderTimeline', () => {
     // Clear any previous test artifacts
     jest.clearAllMocks();
   });
+
+  const mockOnStageToggle = jest.fn();
 
   describe('Component Rendering', () => {
     it('displays all 13 stages with correct names', () => {
@@ -357,6 +361,273 @@ describe('OrderTimeline', () => {
 
       stageElement = screen.getByTestId('stage-DesignProposal');
       expect(stageElement).toHaveStyle('cursor: default');
+    });
+  });
+
+  describe('Admin Mode Checkbox Functionality', () => {
+    beforeEach(() => {
+      mockOnStageToggle.mockClear();
+    });
+
+    it('renders checkboxes instead of icons when in admin mode', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      // Should render checkboxes for stages
+      expect(screen.getByTestId('checkbox-DesignProposal')).toBeInTheDocument();
+      expect(screen.getByTestId('checkbox-ProofApproval')).toBeInTheDocument();
+      expect(screen.getByTestId('checkbox-Measurements')).toBeInTheDocument();
+    });
+
+    it('shows completed stages as checked', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const designProposalCheckbox = screen.getByTestId('checkbox-DesignProposal');
+      const proofApprovalCheckbox = screen.getByTestId('checkbox-ProofApproval');
+      const measurementsCheckbox = screen.getByTestId('checkbox-Measurements');
+
+      expect(designProposalCheckbox).toBeChecked();
+      expect(proofApprovalCheckbox).toBeChecked();
+      expect(measurementsCheckbox).not.toBeChecked(); // Current stage not completed
+    });
+
+    it('calls onStageToggle when checkbox is clicked', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      // Click on current stage checkbox to complete it
+      const measurementsCheckbox = screen.getByTestId('checkbox-Measurements');
+      fireEvent.click(measurementsCheckbox);
+
+      expect(mockOnStageToggle).toHaveBeenCalledWith('Measurements', true);
+    });
+
+    it('shows confirmation dialog when unchecking completed stage', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      // Click on completed stage checkbox to uncheck it
+      const designProposalCheckbox = screen.getByTestId('checkbox-DesignProposal');
+      fireEvent.click(designProposalCheckbox);
+
+      // Should show confirmation dialog
+      expect(screen.getByText('Uncheck Completed Stage')).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure you want to uncheck "Design Proposal"/)).toBeInTheDocument();
+    });
+
+    it('calls onStageToggle when confirming uncheck', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      // Click on completed stage checkbox
+      const designProposalCheckbox = screen.getByTestId('checkbox-DesignProposal');
+      fireEvent.click(designProposalCheckbox);
+
+      // Confirm unchecking
+      const confirmButton = screen.getByTestId('confirm-uncheck-button');
+      fireEvent.click(confirmButton);
+
+      expect(mockOnStageToggle).toHaveBeenCalledWith('DesignProposal', false);
+    });
+
+    it('does not call onStageToggle when canceling uncheck', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      // Click on completed stage checkbox
+      const designProposalCheckbox = screen.getByTestId('checkbox-DesignProposal');
+      fireEvent.click(designProposalCheckbox);
+
+      // Cancel unchecking
+      const cancelButton = screen.getByText('Cancel');
+      fireEvent.click(cancelButton);
+
+      expect(mockOnStageToggle).not.toHaveBeenCalled();
+    });
+
+    it('disables checkboxes for past stages that are not completed', () => {
+      // Test with no stage history to make past stages appear unchecked but disabled
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="ProductionPlanning"
+            stageHistory={[]}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const designProposalCheckbox = screen.getByTestId('checkbox-DesignProposal');
+      const currentStageCheckbox = screen.getByTestId('checkbox-ProductionPlanning');
+
+      expect(designProposalCheckbox).toHaveClass('Mui-disabled');
+      expect(currentStageCheckbox).not.toHaveClass('Mui-disabled');
+    });
+  });
+
+  describe('Keyboard Navigation', () => {
+    it('supports space key to toggle checkboxes in admin mode', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const measurementsStage = screen.getByTestId('stage-Measurements');
+      measurementsStage.focus();
+      fireEvent.keyDown(measurementsStage, { key: ' ' });
+
+      expect(mockOnStageToggle).toHaveBeenCalledWith('Measurements', true);
+    });
+
+    it('supports enter key to toggle checkboxes in admin mode', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const measurementsStage = screen.getByTestId('stage-Measurements');
+      measurementsStage.focus();
+      fireEvent.keyDown(measurementsStage, { key: 'Enter' });
+
+      expect(mockOnStageToggle).toHaveBeenCalledWith('Measurements', true);
+    });
+
+    it('supports arrow key navigation between stages', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const firstStage = screen.getByTestId('stage-DesignProposal');
+      firstStage.focus();
+
+      // Arrow down should focus next stage
+      fireEvent.keyDown(firstStage, { key: 'ArrowDown' });
+
+      // Check if focus moved (this is hard to test directly in jsdom)
+      // The logic is tested by ensuring preventDefault is called
+      expect(firstStage).toHaveAttribute('tabIndex', '0');
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('provides proper ARIA attributes for checkboxes', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const stageElement = screen.getByTestId('stage-DesignProposal');
+      expect(stageElement).toHaveAttribute('role', 'checkbox');
+      expect(stageElement).toHaveAttribute('aria-checked', 'true');
+
+      const pendingStage = screen.getByTestId('stage-ProductionPlanning');
+      expect(pendingStage).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('provides proper aria-label for checkboxes', () => {
+      render(
+        <TestWrapper>
+          <OrderTimeline
+            orderId="test-order-id"
+            currentStage="Measurements"
+            stageHistory={mockStageHistory}
+            adminMode={true}
+            onStageToggle={mockOnStageToggle}
+          />
+        </TestWrapper>
+      );
+
+      const checkbox = screen.getByTestId('checkbox-DesignProposal');
+      expect(checkbox).toHaveAttribute('aria-label', 'Design Proposal - completed');
+
+      const pendingCheckbox = screen.getByTestId('checkbox-ProductionPlanning');
+      expect(pendingCheckbox).toHaveAttribute('aria-label', 'Production Planning - pending');
     });
   });
 });

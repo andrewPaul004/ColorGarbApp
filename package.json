@@ -23,6 +23,11 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
+    "test:admin-messages": "ts-node scripts/run-admin-message-tests.ts",
+    "test:admin-messages:mobile": "ts-node scripts/run-admin-message-tests.ts mobile",
+    "test:admin-messages:a11y": "ts-node scripts/run-admin-message-tests.ts accessibility",
+    "test:admin-messages:cross": "ts-node scripts/run-admin-message-tests.ts cross-browser",
+    "test:admin-messages:ci": "ts-node scripts/run-admin-message-tests.ts ci",
     "lint": "npm run lint --workspaces",
     "lint:web": "npm run lint --workspace=apps/web",
     "clean": "npm run clean --workspaces && dotnet clean apps/api"

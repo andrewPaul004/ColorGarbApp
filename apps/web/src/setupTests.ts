@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom';
 
+// Polyfill for TextEncoder/TextDecoder in Jest environment
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Mock fetch globally for tests
 global.fetch = jest.fn();
 

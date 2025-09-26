@@ -12,6 +12,51 @@ export interface Organization {
   name: string;
   type: string;
   contactEmail: string;
+  contactPhone?: string;
+  address?: string;
+  shippingAddress?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface OrganizationDetails extends Organization {
+  totalOrders: number;
+  activeOrders: number;
+  totalOrderValue: number;
+  lastOrderDate?: string;
+}
+
+export interface CreateOrganizationData {
+  name: string;
+  type: string;
+  contactEmail: string;
+  contactPhone?: string;
+  address: string;
+  shippingAddress?: string;
+}
+
+export interface UpdateOrganizationData {
+  name?: string;
+  type?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  shippingAddress?: string;
+}
+
+export interface BulkImportResult {
+  successCount: number;
+  failureCount: number;
+  failures: OrganizationImportFailure[];
+  processingTime: number;
+}
+
+export interface OrganizationImportFailure {
+  rowNumber: number;
+  organizationName: string;
+  error: string;
+  validationErrors: string[];
 }
 
 interface OrganizationServiceConfig {
@@ -146,6 +191,202 @@ export class OrganizationService {
   }
 
   /**
+   * Gets detailed organization information with statistics
+   * @param {string} id - Organization ID
+   * @returns {Promise<OrganizationDetails>} Detailed organization information
+   *
+   * @throws {Error} When fetching organization details fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const details = await organizationService.getOrganizationDetails('12345');
+   *   console.log('Total orders:', details.totalOrders);
+   * } catch (error) {
+   *   console.error('Failed to fetch organization details:', error.message);
+   * }
+   * ```
+   */
+  async getOrganizationDetails(id: string): Promise<OrganizationDetails> {
+    try {
+      const response = await this.apiClient.get<OrganizationDetails>(`/api/organizations/${id}/details`);
+
+      // Convert Guid ID to string
+      return {
+        ...response.data,
+        id: response.data.id.toString()
+      };
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
+   * Creates a new organization
+   * @param {CreateOrganizationData} data - Organization creation data
+   * @returns {Promise<OrganizationDetails>} Created organization with details
+   *
+   * @throws {Error} When creating organization fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const newOrg = await organizationService.createOrganization({
+   *     name: 'Test School',
+   *     type: 'school',
+   *     contactEmail: 'test@school.edu',
+   *     address: '123 Main St, City, State 12345'
+   *   });
+   *   console.log('Created organization:', newOrg.name);
+   * } catch (error) {
+   *   console.error('Failed to create organization:', error.message);
+   * }
+   * ```
+   */
+  async createOrganization(data: CreateOrganizationData): Promise<OrganizationDetails> {
+    try {
+      const response = await this.apiClient.post<OrganizationDetails>('/api/organizations', data);
+
+      // Convert Guid ID to string
+      return {
+        ...response.data,
+        id: response.data.id.toString()
+      };
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
+   * Updates an existing organization
+   * @param {string} id - Organization ID
+   * @param {UpdateOrganizationData} data - Organization update data
+   * @returns {Promise<OrganizationDetails>} Updated organization with details
+   *
+   * @throws {Error} When updating organization fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const updatedOrg = await organizationService.updateOrganization('12345', {
+   *     name: 'Updated School Name'
+   *   });
+   *   console.log('Updated organization:', updatedOrg.name);
+   * } catch (error) {
+   *   console.error('Failed to update organization:', error.message);
+   * }
+   * ```
+   */
+  async updateOrganization(id: string, data: UpdateOrganizationData): Promise<OrganizationDetails> {
+    try {
+      const response = await this.apiClient.put<OrganizationDetails>(`/api/organizations/${id}`, data);
+
+      // Convert Guid ID to string
+      return {
+        ...response.data,
+        id: response.data.id.toString()
+      };
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
+   * Deactivates an organization (soft delete)
+   * @param {string} id - Organization ID
+   * @returns {Promise<void>}
+   *
+   * @throws {Error} When deactivating organization fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   await organizationService.deactivateOrganization('12345');
+   *   console.log('Organization deactivated');
+   * } catch (error) {
+   *   console.error('Failed to deactivate organization:', error.message);
+   * }
+   * ```
+   */
+  async deactivateOrganization(id: string): Promise<void> {
+    try {
+      await this.apiClient.delete(`/api/organizations/${id}`);
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
+   * Bulk imports organizations from CSV data
+   * @param {CreateOrganizationData[]} organizations - Array of organizations to import
+   * @returns {Promise<BulkImportResult>} Import results with success/failure counts
+   *
+   * @throws {Error} When bulk import fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const result = await organizationService.bulkImportOrganizations([
+   *     { name: 'School 1', type: 'school', contactEmail: 'school1@edu', address: '123 Main St' }
+   *   ]);
+   *   console.log('Import completed:', result.successCount, 'successful');
+   * } catch (error) {
+   *   console.error('Bulk import failed:', error.message);
+   * }
+   * ```
+   */
+  async bulkImportOrganizations(organizations: CreateOrganizationData[]): Promise<BulkImportResult> {
+    try {
+      const response = await this.apiClient.post<BulkImportResult>('/api/organizations/bulk-import', {
+        organizations
+      });
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
+   * Exports organization data as CSV
+   * @param {boolean} includeInactive - Include inactive organizations in export
+   * @returns {Promise<Blob>} CSV file blob
+   *
+   * @throws {Error} When export fails
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const csvBlob = await organizationService.exportOrganizations(false);
+   *   const url = URL.createObjectURL(csvBlob);
+   *   const a = document.createElement('a');
+   *   a.href = url;
+   *   a.download = 'organizations.csv';
+   *   a.click();
+   * } catch (error) {
+   *   console.error('Export failed:', error.message);
+   * }
+   * ```
+   */
+  async exportOrganizations(includeInactive: boolean = false): Promise<Blob> {
+    try {
+      const response = await this.apiClient.get(`/api/organizations/export?includeInactive=${includeInactive}`, {
+        responseType: 'blob'
+      });
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error as AxiosError);
+      throw error; // Re-throw for component handling
+    }
+  }
+
+  /**
    * Handles API errors with user-friendly messages
    * @param {AxiosError} error - Axios error object
    * @throws {Error} Formatted error with user-friendly message
@@ -157,13 +398,16 @@ export class OrganizationService {
 
     switch (error.response.status) {
       case 400:
-        throw new Error('Invalid request format.');
+        const errorMessage = error.response?.data?.message || 'Invalid request format.';
+        throw new Error(errorMessage);
       case 401:
         throw new Error('Authentication required. Please log in again.');
       case 403:
         throw new Error('You don\'t have permission to access organizations.');
       case 404:
         throw new Error('Organization not found.');
+      case 409:
+        throw new Error('Organization with this name already exists.');
       case 429:
         throw new Error('Too many requests. Please try again later.');
       case 500:

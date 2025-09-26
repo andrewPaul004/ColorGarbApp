@@ -45,11 +45,17 @@ public class Organization
     public string? ContactPhone { get; set; }
 
     /// <summary>
-    /// Full mailing address for shipping and billing
+    /// Full mailing address for billing
     /// </summary>
     [Required]
     [MaxLength(500)]
     public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional shipping address (if different from billing address)
+    /// </summary>
+    [MaxLength(500)]
+    public string? ShippingAddress { get; set; }
 
     /// <summary>
     /// Indicates if the organization account is currently active

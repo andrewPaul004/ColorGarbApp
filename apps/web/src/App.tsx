@@ -17,10 +17,10 @@ import UserProfile from './pages/Profile/UserProfile';
 import UserManagement from './pages/Admin/UserManagement';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import { AdminMessageInbox } from './components/admin/AdminMessageInbox';
+import OrganizationManagement from './pages/Admin/OrganizationManagement';
 
 // Placeholder components for new routes
 const OrganizationPage = () => <div style={{padding: '20px'}}><h1>Organization Management</h1><p>Coming soon...</p></div>;
-const AdminOrganizationsPage = () => <div style={{padding: '20px'}}><h1>Organizations Management</h1><p>Coming soon...</p></div>;
 const AdminSystemSettingsPage = () => <div style={{padding: '20px'}}><h1>System Settings</h1><p>Coming soon...</p></div>;
 
 /**
@@ -158,15 +158,15 @@ function App() {
             } 
           />
           
-          <Route 
-            path="/admin/organizations" 
+          <Route
+            path="/admin/organizations"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <AdminOrganizationsPage />
+                  <OrganizationManagement />
                 </Layout>
               </ProtectedRoute>
-            } 
+            }
           />
           
           <Route 
